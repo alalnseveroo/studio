@@ -129,6 +129,46 @@ export async function getContractById(id: string) {
     return { data, error: null };
 }
 
+export async function getContractForClientById(contractId: string) {
+    const supabase = createClient()
+    // Esta função é para o portal público, então não há verificação de usuário.
+    // A segurança é garantida pelas RLS.
+    const { data, error } = await supabase
+        .from('contratos')
+        .select(`
+            *,
+            clientes (*),
+            propostas (*)
+        `)
+        .eq('id', contractId)
+        .single();
+    
+    if (error) {
+        console.error('Supabase error:', error);
+        return { data: null, error: { message: 'Não foi possível buscar os dados do contrato.' } };
+    }
+
+    return { data, error: null };
+}
+
+
+export async function getContractsForClientPortal(clientId: string) {
+    const supabase = createClient()
+    // Esta função é para o portal público.
+    const { data, error } = await supabase
+        .from('contratos')
+        .select('*')
+        .eq('cliente_id', clientId)
+        .order('created_at', { ascending: false });
+
+    if (error) {
+        console.error('Supabase error:', error);
+        return { data: null, error: { message: 'Não foi possível buscar os contratos do cliente.' } };
+    }
+
+    return { data, error: null };
+}
+
 
 export async function signContractAsProvider(contractId: string, otp: string) {
     const supabase = createClient()
@@ -139,7 +179,7 @@ export async function signContractAsProvider(contractId: string, otp: string) {
     const { error: otpError } = await supabase.auth.verifyOtp({
         email: user.email,
         token: otp,
-        type: 'email' // O tipo 'email' aqui é para confirmar uma ação, não para login
+        type: 'email'
     });
     
     if (otpError) {
@@ -210,5 +250,6 @@ export async function signContractAsProvider(contractId: string, otp: string) {
     }
 
     revalidatePath(`/dashboard/contratos/${contractId}`);
+    revalidatePath(`/portal/${contract.cliente_id}`);
     return { data, error: null };
 }

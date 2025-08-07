@@ -51,7 +51,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/', request.url))
   }
 
-  // Se o usuário está logado e tentando acessar a raiz ou verificação, redireciona para o dashboard
+  // Se o usuário está logado e tentando acessar uma rota pública que não seja o portal, redireciona para o dashboard
   if (user && (request.nextUrl.pathname === '/' || request.nextUrl.pathname === '/verify-otp')) {
     return NextResponse.redirect(new URL('/dashboard', request.url))
   }
