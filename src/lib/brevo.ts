@@ -18,7 +18,7 @@ if (BREVO_API_KEY) {
 }
 
 // **IMPORTANTE**: Configure estes valores
-const SENDER_EMAIL = "noreply@dash.com";
+const SENDER_EMAIL = "assinaturas@pelvizi.pro";
 const SENDER_NAME = "DASH - Gestor de Contratos";
 
 /**
