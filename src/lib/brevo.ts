@@ -18,8 +18,8 @@ if (BREVO_API_KEY) {
 }
 
 // **IMPORTANTE**: Configure estes valores
-const SENDER_EMAIL = "seu-email@dominio.com";
-const SENDER_NAME = "Seu Nome ou Nome da Empresa";
+const SENDER_EMAIL = "noreply@dash.com";
+const SENDER_NAME = "DASH - Gestor de Contratos";
 
 /**
  * Adiciona ou atualiza um contato na Brevo, definindo seus atributos.

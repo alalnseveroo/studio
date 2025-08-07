@@ -1,10 +1,9 @@
 'use server'
 
-import { revalidatePath } from 'next/cache'
-import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import crypto from 'crypto';
 import { addOrUpdateContact, sendTransactionalEmail } from '../brevo';
+import { createAdminClient } from '../supabase/admin';
 
 export async function signInWithOtp(email: string) {
   const supabase = createClient()
@@ -56,11 +55,10 @@ export async function sendClientVerificationCode(contractId: string) {
     .single();
 
   if (contractError || !contract || !contract.clientes?.email) {
-      return { error: { message: 'Contrato ou e-mail do cliente não encontrado.' }, success: false };
+      return { success: false, error: { message: 'Contrato ou e-mail do cliente não encontrado.' } };
   }
 
   const clientEmail = contract.clientes.email;
-
   const code = crypto.randomInt(100000, 999999).toString();
   const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutos de validade
 
@@ -73,22 +71,20 @@ export async function sendClientVerificationCode(contractId: string) {
     .eq('id', contractId);
 
   if (updateError) {
-      return { error: { message: 'Falha ao salvar o código de verificação no banco de dados.' }, success: false };
+      return { success: false, error: { message: 'Falha ao salvar o código de verificação no banco de dados.' } };
   }
   
   try {
-    // Adiciona/atualiza o contato na Brevo com o código
     await addOrUpdateContact(clientEmail, { PINSECRET: code });
     
-    // Dispara o e-mail transacional
-    // **IMPORTANTE**: Você precisa criar um template na Brevo e substituir o '1' pelo ID do seu template.
-    const BREVO_TEMPLATE_ID = 1; 
+    // Usando o ID do template fornecido pelo usuário.
+    const BREVO_TEMPLATE_ID = 58; 
     await sendTransactionalEmail(clientEmail, BREVO_TEMPLATE_ID, { pinsecret: code });
 
     return { success: true, message: `Um e-mail com o código de verificação foi enviado para ${clientEmail}.` };
   } catch (brevoError: any) {
     console.error("Brevo API Error:", brevoError);
-    return { error: { message: `Falha ao enviar o e-mail de verificação. Detalhes: ${brevoError.message}` }, success: false };
+    return { success: false, error: { message: `Falha ao enviar o e-mail de verificação. Detalhes: ${brevoError.message}` } };
   }
 }
 

@@ -21,7 +21,7 @@ const nextConfig: NextConfig = {
   env: {
     SUPABASE_URL: process.env.SUPABASE_URL,
     SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY,
-    BREVO_API_KEY: process.env.BREVO_API_KEY,
+    BREVO_API_KEY: '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',
   }
 };
 
