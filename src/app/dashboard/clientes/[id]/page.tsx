@@ -28,7 +28,7 @@ import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 
 const clientProfileSchema = z.object({
-  personType: z.enum(['cpf', 'cnpj']),
+  personType: z.enum(['cpf', 'cnpj'], { required_error: "Você deve selecionar o tipo de pessoa." }),
   // Common fields
   email: z.string().email({ message: "Por favor, insira um e-mail válido." }),
   address: z.string().optional(),
@@ -51,9 +51,12 @@ const clientProfileSchema = z.object({
     if (data.personType === 'cnpj') {
         return !!data.companyName && !!data.cnpj && !!data.representativeName && !!data.representativeRg && !!data.representativeCpf && !!data.address;
     }
-    return !!data.fullName && !!data.nationality && !!data.civilStatus && !!data.profession && !!data.rg && !!data.cpf && !!data.address;
+    if (data.personType === 'cpf') {
+        return !!data.fullName && !!data.nationality && !!data.civilStatus && !!data.profession && !!data.rg && !!data.cpf && !!data.address;
+    }
+    return false; // Deve ter um personType
 }, {
-  message: "Preencha todos os campos obrigatórios.",
+  message: "Preencha todos os campos obrigatórios para o tipo de pessoa selecionado.",
   path: ["form"],
 });
 
@@ -70,7 +73,6 @@ export default function ClienteEditPage() {
   const form = useForm<ClientFormData>({
     resolver: zodResolver(clientProfileSchema),
     defaultValues: {
-      personType: 'cpf',
       email: '',
     },
   })
@@ -87,7 +89,7 @@ export default function ClienteEditPage() {
     } else if (data) {
       setClient(data)
       form.reset({
-        personType: data.person_type || 'cpf',
+        personType: data.person_type as 'cpf' | 'cnpj' | undefined,
         email: data.email || '',
         companyName: data.company_name || '',
         cnpj: data.cnpj || '',
@@ -166,15 +168,15 @@ export default function ClienteEditPage() {
                       <FormItem>
                          <FormControl>
                             <Card 
-                                className={cn("cursor-pointer transition-all", field.value === 'cpf' ? "border-green-500 bg-green-500/10" : "")}
+                                className={cn("cursor-pointer transition-all", field.value === 'cpf' ? "border-primary bg-primary/10" : "")}
                                 onClick={() => field.onChange('cpf')}
                             >
-                                <CardHeader className="flex flex-row items-center justify-between">
-                                    <div>
+                                <CardHeader className="flex flex-row items-center justify-between p-4">
+                                    <div className="space-y-1">
                                         <CardTitle className="flex items-center gap-2 text-base"><User className="h-5 w-5" /> Pessoa Física</CardTitle>
-                                        <CardDescription className="pt-2">Para contratar serviços como pessoa individual.</CardDescription>
+                                        <CardDescription className="text-xs">Para contratar serviços como pessoa individual.</CardDescription>
                                     </div>
-                                    <RadioGroupItem value="cpf" id="cpf" />
+                                    <RadioGroupItem value="cpf" id="cpf" className="translate-y-2" />
                                 </CardHeader>
                             </Card>
                          </FormControl>
@@ -182,20 +184,21 @@ export default function ClienteEditPage() {
                       <FormItem>
                         <FormControl>
                             <Card 
-                                className={cn("cursor-pointer transition-all", field.value === 'cnpj' ? "border-green-500 bg-green-500/10" : "")}
+                                className={cn("cursor-pointer transition-all", field.value === 'cnpj' ? "border-primary bg-primary/10" : "")}
                                 onClick={() => field.onChange('cnpj')}
                              >
-                                <CardHeader className="flex flex-row items-center justify-between">
-                                    <div>
+                                <CardHeader className="flex flex-row items-center justify-between p-4">
+                                     <div className="space-y-1">
                                         <CardTitle className="flex items-center gap-2 text-base"><Building className="h-5 w-5" /> Pessoa Jurídica</CardTitle>
-                                        <CardDescription className="pt-2">Para contratar serviços em nome de uma empresa.</CardDescription>
+                                        <CardDescription className="text-xs">Para contratar serviços em nome de uma empresa.</CardDescription>
                                     </div>
-                                    <RadioGroupItem value="cnpj" id="cnpj" />
+                                    <RadioGroupItem value="cnpj" id="cnpj" className="translate-y-2" />
                                 </CardHeader>
                             </Card>
                          </FormControl>
                       </FormItem>
                    </RadioGroup>
+                   <FormMessage />
                 </FormItem>
               )}
             />
@@ -344,5 +347,3 @@ export default function ClienteEditPage() {
     </div>
   )
 }
-
-    
