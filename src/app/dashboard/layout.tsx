@@ -123,7 +123,7 @@ export default function DashboardLayout({
 }) {
   return (
     <SidebarProvider>
-        <Sidebar side="left" variant="sidebar" collapsible="icon" className="bg-card">
+        <Sidebar side="left" variant="sidebar" collapsible="icon" className="bg-sidebar">
              <SidebarContent className="p-4">
                 <MainNav />
             </SidebarContent>
@@ -132,7 +132,7 @@ export default function DashboardLayout({
             </SidebarFooter>
         </Sidebar>
         <SidebarInset>
-            <main className="flex flex-1 flex-col bg-background">{children}</main>
+            <main className="flex flex-1 flex-col">{children}</main>
         </SidebarInset>
     </SidebarProvider>
   )
