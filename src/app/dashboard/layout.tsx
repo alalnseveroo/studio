@@ -94,7 +94,7 @@ export default function DashboardLayout({
             </SheetContent>
           </Sheet>
         </header>
-        <main className="flex flex-1 flex-col">
+        <main className="flex flex-1 flex-col bg-background">
           {children}
         </main>
       </div>

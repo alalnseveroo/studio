@@ -11,18 +11,30 @@ import {
 } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination"
 import { AddClientModal } from '@/components/add-client-modal'
 import { getClients } from '@/lib/actions/clients'
 import type { Cliente } from '@/lib/types'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import Link from 'next/link'
-import { PlusCircle } from 'lucide-react'
+import { PlusCircle, Loader2 } from 'lucide-react'
+
+const ITEMS_PER_PAGE = 10;
 
 export default function ClientesPage() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [clients, setClients] = useState<Cliente[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [currentPage, setCurrentPage] = useState(1)
 
   useEffect(() => {
     async function fetchClients() {
@@ -37,6 +49,18 @@ export default function ClientesPage() {
   const handleClientAdded = (newClient: Cliente) => {
     setClients((prevClients) => [newClient, ...prevClients])
   }
+  
+  const totalPages = Math.ceil(clients.length / ITEMS_PER_PAGE);
+  const paginatedClients = clients.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
+  const handlePageChange = (page: number) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  };
 
   return (
     <>
@@ -55,7 +79,7 @@ export default function ClientesPage() {
 
         {isLoading ? (
           <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm">
-            <p>Carregando clientes...</p>
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
           </div>
         ) : clients.length === 0 ? (
            <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm">
@@ -66,11 +90,12 @@ export default function ClientesPage() {
               <p className="text-sm text-muted-foreground">
                 Comece a adicionar clientes para vê-los aqui.
               </p>
+               <Button className="mt-4" onClick={() => setIsModalOpen(true)}>Adicionar Cliente</Button>
             </div>
           </div>
         ) : (
-          <Card>
-            <CardContent className="p-0">
+          <Card className="flex flex-1 flex-col">
+            <CardContent className="flex-1 p-0">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -86,7 +111,7 @@ export default function ClientesPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {clients.map((client) => (
+                  {paginatedClients.map((client) => (
                     <TableRow key={client.id}>
                       <TableCell className="hidden sm:table-cell">
                         <Avatar className="h-9 w-9">
@@ -113,6 +138,43 @@ export default function ClientesPage() {
                 </TableBody>
               </Table>
             </CardContent>
+            {totalPages > 1 && (
+              <CardFooter className="border-t pt-6">
+                <Pagination>
+                  <PaginationContent>
+                    <PaginationItem>
+                      <PaginationPrevious 
+                        href="#"
+                        onClick={(e) => { e.preventDefault(); handlePageChange(currentPage - 1); }} 
+                        aria-disabled={currentPage === 1}
+                        className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
+                      />
+                    </PaginationItem>
+                    
+                    {[...Array(totalPages)].map((_, i) => (
+                      <PaginationItem key={i}>
+                        <PaginationLink 
+                          href="#"
+                          onClick={(e) => { e.preventDefault(); handlePageChange(i + 1); }}
+                          isActive={currentPage === i + 1}
+                        >
+                          {i + 1}
+                        </PaginationLink>
+                      </PaginationItem>
+                    ))}
+                    
+                    <PaginationItem>
+                      <PaginationNext 
+                         href="#"
+                         onClick={(e) => { e.preventDefault(); handlePageChange(currentPage + 1); }} 
+                         aria-disabled={currentPage === totalPages}
+                         className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
+                      />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+              </CardFooter>
+            )}
           </Card>
         )}
       </div>
