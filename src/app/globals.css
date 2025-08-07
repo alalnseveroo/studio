@@ -6,7 +6,7 @@
 @layer base {
   :root {
     --radius: 0.75rem;
-    --background: oklch(0.982 0.009 255.4);
+    --background: oklch(0.989 0.001 25.04);
     --foreground: oklch(0.141 0.005 285.823);
     --card: oklch(1 0 0);
     --card-foreground: oklch(0.141 0.005 285.823);
