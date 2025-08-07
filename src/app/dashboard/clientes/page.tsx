@@ -123,11 +123,11 @@ export default function ClientesPage() {
                 </TableHeader>
                 <TableBody>
                   {paginatedClients.map((client) => (
-                    <TableRow key={client.id} className="h-14">
+                    <TableRow key={client.id} className="h-12">
                       <TableCell className="py-1 border-r">{client.client_id}</TableCell>
                       <TableCell className="font-medium py-1 border-r">
                          <div className="flex items-center gap-3">
-                           <Avatar className="h-9 w-9">
+                           <Avatar className="h-8 w-8">
                               <AvatarImage src={client.avatar_url || ''} alt="Avatar do Cliente" />
                               <AvatarFallback>{client.full_name ? client.full_name.charAt(0) : 'C'}</AvatarFallback>
                            </Avatar>
