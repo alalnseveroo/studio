@@ -137,7 +137,7 @@ export default function ClienteEditPage() {
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-4 rounded-lg bg-card p-4 shadow-sm sm:gap-6 sm:p-6">
+    <div className="flex flex-1 flex-col gap-4 p-4 sm:gap-6 sm:p-6">
       <div className="flex items-center">
         <h1 className="text-lg font-semibold md:text-2xl">Editar Cliente: {client.full_name || client.company_name}</h1>
       </div>

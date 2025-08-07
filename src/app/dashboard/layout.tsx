@@ -77,13 +77,13 @@ export default function DashboardLayout({
         </div>
       </div>
       <div className="flex flex-col">
-        <header className="flex h-14 items-center gap-4 border-b bg-background px-4 lg:h-[60px] lg:px-6">
+        <header className="flex h-14 items-center gap-4 border-b bg-background px-4 lg:h-[60px] lg:px-6 md:hidden">
           <Sheet>
             <SheetTrigger asChild>
               <Button
                 variant="outline"
                 size="icon"
-                className="shrink-0 md:hidden"
+                className="shrink-0"
               >
                 <Menu className="h-5 w-5" />
                 <span className="sr-only">Toggle navigation menu</span>
@@ -93,11 +93,8 @@ export default function DashboardLayout({
               <DashboardNav />
             </SheetContent>
           </Sheet>
-          <div className="w-full flex-1">
-            {/* Adicionar busca aqui se necessário */}
-          </div>
         </header>
-        <main className="flex flex-1 flex-col gap-4 bg-muted/40 p-4 sm:gap-8 sm:p-6">
+        <main className="flex flex-1 flex-col">
           {children}
         </main>
       </div>
