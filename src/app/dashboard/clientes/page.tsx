@@ -15,7 +15,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import {
   Pagination,
   PaginationContent,
-  PaginationEllipsis,
   PaginationItem,
   PaginationLink,
   PaginationNext,
@@ -26,7 +25,8 @@ import { getClients } from '@/lib/actions/clients'
 import type { Cliente } from '@/lib/types'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import Link from 'next/link'
-import { PlusCircle, Loader2, Eye } from 'lucide-react'
+import { PlusCircle, Loader2, FilePen } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 const ITEMS_PER_PAGE = 10;
 
@@ -61,6 +61,19 @@ export default function ClientesPage() {
       setCurrentPage(page);
     }
   };
+
+  const getStatusClass = (status: string) => {
+    switch (status) {
+      case 'Ativo':
+        return 'border-green-500 bg-green-500/10 text-green-700'
+      case 'Inativo':
+        return 'border-red-500 bg-red-500/10 text-red-700'
+      case 'Pendente':
+        return 'border-orange-500 bg-orange-500/10 text-orange-700'
+      default:
+        return 'border-gray-500 bg-gray-500/10 text-gray-700'
+    }
+  }
 
   return (
     <>
@@ -99,36 +112,39 @@ export default function ClientesPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="hidden w-[100px] border-r sm:table-cell">
-                      <span className="sr-only">Avatar</span>
-                    </TableHead>
-                    <TableHead className="border-r">Nome</TableHead>
-                    <TableHead className="border-r">ID Cliente</TableHead>
-                    <TableHead className="hidden border-r md:table-cell">Status</TableHead>
+                    <TableHead className="w-[100px] border-r">Código</TableHead>
+                    <TableHead className="border-r">Cliente</TableHead>
+                    <TableHead className="border-r hidden md:table-cell">Profissão</TableHead>
+                    <TableHead className="border-r hidden lg:table-cell">E-mail</TableHead>
+                    <TableHead className="border-r hidden lg:table-cell">Contato</TableHead>
+                    <TableHead className="border-r hidden md:table-cell">Status</TableHead>
                     <TableHead className="text-center">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {paginatedClients.map((client) => (
                     <TableRow key={client.id} className="h-14">
-                      <TableCell className="hidden py-1 border-r sm:table-cell">
-                        <Avatar className="h-9 w-9">
-                            <AvatarImage src={client.avatar_url || ''} alt="Avatar do Cliente" />
-                            <AvatarFallback>{client.full_name ? client.full_name.charAt(0) : 'C'}</AvatarFallback>
-                        </Avatar>
+                      <TableCell className="py-1 border-r">{client.client_id}</TableCell>
+                      <TableCell className="font-medium py-1 border-r">
+                         <div className="flex items-center gap-3">
+                           <Avatar className="h-9 w-9">
+                              <AvatarImage src={client.avatar_url || ''} alt="Avatar do Cliente" />
+                              <AvatarFallback>{client.full_name ? client.full_name.charAt(0) : 'C'}</AvatarFallback>
+                           </Avatar>
+                           <span>{client.full_name || client.company_name}</span>
+                         </div>
                       </TableCell>
-                      <TableCell className="font-medium py-1 border-r">{client.full_name || client.company_name}</TableCell>
-                       <TableCell className="py-1 border-r">
-                        <Badge variant="outline">{client.client_id}</Badge>
-                      </TableCell>
+                       <TableCell className="py-1 border-r hidden md:table-cell">{client.profession || 'Não informado'}</TableCell>
+                       <TableCell className="py-1 border-r hidden lg:table-cell">{client.email || 'Não informado'}</TableCell>
+                       <TableCell className="py-1 border-r hidden lg:table-cell">{client.email || 'Não informado'}</TableCell>
                       <TableCell className="hidden py-1 border-r md:table-cell">
-                         <Badge variant="secondary">Ativo</Badge>
+                         <Badge variant="outline" className={cn("font-normal", getStatusClass('Ativo'))}>Ativo</Badge>
                       </TableCell>
                       <TableCell className="py-1 text-center">
                          <Button asChild variant="outline" size="icon" className="h-8 w-8">
                             <Link href={`/dashboard/clientes/${client.id}`}>
-                                <Eye className="h-4 w-4" />
-                                <span className="sr-only">Visualizar</span>
+                                <FilePen className="h-4 w-4" />
+                                <span className="sr-only">Editar</span>
                             </Link>
                         </Button>
                       </TableCell>
