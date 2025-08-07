@@ -368,7 +368,7 @@ export default function NovaPropostaPage() {
                                         <SelectItem value="PE">Pernambuco</SelectItem>
                                         <SelectItem value="PI">Piauí</SelectItem>
                                         <SelectItem value="RJ">Rio de Janeiro</SelectItem>
-                                        <นาน value="RN">Rio Grande do Norte</นาน>
+                                        <SelectItem value="RN">Rio Grande do Norte</SelectItem>
                                         <SelectItem value="RS">Rio Grande do Sul</SelectItem>
                                         <SelectItem value="RO">Rondônia</SelectItem>
                                         <SelectItem value="RR">Roraima</SelectItem>
