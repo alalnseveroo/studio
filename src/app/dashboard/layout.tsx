@@ -1,3 +1,4 @@
+
 import Link from 'next/link'
 import {
   Bell,
@@ -20,7 +21,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import {
   Sidebar,
   SidebarContent,
@@ -69,7 +69,7 @@ export default function DashboardLayout({
 }) {
   return (
     <SidebarProvider>
-        <Sidebar side="left" variant="sidebar" collapsible="icon">
+        <Sidebar side="left" variant="sidebar" collapsible="icon" className="bg-card">
              <SidebarHeader className="h-14 items-center gap-2 border-b px-4 lg:h-[60px]">
                 <Link href="/" className="flex items-center gap-2 font-semibold">
                     <Package2 className="h-6 w-6" />
@@ -123,11 +123,9 @@ export default function DashboardLayout({
         <SidebarInset>
              <header className="flex h-14 items-center gap-4 border-b bg-background px-4 lg:h-[60px] lg:px-6">
                 <SidebarTrigger className="md:hidden" />
-                <div className="flex-1 text-lg font-semibold md:text-2xl">
-                    {/* Aqui você pode adicionar o título da página dinamicamente se desejar */}
-                </div>
+                <div className="flex-1 text-lg font-semibold md:text-2xl" />
             </header>
-            <main className="flex flex-1 flex-col">{children}</main>
+            <main className="flex flex-1 flex-col bg-card">{children}</main>
         </SidebarInset>
     </SidebarProvider>
   )
