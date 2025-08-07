@@ -55,11 +55,18 @@ export default function DashboardLayout({
           <div className="flex-1">
             <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
               <Link
-                href="#"
+                href="/dashboard"
                 className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
               >
                 <Home className="h-4 w-4" />
                 Dashboard
+              </Link>
+              <Link
+                href="/dashboard/clientes"
+                className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
+              >
+                <Users className="h-4 w-4" />
+                Clientes
               </Link>
               <Link
                 href="#"
@@ -77,13 +84,6 @@ export default function DashboardLayout({
               >
                 <Package className="h-4 w-4" />
                 Products{' '}
-              </Link>
-              <Link
-                href="#"
-                className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
-              >
-                <Users className="h-4 w-4" />
-                Customers
               </Link>
               <Link
                 href="#"
@@ -135,11 +135,18 @@ export default function DashboardLayout({
                   <span className="sr-only">Acme Inc</span>
                 </Link>
                 <Link
-                  href="#"
+                  href="/dashboard"
                   className="mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground"
                 >
                   <Home className="h-5 w-5" />
                   Dashboard
+                </Link>
+                 <Link
+                  href="/dashboard/clientes"
+                  className="mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground"
+                >
+                  <Users className="h-5 w-5" />
+                  Clientes
                 </Link>
                 <Link
                   href="#"
@@ -157,13 +164,6 @@ export default function DashboardLayout({
                 >
                   <Package className="h-5 w-5" />
                   Products
-                </Link>
-                <Link
-                  href="#"
-                  className="mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground"
-                >
-                  <Users className="h-5 w-5" />
-                  Customers
                 </Link>
                 <Link
                   href="#"
