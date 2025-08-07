@@ -275,12 +275,11 @@ export async function signContractAsClient({ contractId, otp, signatureDataUrl }
         return { error: { message: 'Contrato ou e-mail do cliente não encontrado.' } };
     }
     
-    // 2. Verificar o OTP
-    // Usamos o tipo 'email' aqui, pois foi o tipo enviado pelo signInWithOtp
+    // 2. Verificar o OTP. Como o cliente não é um usuário, usamos o tipo 'signup'.
     const { error: otpError } = await supabase.auth.verifyOtp({
         email: contract.clientes.email,
         token: otp,
-        type: 'email'
+        type: 'signup' // Alterado para 'signup' que é o tipo enviado.
     });
 
     if (otpError) {
