@@ -19,7 +19,7 @@ function VerifyOtpPageContent() {
 
 export default function VerifyOtpPage() {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={<div>Carregando...</div>}>
       <VerifyOtpPageContent />
     </Suspense>
   )

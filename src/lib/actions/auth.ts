@@ -18,7 +18,7 @@ export async function signInWithOtp(email: string) {
   })
 
   if (error) {
-    return { error: { message: `Could not send OTP: ${error.message}` } }
+    return { error: { message: `Não foi possível enviar o OTP: ${error.message}` } }
   }
 
   return { error: null }
@@ -34,7 +34,7 @@ export async function verifyOtp(email: string, token: string) {
   })
 
   if (error || !data.session) {
-    return { error: { message: `Could not verify OTP. The code may be invalid or expired. Please try again. ${error?.message || ''}` } }
+    return { error: { message: `Não foi possível verificar o OTP. O código pode ser inválido ou ter expirado. Por favor, tente novamente. ${error?.message || ''}` } }
   }
 
   revalidatePath('/', 'layout')

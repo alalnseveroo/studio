@@ -22,16 +22,16 @@ export default async function DashboardPage() {
           DASH
         </h1>
         <form action={signOut}>
-          <Button variant="outline">Sign Out</Button>
+          <Button variant="outline">Sair</Button>
         </form>
       </header>
       <main className="flex flex-1 flex-col items-center justify-center gap-8 p-4">
         <div className="text-center animate-in fade-in-50 duration-1000">
           <h2 className="text-4xl font-bold tracking-tighter text-primary font-headline md:text-6xl">
-            Welcome!
+            Bem-vindo!
           </h2>
           <p className="text-muted-foreground mt-2">
-            You are logged in as {user.email}
+            Você está logado como {user.email}
           </p>
         </div>
       </main>

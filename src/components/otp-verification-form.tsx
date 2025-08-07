@@ -27,7 +27,7 @@ import { Loader2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
 const otpSchema = z.object({
-  otp: z.string().min(6, { message: 'OTP must be 6 digits.' }).max(6, { message: 'OTP must be 6 digits.' }),
+  otp: z.string().min(6, { message: 'O OTP deve ter 6 dígitos.' }).max(6, { message: 'O OTP deve ter 6 dígitos.' }),
 })
 
 interface OtpVerificationFormProps {
@@ -50,8 +50,8 @@ export function OtpVerificationForm({ email }: OtpVerificationFormProps) {
     if (!email) {
         toast({
             variant: 'destructive',
-            title: 'Error',
-            description: 'Email is missing. Please go back and try again.',
+            title: 'Erro',
+            description: 'E-mail não informado. Por favor, volte e tente novamente.',
         })
         return;
     }
@@ -62,7 +62,7 @@ export function OtpVerificationForm({ email }: OtpVerificationFormProps) {
         setIsLoading(false)
         toast({
             variant: 'destructive',
-            title: 'Verification Error',
+            title: 'Erro de Verificação',
             description: error.message,
         })
         form.reset();
@@ -75,11 +75,11 @@ export function OtpVerificationForm({ email }: OtpVerificationFormProps) {
     return (
         <Card className="w-full max-w-sm">
             <CardHeader>
-                <CardTitle>Error</CardTitle>
-                <CardDescription>Email not provided. Please return to the login page.</CardDescription>
+                <CardTitle>Erro</CardTitle>
+                <CardDescription>E-mail não fornecido. Por favor, retorne à página de login.</CardDescription>
             </CardHeader>
             <CardContent>
-                <Button onClick={() => router.push('/')} className="w-full">Go to Login</Button>
+                <Button onClick={() => router.push('/')} className="w-full">Ir para o Login</Button>
             </CardContent>
         </Card>
     )
@@ -88,8 +88,8 @@ export function OtpVerificationForm({ email }: OtpVerificationFormProps) {
   return (
     <Card className="w-full max-w-sm animate-in fade-in-50 duration-500">
       <CardHeader>
-        <CardTitle className="text-2xl font-headline">Verify Your Code</CardTitle>
-        <CardDescription>Enter the 6-digit code sent to <strong>{email}</strong></CardDescription>
+        <CardTitle className="text-2xl font-headline">Verifique seu Código</CardTitle>
+        <CardDescription>Digite o código de 6 dígitos enviado para <strong>{email}</strong></CardDescription>
       </CardHeader>
       <CardContent>
         <Form {...form}>
@@ -99,7 +99,7 @@ export function OtpVerificationForm({ email }: OtpVerificationFormProps) {
               name="otp"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>One-Time Password</FormLabel>
+                  <FormLabel>Senha de Uso Único</FormLabel>
                   <FormControl>
                     <Input placeholder="123456" {...field} inputMode="numeric" autoComplete="one-time-code" />
                   </FormControl>
@@ -109,7 +109,7 @@ export function OtpVerificationForm({ email }: OtpVerificationFormProps) {
             />
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Verify & Sign In
+              Verificar e Entrar
             </Button>
           </form>
         </Form>

@@ -27,7 +27,7 @@ import { useToast } from '@/hooks/use-toast'
 import { Loader2 } from 'lucide-react'
 
 const emailSchema = z.object({
-  email: z.string().email({ message: 'Please enter a valid email address.' }),
+  email: z.string().email({ message: 'Por favor, insira um endereço de e-mail válido.' }),
 })
 
 export function AuthForm() {
@@ -50,13 +50,13 @@ export function AuthForm() {
     if (error) {
       toast({
         variant: 'destructive',
-        title: 'Authentication Error',
+        title: 'Erro de Autenticação',
         description: error.message,
       })
     } else {
       toast({
-        title: 'Check your email',
-        description: `We've sent a 6-digit code to ${values.email}.`,
+        title: 'Verifique seu e-mail',
+        description: `Enviamos um código de 6 dígitos para ${values.email}.`,
       })
       router.push(`/verify-otp?email=${encodeURIComponent(values.email)}`)
     }
@@ -65,9 +65,9 @@ export function AuthForm() {
   return (
     <Card className="w-full max-w-sm animate-in fade-in-50 duration-500">
       <CardHeader>
-        <CardTitle className="text-2xl font-headline">Welcome to DASH</CardTitle>
+        <CardTitle className="text-2xl font-headline">Bem-vindo ao DASH</CardTitle>
         <CardDescription>
-          Enter your email to sign in or create an account.
+          Digite seu e-mail para entrar ou criar uma conta.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -78,9 +78,9 @@ export function AuthForm() {
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel>E-mail</FormLabel>
                   <FormControl>
-                    <Input placeholder="you@example.com" {...field} type="email" />
+                    <Input placeholder="voce@exemplo.com" {...field} type="email" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -88,7 +88,7 @@ export function AuthForm() {
             />
             <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Send Code
+                Enviar Código
             </Button>
           </form>
         </Form>
