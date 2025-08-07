@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache'
 import { headers } from 'next/headers'
 import { getContractTemplate } from '@/lib/contract-template'
 import type { Profile, Contrato } from '@/lib/types'
+import { sendTransactionalEmail, addOrUpdateContact } from '../brevo'
 
 // Helper para buscar o perfil da contratada (usuário logado)
 async function getProviderProfile(supabase: any, userId: string): Promise<{ data: Profile | null, error: any }> {
@@ -240,6 +241,27 @@ export async function signContractAsProvider(contractId: string, otp: string) {
         return { data: null, error: { message: `Não foi possível assinar o contrato: ${updateError.message}` } };
     }
 
+    // Enviar e-mail para o cliente após a assinatura da contratada
+    if (contract.clientes?.email) {
+        try {
+            const portalUrl = new URL(`/portal/${contract.cliente_id}/contrato/${contract.id}`, process.env.NEXT_PUBLIC_SITE_URL).toString();
+            
+            // **AÇÃO NECESSÁRIA**: Crie um template na Brevo para este e-mail
+            // e substitua o '59' abaixo pelo ID do seu novo template.
+            const BREVO_TEMPLATE_ID_CLIENT_NOTIFICATION = 59; 
+
+            await sendTransactionalEmail(contract.clientes.email, BREVO_TEMPLATE_ID_CLIENT_NOTIFICATION, {
+                nome_cliente: contract.clientes.full_name || contract.clientes.company_name,
+                nome_contratada: contratada.full_name || contratada.company_name,
+                link_contrato: portalUrl
+            });
+        } catch (emailError: any) {
+            // Não bloqueia o processo se o e-mail falhar, mas registra o erro.
+            console.error(`Falha ao enviar e-mail de notificação para o cliente ${contract.clientes.email}:`, emailError.message);
+        }
+    }
+
+
     revalidatePath(`/dashboard/contratos/${contractId}`);
     revalidatePath(`/portal/${contract.cliente_id}/contrato/${contract.id}`);
     revalidatePath(`/portal/${contract.cliente_id}`);
@@ -327,3 +349,6 @@ export async function signContractAsClient({ contractId, otp, signatureDataUrl }
     revalidatePath(`/portal/${contract.cliente_id}`);
     return { error: null };
 }
+
+
+    
