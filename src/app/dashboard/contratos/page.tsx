@@ -1,3 +1,4 @@
+
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
@@ -194,50 +195,50 @@ export default function ContratosPage() {
               <Table>
                 <TableHeader>
                   <TableRow className="bg-muted/50 hover:bg-muted/50">
-                    <TableHead className="w-[60px] border-r">
+                    <TableHead className="w-[60px]">
                        <Checkbox
                         checked={selectedContracts.length > 0 && selectedContracts.length === filteredAndSortedContracts.length}
                         onCheckedChange={handleSelectAll}
                         aria-label="Selecionar todos"
                       />
                     </TableHead>
-                    <TableHead className="w-[100px] border-r">Código</TableHead>
-                    <TableHead className="border-r">Cliente</TableHead>
-                    <TableHead className="border-r hidden md:table-cell">Proposta</TableHead>
-                    <TableHead className="border-r hidden lg:table-cell">Valor</TableHead>
-                    <TableHead className="border-r hidden lg:table-cell">Criado em</TableHead>
-                    <TableHead className="border-r hidden md:table-cell">Status</TableHead>
+                    <TableHead className="w-[100px]">Código</TableHead>
+                    <TableHead>Cliente</TableHead>
+                    <TableHead className="hidden md:table-cell">Proposta</TableHead>
+                    <TableHead className="hidden lg:table-cell">Valor</TableHead>
+                    <TableHead className="hidden lg:table-cell">Criado em</TableHead>
+                    <TableHead className="hidden md:table-cell">Status</TableHead>
                     <TableHead className="w-[100px] text-center">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredAndSortedContracts.map((contract) => (
                     <TableRow key={contract.id} className="h-12" data-state={selectedContracts.includes(contract.id) ? 'selected' : ''}>
-                       <TableCell className="py-1 border-r">
+                       <TableCell className="py-1">
                          <Checkbox
                           checked={selectedContracts.includes(contract.id)}
                           onCheckedChange={(checked) => handleSelectContract(contract.id, !!checked)}
                           aria-label={`Selecionar contrato ${contract.contract_code}`}
                         />
                       </TableCell>
-                      <TableCell className="py-1 border-r font-medium">{contract.contract_code}</TableCell>
-                      <TableCell className="font-medium py-1 border-r">
+                      <TableCell className="py-1 font-medium">{contract.contract_code}</TableCell>
+                      <TableCell className="font-medium py-1">
                          <div className="flex items-center gap-3">
-                           <Avatar className="h-8 w-8">
+                           <Avatar className="h-6 w-6">
                               <AvatarImage src={contract.clientes?.avatar_url || ''} alt="Avatar do Cliente" />
                               <AvatarFallback>{contract.clientes?.full_name ? contract.clientes.full_name.charAt(0) : 'C'}</AvatarFallback>
                            </Avatar>
                            <span>{contract.clientes?.full_name || contract.clientes?.company_name}</span>
                          </div>
                       </TableCell>
-                      <TableCell className="py-1 border-r hidden md:table-cell">{contract.propostas?.name}</TableCell>
-                      <TableCell className="py-1 border-r hidden lg:table-cell">
+                      <TableCell className="py-1 hidden md:table-cell">{contract.propostas?.name}</TableCell>
+                      <TableCell className="py-1 hidden lg:table-cell">
                         {contract.propostas?.value ? `R$ ${Number(contract.propostas.value).toFixed(2)}` : 'N/A'}
                       </TableCell>
-                      <TableCell className="hidden py-1 border-r lg:table-cell">
+                      <TableCell className="hidden py-1 lg:table-cell">
                         {format(new Date(contract.created_at), 'dd/MM/yyyy')}
                       </TableCell>
-                      <TableCell className="hidden py-1 border-r md:table-cell">
+                      <TableCell className="hidden py-1 md:table-cell">
                         <Badge variant="outline" className={cn("font-normal", getStatusClass(contract.status))}>
                           {getStatusText(contract.status)}
                         </Badge>

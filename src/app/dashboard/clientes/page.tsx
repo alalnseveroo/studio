@@ -133,7 +133,7 @@ export default function ClientesPage() {
                 {paginatedClients.map((client) => (
                   <div key={client.id} className="p-4 space-y-3">
                     <div className="flex items-center gap-3">
-                       <Avatar className="h-10 w-10 border">
+                       <Avatar className="h-9 w-9 border">
                           <AvatarImage src={client.avatar_url || ''} alt="Avatar do Cliente" />
                           <AvatarFallback>{(client.full_name || client.company_name || 'C').charAt(0)}</AvatarFallback>
                        </Avatar>
