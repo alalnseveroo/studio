@@ -280,217 +280,220 @@ export default function ClienteEditPage() {
                 </CardContent>
             </Card>
 
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Informações de Contato e Endereço</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-               <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>E-mail do Cliente</FormLabel>
-                    <FormControl><Input type="email" placeholder="email@cliente.com" {...field} /></FormControl>
-                    <FormDescription>Este e-mail será usado para enviar o código de assinatura do contrato.</FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <FormField
-                      control={form.control}
-                      name="cep"
-                      render={({ field }) => (
-                      <FormItem className="md:col-span-1">
-                          <FormLabel>CEP</FormLabel>
-                          <div className="flex items-center gap-2">
-                          <FormControl>
-                              <Input placeholder="00000-000" {...field} />
-                          </FormControl>
-                          <Button type="button" size="icon" onClick={handleCepSearch} disabled={isFetchingCep}>
-                              {isFetchingCep ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
-                          </Button>
-                          </div>
-                          <FormMessage />
-                      </FormItem>
-                      )}
-                  />
-                  <FormField
-                      control={form.control}
-                      name="street"
-                      render={({ field }) => (
-                      <FormItem className="md:col-span-2">
-                          <FormLabel>Rua / Logradouro</FormLabel>
-                          <FormControl><Input placeholder="Ex: Rua das Flores" {...field} /></FormControl>
-                          <FormMessage />
-                      </FormItem>
-                      )}
-                  />
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Informações de Contato e Endereço</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
                    <FormField
-                      control={form.control}
-                      name="number"
-                      render={({ field }) => (
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
                       <FormItem>
-                          <FormLabel>Número</FormLabel>
-                          <FormControl><Input placeholder="123" {...field} /></FormControl>
-                          <FormMessage />
+                        <FormLabel>E-mail do Cliente</FormLabel>
+                        <FormControl><Input type="email" placeholder="email@cliente.com" {...field} /></FormControl>
+                        <FormDescription>Este e-mail será usado para enviar o código de assinatura do contrato.</FormDescription>
+                        <FormMessage />
                       </FormItem>
-                      )}
+                    )}
                   />
-                  <FormField
-                      control={form.control}
-                      name="complement"
-                      render={({ field }) => (
-                      <FormItem>
-                          <FormLabel>Complemento</FormLabel>
-                          <FormControl><Input placeholder="Apto 45" {...field} /></FormControl>
-                          <FormMessage />
-                      </FormItem>
-                      )}
-                  />
-                  <FormField
-                      control={form.control}
-                      name="neighborhood"
-                      render={({ field }) => (
-                      <FormItem>
-                          <FormLabel>Bairro</FormLabel>
-                          <FormControl><Input placeholder="Centro" {...field} /></FormControl>
-                          <FormMessage />
-                      </FormItem>
-                      )}
-                  />
-              </div>
-               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                      control={form.control}
-                      name="city"
-                      render={({ field }) => (
-                      <FormItem>
-                          <FormLabel>Cidade</FormLabel>
-                          <FormControl><Input placeholder="São Paulo" {...field} /></FormControl>
-                          <FormMessage />
-                      </FormItem>
-                      )}
-                  />
-                  <FormField
-                      control={form.control}
-                      name="state"
-                      render={({ field }) => (
-                      <FormItem>
-                          <FormLabel>Estado (UF)</FormLabel>
-                          <FormControl><Input placeholder="SP" {...field} /></FormControl>
-                          <FormMessage />
-                      </FormItem>
-                      )}
-                  />
-              </div>
-            </CardContent>
-          </Card>
-
-          {personType === 'cnpj' && (
-             <Card>
-                <CardHeader>
-                    <CardTitle>Dados da Pessoa Jurídica</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <FormField control={form.control} name="companyName" render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Nome da Empresa</FormLabel>
-                            <FormControl><Input placeholder="Empresa Contratante LTDA" {...field} /></FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )} />
-                    <FormField control={form.control} name="cnpj" render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>CNPJ</FormLabel>
-                             <div className="flex items-center gap-2">
-                                <FormControl><Input placeholder="00.000.000/0001-00" {...field} /></FormControl>
-                                <Button type="button" size="icon" onClick={handleCnpjSearch} disabled={isFetchingCnpj}>
-                                    {isFetchingCnpj ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
-                                </Button>
-                            </div>
-                            <FormMessage />
-                        </FormItem>
-                    )} />
-                    <FormField control={form.control} name="representativeName" render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Nome do Representante Legal</FormLabel>
-                            <FormControl><Input placeholder="Nome do representante" {...field} /></FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )} />
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <FormField control={form.control} name="representativeCpf" render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>CPF do Representante</FormLabel>
-                                <FormControl><Input placeholder="000.000.000-00" {...field} /></FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )} />
-                    </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <FormField
+                          control={form.control}
+                          name="cep"
+                          render={({ field }) => (
+                          <FormItem className="md:col-span-1">
+                              <FormLabel>CEP</FormLabel>
+                              <div className="flex items-center gap-2">
+                              <FormControl>
+                                  <Input placeholder="00000-000" {...field} />
+                              </FormControl>
+                              <Button type="button" size="icon" onClick={handleCepSearch} disabled={isFetchingCep}>
+                                  {isFetchingCep ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+                              </Button>
+                              </div>
+                              <FormMessage />
+                          </FormItem>
+                          )}
+                      />
+                      <FormField
+                          control={form.control}
+                          name="street"
+                          render={({ field }) => (
+                          <FormItem className="md:col-span-2">
+                              <FormLabel>Rua / Logradouro</FormLabel>
+                              <FormControl><Input placeholder="Ex: Rua das Flores" {...field} /></FormControl>
+                              <FormMessage />
+                          </FormItem>
+                          )}
+                      />
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                       <FormField
+                          control={form.control}
+                          name="number"
+                          render={({ field }) => (
+                          <FormItem>
+                              <FormLabel>Número</FormLabel>
+                              <FormControl><Input placeholder="123" {...field} /></FormControl>
+                              <FormMessage />
+                          </FormItem>
+                          )}
+                      />
+                      <FormField
+                          control={form.control}
+                          name="complement"
+                          render={({ field }) => (
+                          <FormItem>
+                              <FormLabel>Complemento</FormLabel>
+                              <FormControl><Input placeholder="Apto 45" {...field} /></FormControl>
+                              <FormMessage />
+                          </FormItem>
+                          )}
+                      />
+                      <FormField
+                          control={form.control}
+                          name="neighborhood"
+                          render={({ field }) => (
+                          <FormItem>
+                              <FormLabel>Bairro</FormLabel>
+                              <FormControl><Input placeholder="Centro" {...field} /></FormControl>
+                              <FormMessage />
+                          </FormItem>
+                          )}
+                      />
+                  </div>
+                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                          control={form.control}
+                          name="city"
+                          render={({ field }) => (
+                          <FormItem>
+                              <FormLabel>Cidade</FormLabel>
+                              <FormControl><Input placeholder="São Paulo" {...field} /></FormControl>
+                              <FormMessage />
+                          </FormItem>
+                          )}
+                      />
+                      <FormField
+                          control={form.control}
+                          name="state"
+                          render={({ field }) => (
+                          <FormItem>
+                              <FormLabel>Estado (UF)</FormLabel>
+                              <FormControl><Input placeholder="SP" {...field} /></FormControl>
+                              <FormMessage />
+                          </FormItem>
+                          )}
+                      />
+                  </div>
                 </CardContent>
-             </Card>
-          )}
+              </Card>
 
-          {personType === 'cpf' && (
-            <Card>
-                <CardHeader>
-                    <CardTitle>Dados da Pessoa Física</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                     <FormField control={form.control} name="fullName" render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Nome Completo</FormLabel>
-                            <FormControl><Input placeholder="Nome completo do cliente" {...field} /></FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )} />
-                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <FormField control={form.control} name="nationality" render={({ field }) => (
+              <div>
+                {personType === 'cnpj' && (
+                 <Card>
+                    <CardHeader>
+                        <CardTitle>Dados da Pessoa Jurídica</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <FormField control={form.control} name="companyName" render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Nacionalidade</FormLabel>
-                                <FormControl><Input placeholder="Brasileira" {...field} /></FormControl>
+                                <FormLabel>Nome da Empresa</FormLabel>
+                                <FormControl><Input placeholder="Empresa Contratante LTDA" {...field} /></FormControl>
                                 <FormMessage />
                             </FormItem>
                         )} />
-                        <FormField control={form.control} name="civilStatus" render={({ field }) => (
+                        <FormField control={form.control} name="cnpj" render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Estado Civil</FormLabel>
-                                <FormControl><Input placeholder="Solteiro(a)" {...field} /></FormControl>
+                                <FormLabel>CNPJ</FormLabel>
+                                 <div className="flex items-center gap-2">
+                                    <FormControl><Input placeholder="00.000.000/0001-00" {...field} /></FormControl>
+                                    <Button type="button" size="icon" onClick={handleCnpjSearch} disabled={isFetchingCnpj}>
+                                        {isFetchingCnpj ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+                                    </Button>
+                                </div>
                                 <FormMessage />
                             </FormItem>
                         )} />
-                     </div>
-                     <FormField control={form.control} name="profession" render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Profissão</FormLabel>
-                            <FormControl><Input placeholder="Profissão do cliente" {...field} /></FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )} />
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <FormField control={form.control} name="rg" render={({ field }) => (
+                        <FormField control={form.control} name="representativeName" render={({ field }) => (
                             <FormItem>
-                                <FormLabel>RG</FormLabel>
-                                <FormControl><Input placeholder="00.000.000-0" {...field} /></FormControl>
+                                <FormLabel>Nome do Representante Legal</FormLabel>
+                                <FormControl><Input placeholder="Nome do representante" {...field} /></FormControl>
                                 <FormMessage />
                             </FormItem>
                         )} />
-                        <FormField control={form.control} name="cpf" render={({ field }) => (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <FormField control={form.control} name="representativeCpf" render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>CPF do Representante</FormLabel>
+                                    <FormControl><Input placeholder="000.000.000-00" {...field} /></FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )} />
+                        </div>
+                    </CardContent>
+                 </Card>
+                )}
+    
+                {personType === 'cpf' && (
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Dados da Pessoa Física</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                         <FormField control={form.control} name="fullName" render={({ field }) => (
                             <FormItem>
-                                <FormLabel>CPF</FormLabel>
-                                <FormControl><Input placeholder="000.000.000-00" {...field} /></FormControl>
+                                <FormLabel>Nome Completo</FormLabel>
+                                <FormControl><Input placeholder="Nome completo do cliente" {...field} /></FormControl>
                                 <FormMessage />
                             </FormItem>
                         )} />
-                    </div>
-                </CardContent>
-            </Card>
-          )}
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <FormField control={form.control} name="nationality" render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Nacionalidade</FormLabel>
+                                    <FormControl><Input placeholder="Brasileira" {...field} /></FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )} />
+                            <FormField control={form.control} name="civilStatus" render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Estado Civil</FormLabel>
+                                    <FormControl><Input placeholder="Solteiro(a)" {...field} /></FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )} />
+                         </div>
+                         <FormField control={form.control} name="profession" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Profissão</FormLabel>
+                                <FormControl><Input placeholder="Profissão do cliente" {...field} /></FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )} />
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <FormField control={form.control} name="rg" render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>RG</FormLabel>
+                                    <FormControl><Input placeholder="00.000.000-0" {...field} /></FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )} />
+                            <FormField control={form.control} name="cpf" render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>CPF</FormLabel>
+                                    <FormControl><Input placeholder="000.000.000-00" {...field} /></FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )} />
+                        </div>
+                    </CardContent>
+                </Card>
+                )}
+              </div>
+            </div>
 
           <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
