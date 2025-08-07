@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Home, Users, Settings, FileText } from 'lucide-react'
+import { Home, Users, Settings, FileText, FileSignature } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 export function DashboardNav() {
@@ -12,6 +12,7 @@ export function DashboardNav() {
     { href: '/dashboard', label: 'Dashboard', icon: Home },
     { href: '/dashboard/clientes', label: 'Clientes', icon: Users },
     { href: '/dashboard/propostas', label: 'Propostas', icon: FileText },
+    { href: '/dashboard/contratos', label: 'Contratos', icon: FileSignature },
     { href: '/dashboard/settings/profile', label: 'Configurações', icon: Settings },
   ]
 

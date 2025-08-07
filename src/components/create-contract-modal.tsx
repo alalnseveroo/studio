@@ -1,0 +1,159 @@
+'use client'
+
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import * as z from 'zod'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog'
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { Button } from '@/components/ui/button'
+import { useToast } from '@/hooks/use-toast'
+import { createContract } from '@/lib/actions/contratos'
+import { Loader2 } from 'lucide-react'
+import type { Contrato, Cliente, Proposta } from '@/lib/types'
+
+const contractSchema = z.object({
+  clienteId: z.string({ required_error: 'Selecione um cliente.' }),
+  propostaId: z.string({ required_error: 'Selecione uma proposta.' }),
+})
+
+interface CreateContractModalProps {
+  isOpen: boolean
+  onClose: () => void
+  onContractAdded: (newContract: Contrato) => void
+  clients: Cliente[]
+  proposals: Proposta[]
+}
+
+export function CreateContractModal({ 
+    isOpen, 
+    onClose, 
+    onContractAdded, 
+    clients, 
+    proposals 
+}: CreateContractModalProps) {
+  const [isLoading, setIsLoading] = useState(false)
+  const { toast } = useToast()
+  const router = useRouter()
+
+  const form = useForm<z.infer<typeof contractSchema>>({
+    resolver: zodResolver(contractSchema),
+  })
+
+  const handleFormSubmit = async (values: z.infer<typeof contractSchema>) => {
+    setIsLoading(true)
+    const { data, error } = await createContract(values.clienteId, values.propostaId)
+    setIsLoading(false)
+
+    if (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao Gerar Contrato',
+        description: error.message,
+      })
+    } else if (data) {
+      toast({
+        title: 'Contrato Gerado!',
+        description: 'O novo contrato foi criado com sucesso.',
+      })
+      onContractAdded(data);
+      router.push(`/dashboard/contratos/${data.id}`);
+      onClose();
+      form.reset();
+    }
+  }
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Gerar Novo Contrato</DialogTitle>
+          <DialogDescription>
+            Selecione o cliente e a proposta para gerar um novo contrato.
+          </DialogDescription>
+        </DialogHeader>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 py-4">
+            <FormField
+              control={form.control}
+              name="clienteId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Cliente</FormLabel>
+                   <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                        <SelectTrigger>
+                            <SelectValue placeholder="Selecione um cliente" />
+                        </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                        {clients.map(client => (
+                            <SelectItem key={client.id} value={client.id}>
+                                {client.full_name || client.company_name}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="propostaId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Proposta</FormLabel>
+                   <Select onValueChange={field.onChange} defaultValue={field.value}>
+                     <FormControl>
+                        <SelectTrigger>
+                            <SelectValue placeholder="Selecione uma proposta" />
+                        </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                        {proposals.map(proposal => (
+                            <SelectItem key={proposal.id} value={proposal.id}>
+                                {proposal.name}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <DialogFooter>
+              <Button type="button" variant="ghost" onClick={onClose}>Cancelar</Button>
+              <Button type="submit" disabled={isLoading}>
+                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Gerar e Continuar
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
+  )
+}

@@ -39,3 +39,45 @@ export type Proposta = {
   jurisdiction_city?: string;
   jurisdiction_state?: string;
 };
+
+export type Profile = {
+  id: string;
+  person_type: 'cpf' | 'cnpj';
+  company_name?: string;
+  cnpj?: string;
+  full_name?: string;
+  nationality?: string;
+  civil_status?: string;
+  profession?: string;
+  rg?: string;
+  cpf?: string;
+  address?: string;
+  signature?: string;
+};
+
+export type Contrato = {
+  id: string;
+  user_id: string;
+  cliente_id: string;
+  proposta_id: string;
+  contract_code: string;
+  status: 'draft' | 'signed_by_provider' | 'signed_by_client';
+  provider_signature_data: SignatureData | null;
+  client_signature_data: SignatureData | null;
+  full_contract_text: string;
+  created_at: string;
+  updated_at: string;
+  clientes: Cliente; // Relação para obter o nome do cliente
+  propostas: Proposta; // Relação para obter o nome da proposta
+};
+
+export type SignatureData = {
+  signed_at: string;
+  ip_address: string;
+  user_agent: string;
+  // Geo-localização pode ser mais complexa de obter, deixamos como opcional
+  geolocation?: {
+    latitude: number;
+    longitude: number;
+  };
+};
