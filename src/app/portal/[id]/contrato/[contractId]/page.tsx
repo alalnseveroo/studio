@@ -67,15 +67,14 @@ export default function ContratoPortalPage() {
     setSignature(signatureData)
     setSheetStep('verifying')
     
-    const { success, error, code } = await sendClientVerificationCode(contract!.id)
+    const { success, error, message } = await sendClientVerificationCode(contract!.id)
     if (error) {
-      toast({ variant: 'destructive', title: 'Erro ao Gerar Código', description: error.message })
+      toast({ variant: 'destructive', title: 'Erro ao Enviar Código', description: error.message })
       setSheetStep('initial')
     } else if (success) {
-      // Como não podemos enviar o email, vamos informar ao usuário para pegar o código com a contratada.
       toast({ 
-        title: 'Código Gerado!', 
-        description: `Um código foi gerado. Por favor, contate a contratada para recebê-lo e continuar a assinatura.`,
+        title: 'Verifique seu E-mail!', 
+        description: message,
         duration: 10000 
       })
       setSheetStep('otp_sent')
@@ -218,7 +217,7 @@ export default function ContratoPortalPage() {
           <SheetHeader>
             <SheetTitle>Confirmar Assinatura Digital</SheetTitle>
             <SheetDescription>
-              Para sua segurança, desenhe sua assinatura e confirme com o código de 6 dígitos que será fornecido pela contratada.
+              Para sua segurança, desenhe sua assinatura e confirme com o código de 6 dígitos que será enviado para o seu e-mail.
             </SheetDescription>
           </SheetHeader>
 
@@ -254,9 +253,9 @@ export default function ContratoPortalPage() {
              <div className="grid gap-6 py-4">
                  <Alert variant="default" className="bg-blue-50 border-blue-200">
                     <MailCheck className="h-4 w-4 text-blue-600" />
-                    <AlertTitle className="text-blue-800">Solicite seu Código</AlertTitle>
+                    <AlertTitle className="text-blue-800">Verifique seu E-mail</AlertTitle>
                     <AlertDescription className="text-blue-700">
-                        Um código de 6 dígitos foi gerado. Entre em contato com a contratada, solicite seu código e insira-o abaixo para validar sua assinatura.
+                        Um e-mail com um código de 6 dígitos foi enviado para você. Insira-o abaixo para validar sua assinatura.
                     </AlertDescription>
                 </Alert>
                 <div className="flex flex-col items-center justify-center gap-2">
@@ -281,7 +280,7 @@ export default function ContratoPortalPage() {
             {sheetStep === 'initial' && (
                  <Button onClick={handleSendCode}>
                     <Send className="mr-2 h-4 w-4" />
-                    Confirmar Assinatura e Gerar Código
+                    Confirmar Assinatura e Enviar Código
                 </Button>
             )}
              {sheetStep === 'otp_sent' && (
