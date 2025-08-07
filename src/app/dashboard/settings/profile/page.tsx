@@ -1,6 +1,7 @@
+
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
@@ -20,8 +21,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { CheckCircle, AlertTriangle, Loader2 } from 'lucide-react'
 import SignatureCanvas from 'react-signature-canvas'
-import { saveProfile } from '@/lib/actions/profile'
+import { saveProfile, getProfile } from '@/lib/actions/profile'
 import { useToast } from '@/hooks/use-toast'
+import type { Profile } from '@/lib/types'
 
 const profileSchema = z.object({
   personType: z.enum(['cpf', 'cnpj']),
@@ -51,7 +53,7 @@ const profileSchema = z.object({
 export type ProfileFormData = z.infer<typeof profileSchema>;
 
 export default function ProfilePage() {
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
   const [isSaved, setIsSaved] = useState(false)
   const sigCanvas = useRef<SignatureCanvas>(null);
   const { toast } = useToast()
@@ -62,6 +64,38 @@ export default function ProfilePage() {
       personType: 'cpf',
     },
   })
+
+  useEffect(() => {
+    async function fetchProfile() {
+      setIsLoading(true);
+      const { data, error } = await getProfile();
+      if (data) {
+        if(data.is_completed) {
+            setIsSaved(true)
+        }
+        form.reset({
+          personType: data.person_type || 'cpf',
+          companyName: data.company_name || '',
+          cnpj: data.cnpj || '',
+          fullName: data.full_name || '',
+          nationality: data.nationality || '',
+          civilStatus: data.civil_status || '',
+          profession: data.profession || '',
+          rg: data.rg || '',
+          cpf: data.cpf || '',
+          address: data.address || '',
+        });
+        if (data.signature) {
+           setTimeout(() => {
+               sigCanvas.current?.fromDataURL(data.signature as string)
+           }, 100)
+        }
+      }
+      setIsLoading(false);
+    }
+    fetchProfile();
+  }, [form]);
+
 
   const personType = form.watch('personType')
 
@@ -75,7 +109,7 @@ export default function ProfilePage() {
         return;
     }
 
-    const data = { ...values, signature: signatureData };
+    const data = { ...values, signature: signatureData, is_completed: true };
     
     const { error } = await saveProfile(data);
 
@@ -88,6 +122,10 @@ export default function ProfilePage() {
         description: error.message,
       })
     } else {
+      toast({
+        title: 'Perfil Salvo!',
+        description: 'Seus dados foram salvos e agora você pode gerar contratos.',
+      })
       setIsSaved(true)
     }
   }
@@ -97,22 +135,30 @@ export default function ProfilePage() {
     form.setValue('signature', '');
   }
 
+  if (isLoading) {
+    return (
+      <div className="flex flex-1 flex-col gap-4 p-4 sm:gap-6 sm:p-6 items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    )
+  }
+
   if (isSaved) {
     return (
-      <div className="flex flex-1 flex-col gap-4 rounded-lg bg-card p-4 shadow-sm sm:gap-6 sm:p-6">
-        <Alert variant="default" className="bg-green-100 border-green-200 text-green-800">
-          <CheckCircle className="h-4 w-4 text-green-600" />
-          <AlertTitle>Perfil Salvo com Sucesso!</AlertTitle>
-          <AlertDescription>
-            Seus dados foram salvos e não podem mais ser alterados. Agora você está pronto para criar e assinar contratos.
-          </AlertDescription>
+      <div className="flex flex-1 flex-col gap-4 p-4 sm:gap-6 sm:p-6">
+        <Alert variant="default" className="bg-green-50 border-green-200">
+            <CheckCircle className="h-4 w-4 !text-green-600" />
+            <AlertTitle className="text-green-800">Perfil Completo!</AlertTitle>
+            <AlertDescription className="text-green-700">
+                Seus dados foram salvos. Agora você já pode gerar e assinar contratos.
+            </AlertDescription>
         </Alert>
       </div>
     )
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-4 rounded-lg bg-card p-4 shadow-sm sm:gap-6 sm:p-6">
+    <div className="flex flex-1 flex-col gap-4 p-4 sm:gap-6 sm:p-6">
       <div className="flex items-center">
         <h1 className="text-lg font-semibold md:text-2xl">Perfil da Contratada</h1>
       </div>
@@ -162,21 +208,21 @@ export default function ProfilePage() {
                     <FormField control={form.control} name="companyName" render={({ field }) => (
                         <FormItem>
                             <FormLabel>Nome da Empresa ou Nome Completo (MEI)</FormLabel>
-                            <FormControl><Input placeholder="Minha Empresa LTDA" {...field} /></FormControl>
+                            <FormControl><Input placeholder="Minha Empresa LTDA" {...field} value={field.value || ''} /></FormControl>
                             <FormMessage />
                         </FormItem>
                     )} />
                     <FormField control={form.control} name="cnpj" render={({ field }) => (
                         <FormItem>
                             <FormLabel>CNPJ</FormLabel>
-                            <FormControl><Input placeholder="00.000.000/0001-00" {...field} /></FormControl>
+                            <FormControl><Input placeholder="00.000.000/0001-00" {...field} value={field.value || ''} /></FormControl>
                             <FormMessage />
                         </FormItem>
                     )} />
                      <FormField control={form.control} name="address" render={({ field }) => (
                         <FormItem>
                             <FormLabel>Endereço Completo</FormLabel>
-                            <FormControl><Input placeholder="Rua, Número, Bairro, CEP, Cidade, Estado" {...field} /></FormControl>
+                            <FormControl><Input placeholder="Rua, Número, Bairro, CEP, Cidade, Estado" {...field} value={field.value || ''} /></FormControl>
                             <FormMessage />
                         </FormItem>
                     )} />
@@ -193,7 +239,7 @@ export default function ProfilePage() {
                      <FormField control={form.control} name="fullName" render={({ field }) => (
                         <FormItem>
                             <FormLabel>Nome Completo</FormLabel>
-                            <FormControl><Input placeholder="Seu nome completo" {...field} /></FormControl>
+                            <FormControl><Input placeholder="Seu nome completo" {...field} value={field.value || ''} /></FormControl>
                             <FormMessage />
                         </FormItem>
                     )} />
@@ -201,14 +247,14 @@ export default function ProfilePage() {
                         <FormField control={form.control} name="nationality" render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Nacionalidade</FormLabel>
-                                <FormControl><Input placeholder="Brasileira" {...field} /></FormControl>
+                                <FormControl><Input placeholder="Brasileira" {...field} value={field.value || ''} /></FormControl>
                                 <FormMessage />
                             </FormItem>
                         )} />
                         <FormField control={form.control} name="civilStatus" render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Estado Civil</FormLabel>
-                                <FormControl><Input placeholder="Solteiro(a)" {...field} /></FormControl>
+                                <FormControl><Input placeholder="Solteiro(a)" {...field} value={field.value || ''} /></FormControl>
                                 <FormMessage />
                             </FormItem>
                         )} />
@@ -216,7 +262,7 @@ export default function ProfilePage() {
                      <FormField control={form.control} name="profession" render={({ field }) => (
                         <FormItem>
                             <FormLabel>Profissão</FormLabel>
-                            <FormControl><Input placeholder="Assistente Virtual" {...field} /></FormControl>
+                            <FormControl><Input placeholder="Assistente Virtual" {...field} value={field.value || ''} /></FormControl>
                             <FormMessage />
                         </FormItem>
                     )} />
@@ -224,14 +270,14 @@ export default function ProfilePage() {
                         <FormField control={form.control} name="rg" render={({ field }) => (
                             <FormItem>
                                 <FormLabel>RG</FormLabel>
-                                <FormControl><Input placeholder="00.000.000-0" {...field} /></FormControl>
+                                <FormControl><Input placeholder="00.000.000-0" {...field} value={field.value || ''} /></FormControl>
                                 <FormMessage />
                             </FormItem>
                         )} />
                         <FormField control={form.control} name="cpf" render={({ field }) => (
                             <FormItem>
                                 <FormLabel>CPF</FormLabel>
-                                <FormControl><Input placeholder="000.000.000-00" {...field} /></FormControl>
+                                <FormControl><Input placeholder="000.000.000-00" {...field} value={field.value || ''} /></FormControl>
                                 <FormMessage />
                             </FormItem>
                         )} />
@@ -239,7 +285,7 @@ export default function ProfilePage() {
                      <FormField control={form.control} name="address" render={({ field }) => (
                         <FormItem>
                             <FormLabel>Endereço Completo</FormLabel>
-                            <FormControl><Input placeholder="Rua, Número, Bairro, CEP, Cidade, Estado" {...field} /></FormControl>
+                            <FormControl><Input placeholder="Rua, Número, Bairro, CEP, Cidade, Estado" {...field} value={field.value || ''} /></FormControl>
                             <FormMessage />
                         </FormItem>
                     )} />
@@ -276,12 +322,12 @@ export default function ProfilePage() {
                  </Button>
             </CardContent>
           </Card>
-
+          
           <Alert variant="destructive">
             <AlertTriangle className="h-4 w-4" />
             <AlertTitle>Atenção!</AlertTitle>
             <AlertDescription>
-                Após salvar, os dados do perfil não poderão ser alterados. Verifique todas as informações com cuidado antes de continuar.
+                Após salvar, os dados do perfil não poderão ser alterados. Verifique todas as informações com cuidado antes de continuar. Esta ação é irreversível.
             </AlertDescription>
           </Alert>
 

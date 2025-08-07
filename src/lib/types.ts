@@ -1,3 +1,4 @@
+
 export type Cliente = {
   id: string;
   user_id: string;
@@ -54,6 +55,7 @@ export type Profile = {
   cpf?: string;
   address?: string;
   signature?: string;
+  is_completed?: boolean;
 };
 
 export type Contrato = {

@@ -1,9 +1,10 @@
+
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
 import type { ProfileFormData } from '@/app/dashboard/settings/profile/page';
 
-export async function saveProfile(formData: ProfileFormData) {
+export async function saveProfile(formData: ProfileFormData & { is_completed: boolean }) {
   const supabase = createClient()
 
   const { data: { user } } = await supabase.auth.getUser()
@@ -26,6 +27,7 @@ export async function saveProfile(formData: ProfileFormData) {
     address: formData.address,
     signature: formData.signature,
     updated_at: new Date().toISOString(),
+    is_completed: formData.is_completed,
   };
 
   const { error } = await supabase.from('profiles').upsert(profileData)
@@ -36,4 +38,27 @@ export async function saveProfile(formData: ProfileFormData) {
   }
 
   return { error: null }
+}
+
+
+export async function getProfile() {
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+        return { data: null, error: { message: 'Usuário não autenticado' } };
+    }
+
+    const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+    if (error && error.code !== 'PGRST116') { // Ignore 'exact-one' error for new users
+        console.error('Error fetching profile:', error);
+        return { data: null, error: { message: 'Erro ao buscar perfil.' } };
+    }
+
+    return { data, error: null };
 }
