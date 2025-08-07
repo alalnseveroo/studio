@@ -17,7 +17,7 @@ export default async function DashboardLayout({
 
   return (
     <SidebarProvider>
-      <Sidebar className="bg-background border-r">
+      <Sidebar className="bg-card border-r">
         <SidebarContent>
           <SidebarMenu>
             <SidebarMenuItem>
@@ -33,7 +33,7 @@ export default async function DashboardLayout({
           </SidebarMenu>
         </SidebarContent>
       </Sidebar>
-      <SidebarInset className="bg-transparent p-4">
+      <SidebarInset className="bg-background p-4">
         <div className="bg-card h-full rounded-lg p-6">
             {children}
         </div>
