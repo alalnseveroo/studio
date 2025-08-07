@@ -122,7 +122,7 @@ export default function ContratoPortalPage() {
             margin:       1,
             filename:     `Contrato_${contract?.contract_code}.pdf`,
             image:        { type: 'jpeg', quality: 0.98 },
-            html2canvas:  { scale: 2 },
+            html2canvas:  { scale: 2, useCORS: true },
             jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
         };
         html2pdf().from(element).set(opt).save();
@@ -202,13 +202,19 @@ export default function ContratoPortalPage() {
               <CardTitle>Detalhes do Contrato</CardTitle>
               <CardDescription>Status: {getStatusText(contract.status)}</CardDescription>
             </CardHeader>
-            <CardContent id="contract-content-for-pdf">
+            <CardContent>
               <div
                 className="prose prose-sm max-w-none rounded-md border bg-gray-50 p-6"
                 dangerouslySetInnerHTML={{ __html: contract.full_contract_text || '' }}
               />
             </CardContent>
           </Card>
+          
+          {/* Div oculta para geração de PDF */}
+          <div style={{ display: 'none' }}>
+            <div id="contract-content-for-pdf" dangerouslySetInnerHTML={{ __html: contract.full_contract_text || '' }} />
+          </div>
+
         </main>
       </div>
 
