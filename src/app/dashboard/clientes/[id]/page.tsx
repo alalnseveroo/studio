@@ -1,7 +1,7 @@
 
 'use client'
 
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useParams } from 'next/navigation'
 import { useForm, FormProvider, useFormContext } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -35,7 +35,6 @@ const clientTypeSchema = z.object({
 });
 
 const clientInfoSchema = z.object({
-  personType: z.enum(['cpf', 'cnpj']),
   // Common
   email: z.string().email({ message: "Por favor, insira um e-mail válido." }),
   // PJ Fields
@@ -49,17 +48,6 @@ const clientInfoSchema = z.object({
   civilStatus: z.string().optional(),
   profession: z.string().optional(),
   cpf: z.string().optional(),
-}).refine(data => {
-    if (data.personType === 'cnpj') {
-        return !!data.companyName && !!data.cnpj && !!data.representativeName && !!data.representativeCpf;
-    }
-    if (data.personType === 'cpf') {
-        return !!data.fullName && !!data.nationality && !!data.civilStatus && !!data.profession && !!data.cpf;
-    }
-    return false;
-}, {
-  message: "Preencha todos os campos obrigatórios para o tipo de pessoa selecionado.",
-  path: ["fullName"], // a representative path
 });
 
 
@@ -74,7 +62,44 @@ const addressSchema = z.object({
 });
 
 
-const combinedSchema = clientTypeSchema.merge(clientInfoSchema).merge(addressSchema);
+const combinedSchema = z.object({
+  personType: z.enum(['cpf', 'cnpj'], { required_error: "Você deve selecionar o tipo de pessoa." }),
+  email: z.string().email({ message: "Por favor, insira um e-mail válido." }),
+  companyName: z.string().optional(),
+  cnpj: z.string().optional(),
+  representativeName: z.string().optional(),
+  representativeCpf: z.string().optional(),
+  fullName: z.string().optional(),
+  nationality: z.string().optional(),
+  civilStatus: z.string().optional(),
+  profession: z.string().optional(),
+  cpf: z.string().optional(),
+  cep: z.string().min(8, { message: "O CEP é obrigatório e deve ter 8 dígitos."}),
+  street: z.string().min(1, { message: "A rua é obrigatória."}),
+  number: z.string().min(1, { message: "O número é obrigatório."}),
+  complement: z.string().optional(),
+  neighborhood: z.string().min(1, { message: "O bairro é obrigatório."}),
+  city: z.string().min(1, { message: "A cidade é obrigatória."}),
+  state: z.string().min(2, { message: "O estado é obrigatório."}),
+}).refine(data => {
+    if (data.personType === 'cnpj') {
+        return !!data.companyName && !!data.cnpj && !!data.representativeName && !!data.representativeCpf;
+    }
+    return true; // Return true if not 'cnpj' so it can be validated by the next refine
+}, {
+    message: "Para Pessoa Jurídica, preencha: Nome da Empresa, CNPJ, Nome e CPF do representante.",
+    path: ["companyName"],
+}).refine(data => {
+    if (data.personType === 'cpf') {
+        return !!data.fullName && !!data.nationality && !!data.civilStatus && !!data.profession && !!data.cpf;
+    }
+    return true;
+}, {
+    message: "Para Pessoa Física, preencha: Nome, Nacionalidade, Estado Civil, Profissão e CPF.",
+    path: ["fullName"],
+});
+
+
 type ClientFormData = z.infer<typeof combinedSchema>;
 type StepName = 'type' | 'info' | 'address';
 
@@ -130,7 +155,7 @@ export default function ClienteEditPage() {
     if (data) {
       setClient(data);
       const addressParts = parseAddress(data.address);
-      const defaultValues = {
+      const defaultValues: Partial<ClientFormData> = {
         personType: data.person_type as 'cpf' | 'cnpj' | undefined,
         email: data.email || '',
         companyName: data.company_name || '',
@@ -558,3 +583,5 @@ function AddressStep({ isEditing, setEditingStep, onSave, isLoading }: StepProps
         </Card>
     )
 }
+
+    
