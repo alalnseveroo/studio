@@ -16,7 +16,6 @@ import { format } from 'date-fns'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from '@/components/ui/sheet'
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp'
 import SignatureCanvas from 'react-signature-canvas'
-import html2pdf from 'html2pdf.js'
 
 type SheetStep = 'initial' | 'otp_sent' | 'verifying'
 
@@ -111,7 +110,8 @@ export default function ContratoPortalPage() {
     }, 300)
   }
 
-  const handleDownloadPdf = () => {
+  const handleDownloadPdf = async () => {
+    const html2pdf = (await import('html2pdf.js')).default;
     const element = document.getElementById('contract-content-for-pdf');
     if (element) {
         const opt = {
