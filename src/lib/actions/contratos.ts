@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { headers } from 'next/headers'
 import { getContractTemplate } from '@/lib/contract-template'
-import type { Profile, Contrato } from '@/lib/types'
+import type { Profile, Contrato, SignatureData } from '@/lib/types'
 import { sendTransactionalEmail, addOrUpdateContact } from '../brevo'
 
 // Helper para buscar o perfil da contratada (usuário logado)
@@ -246,9 +246,7 @@ export async function signContractAsProvider(contractId: string, otp: string) {
         try {
             const portalUrl = new URL(`/portal/${contract.cliente_id}/contrato/${contract.id}`, process.env.NEXT_PUBLIC_SITE_URL).toString();
             
-            // **AÇÃO NECESSÁRIA**: Crie um template na Brevo para este e-mail
-            // e substitua o '59' abaixo pelo ID do seu novo template.
-            const BREVO_TEMPLATE_ID_CLIENT_NOTIFICATION = 59; 
+            const BREVO_TEMPLATE_ID_CLIENT_NOTIFICATION = 58; 
 
             await sendTransactionalEmail(contract.clientes.email, BREVO_TEMPLATE_ID_CLIENT_NOTIFICATION, {
                 nome_cliente: contract.clientes.full_name || contract.clientes.company_name,
