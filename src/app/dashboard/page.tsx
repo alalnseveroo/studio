@@ -1,8 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import { Button } from '@/components/ui/button'
-import { signOut } from '@/lib/actions/auth'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { SidebarTrigger } from '@/components/ui/sidebar'
 
 export default async function DashboardPage() {
   const supabase = createClient()
@@ -17,13 +15,13 @@ export default async function DashboardPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      <header className="flex items-center justify-between p-4 sm:p-6">
-        <h1 className="text-2xl font-bold text-primary font-headline">
-          DASH
-        </h1>
-        <form action={signOut}>
-          <Button variant="outline">Sair</Button>
-        </form>
+      <header className="flex items-center justify-between border-b p-4 sm:p-6">
+        <div className="flex items-center gap-2">
+           <SidebarTrigger />
+           <h1 className="text-2xl font-bold text-primary font-headline">
+            DASH
+          </h1>
+        </div>
       </header>
       <main className="flex flex-1 flex-col items-center justify-center gap-8 p-4">
         <div className="text-center animate-in fade-in-50 duration-1000">
