@@ -17,7 +17,7 @@ export default async function DashboardLayout({
 
   return (
     <SidebarProvider>
-      <Sidebar className="bg-card border-r">
+      <Sidebar className="bg-sidebar border-r">
         <SidebarContent>
           <SidebarMenu>
             <SidebarMenuItem>
