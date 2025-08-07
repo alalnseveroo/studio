@@ -1,5 +1,12 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 
 export default async function DashboardPage() {
   const supabase = createClient()
@@ -13,8 +20,12 @@ export default async function DashboardPage() {
   }
 
   return (
-    <div className="flex min-h-full flex-col p-4">
-      <main className="flex-1 rounded-lg bg-background p-6 shadow-sm">
+    <Card className="flex-1">
+      <CardHeader>
+        <CardTitle>Bem-vindo!</CardTitle>
+        <CardDescription>Você está logado como {user.email}</CardDescription>
+      </CardHeader>
+      <CardContent>
         <div className="flex h-full flex-col items-center justify-center gap-8">
             <div className="text-center animate-in fade-in-50 duration-1000">
             <h2 className="text-4xl font-bold tracking-tighter text-primary font-headline md:text-6xl">
@@ -25,7 +36,7 @@ export default async function DashboardPage() {
             </p>
             </div>
         </div>
-      </main>
-    </div>
+      </CardContent>
+    </Card>
   )
 }

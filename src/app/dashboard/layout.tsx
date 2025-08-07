@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/sidebar'
 import { signOut } from '@/lib/actions/auth'
 import { Button } from '@/components/ui/button'
-import { Home, Settings, LogOut, PanelLeft } from 'lucide-react'
+import { Home, Settings, LogOut } from 'lucide-react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { createClient } from '@/lib/supabase/server'
 import { Separator } from '@/components/ui/separator'
@@ -80,7 +80,7 @@ export default async function DashboardLayout({
           </form>
         </SidebarFooter>
       </Sidebar>
-      <SidebarInset>{children}</SidebarInset>
+      <SidebarInset className="bg-background p-2 md:p-4">{children}</SidebarInset>
     </SidebarProvider>
   )
 }
