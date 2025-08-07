@@ -20,6 +20,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination"
+import { Checkbox } from "@/components/ui/checkbox"
 import { AddClientModal } from '@/components/add-client-modal'
 import { getClients } from '@/lib/actions/clients'
 import type { Cliente } from '@/lib/types'
@@ -35,6 +36,7 @@ export default function ClientesPage() {
   const [clients, setClients] = useState<Cliente[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [currentPage, setCurrentPage] = useState(1)
+  const [selectedClients, setSelectedClients] = useState<string[]>([])
 
   useEffect(() => {
     async function fetchClients() {
@@ -59,6 +61,22 @@ export default function ClientesPage() {
   const handlePageChange = (page: number) => {
     if (page >= 1 && page <= totalPages) {
       setCurrentPage(page);
+    }
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedClients(paginatedClients.map((client) => client.id));
+    } else {
+      setSelectedClients([]);
+    }
+  };
+
+  const handleSelectClient = (clientId: string, checked: boolean) => {
+    if (checked) {
+      setSelectedClients((prev) => [...prev, clientId]);
+    } else {
+      setSelectedClients((prev) => prev.filter((id) => id !== clientId));
     }
   };
 
@@ -111,7 +129,14 @@ export default function ClientesPage() {
             <CardContent className="p-0">
               <Table>
                 <TableHeader>
-                  <TableRow>
+                  <TableRow className="bg-muted/50 hover:bg-muted/50">
+                    <TableHead className="w-[60px] border-r">
+                      <Checkbox
+                        checked={selectedClients.length > 0 && selectedClients.length === paginatedClients.length}
+                        onCheckedChange={handleSelectAll}
+                        aria-label="Selecionar todos"
+                      />
+                    </TableHead>
                     <TableHead className="w-[100px] border-r">Código</TableHead>
                     <TableHead className="border-r">Cliente</TableHead>
                     <TableHead className="border-r hidden md:table-cell">Profissão</TableHead>
@@ -123,7 +148,14 @@ export default function ClientesPage() {
                 </TableHeader>
                 <TableBody>
                   {paginatedClients.map((client) => (
-                    <TableRow key={client.id} className="h-12">
+                    <TableRow key={client.id} className="h-12" data-state={selectedClients.includes(client.id) ? 'selected' : ''}>
+                      <TableCell className="py-1 border-r">
+                         <Checkbox
+                          checked={selectedClients.includes(client.id)}
+                          onCheckedChange={(checked) => handleSelectClient(client.id, !!checked)}
+                          aria-label={`Selecionar cliente ${client.full_name}`}
+                        />
+                      </TableCell>
                       <TableCell className="py-1 border-r">{client.client_id}</TableCell>
                       <TableCell className="font-medium py-1 border-r">
                          <div className="flex items-center gap-3">
