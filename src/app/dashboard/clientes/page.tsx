@@ -94,8 +94,8 @@ export default function ClientesPage() {
             </div>
           </div>
         ) : (
-          <Card className="flex flex-1 flex-col">
-            <CardContent className="flex-1 p-0">
+          <Card>
+            <CardContent className="p-0">
               <Table>
                 <TableHeader>
                   <TableRow>
