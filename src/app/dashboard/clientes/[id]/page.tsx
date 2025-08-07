@@ -17,9 +17,8 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form'
-import { Switch } from '@/components/ui/switch'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Loader2, User, Building, Search, CheckCircle, Edit, ShieldCheck } from 'lucide-react'
+import { Loader2, User, Building, Search, CheckCircle, Edit } from 'lucide-react'
 import { getClientById, updateClientProfile } from '@/lib/actions/clients'
 import { useToast } from '@/hooks/use-toast'
 import type { Cliente } from '@/lib/types'
@@ -49,14 +48,13 @@ const clientInfoSchema = z.object({
   nationality: z.string().optional(),
   civilStatus: z.string().optional(),
   profession: z.string().optional(),
-  rg: z.string().optional(),
   cpf: z.string().optional(),
 }).refine(data => {
     if (data.personType === 'cnpj') {
         return !!data.companyName && !!data.cnpj && !!data.representativeName && !!data.representativeCpf;
     }
     if (data.personType === 'cpf') {
-        return !!data.fullName && !!data.nationality && !!data.civilStatus && !!data.profession && !!data.rg && !!data.cpf;
+        return !!data.fullName && !!data.nationality && !!data.civilStatus && !!data.profession && !!data.cpf;
     }
     return false;
 }, {
@@ -85,13 +83,17 @@ export default function ClienteEditPage() {
   const clientId = params.id as string;
   const [client, setClient] = useState<Cliente | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<StepName>('type');
   const [editingStep, setEditingStep] = useState<StepName | null>(null);
   const { toast } = useToast();
 
   const methods = useForm<ClientFormData>({
     resolver: zodResolver(combinedSchema),
+    mode: 'onBlur',
     defaultValues: {
       personType: undefined,
+      fullName: '',
+      email: '',
     },
   });
 
@@ -121,10 +123,14 @@ export default function ClienteEditPage() {
     const { data, error } = await getClientById(clientId);
     if (error) {
       toast({ variant: 'destructive', title: 'Erro ao Carregar Cliente', description: error.message });
-    } else if (data) {
+      setIsLoading(false);
+      return;
+    } 
+    
+    if (data) {
       setClient(data);
       const addressParts = parseAddress(data.address);
-      methods.reset({
+      const defaultValues = {
         personType: data.person_type as 'cpf' | 'cnpj' | undefined,
         email: data.email || '',
         companyName: data.company_name || '',
@@ -135,17 +141,20 @@ export default function ClienteEditPage() {
         nationality: data.nationality || '',
         civilStatus: data.civil_status || '',
         profession: data.profession || '',
-        rg: data.rg || '',
         cpf: data.cpf || '',
         ...addressParts,
-      });
-      // Start by editing the first incomplete step
+      };
+      methods.reset(defaultValues);
+     
       if (!data.person_type) {
         setEditingStep('type');
-      } else if (!data.cpf && !data.cnpj) {
+        setActiveTab('type');
+      } else if (!clientInfoSchema.safeParse(defaultValues).success) {
         setEditingStep('info');
-      } else if (!data.address) {
+        setActiveTab('info');
+      } else if (!addressSchema.safeParse(defaultValues).success) {
         setEditingStep('address');
+        setActiveTab('address');
       }
     }
     setIsLoading(false);
@@ -157,13 +166,24 @@ export default function ClienteEditPage() {
 
   const handleSaveStep = async (step: StepName) => {
     let schema;
+    let fieldNames: (keyof ClientFormData)[];
     switch(step) {
-      case 'type': schema = clientTypeSchema; break;
-      case 'info': schema = clientInfoSchema; break;
-      case 'address': schema = addressSchema; break;
+      case 'type': 
+        schema = clientTypeSchema; 
+        fieldNames = Object.keys(schema.shape) as (keyof typeof schema.shape)[];
+        break;
+      case 'info': 
+        schema = clientInfoSchema; 
+        fieldNames = Object.keys(schema.shape) as (keyof typeof schema.shape)[];
+        break;
+      case 'address': 
+        schema = addressSchema; 
+        fieldNames = Object.keys(schema.shape) as (keyof typeof schema.shape)[];
+        break;
     }
 
-    const isValid = await methods.trigger(Object.keys(schema.shape) as (keyof ClientFormData)[]);
+    const isValid = await methods.trigger(fieldNames);
+
     if (!isValid) {
       toast({ variant: 'destructive', title: 'Campos Inválidos', description: 'Por favor, corrija os erros antes de salvar.' });
       return;
@@ -171,7 +191,8 @@ export default function ClienteEditPage() {
     
     setIsLoading(true);
     const values = methods.getValues();
-    const address = `${values.street}, ${values.number}${values.complement ? `, ${values.complement}` : ''}, ${values.neighborhood}, ${values.city}-${values.state}, CEP: ${values.cep}`;
+    const address = values.cep ? `${values.street}, ${values.number}${values.complement ? `, ${values.complement}` : ''} - ${values.neighborhood}, ${values.city} - ${values.state}, CEP: ${values.cep}` : '';
+    
     const submissionData = { ...values, address };
     
     const { error } = await updateClientProfile(clientId, submissionData);
@@ -182,14 +203,20 @@ export default function ClienteEditPage() {
     } else {
       toast({ variant: 'default', title: 'Salvo!', description: 'As informações foram atualizadas.', className: 'bg-green-100 border-green-200 text-green-800' });
       setEditingStep(null);
-      await fetchClientData(); // Refresh data
+      await fetchClientData(); // Refresh data to re-evaluate completion status
+      
+      // Move to next logical tab
+      if (step === 'type') setActiveTab('info');
+      else if (step === 'info') setActiveTab('address');
+
     }
   };
 
   const personType = methods.watch('personType');
-  const isTypeComplete = !!personType;
-  const isInfoComplete = useMemo(() => clientInfoSchema.safeParse(methods.getValues()).success, [methods]);
-  const isAddressComplete = useMemo(() => addressSchema.safeParse(methods.getValues()).success, [methods]);
+  
+  const isTypeComplete = clientTypeSchema.safeParse(methods.getValues()).success;
+  const isInfoComplete = clientInfoSchema.safeParse(methods.getValues()).success;
+  const isAddressComplete = addressSchema.safeParse(methods.getValues()).success;
 
 
   if (isLoading && !client) {
@@ -214,17 +241,17 @@ export default function ClienteEditPage() {
             </div>
         </div>
 
-        <Tabs defaultValue={editingStep || 'type'} value={editingStep || (isTypeComplete ? (isInfoComplete ? 'address' : 'info') : 'type')} className="w-full">
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as StepName)} className="w-full">
           <TabsList className="grid w-full grid-cols-3 bg-gray-100">
-             <TabsTrigger value="type" disabled={editingStep !== 'type'}>
+             <TabsTrigger value="type" disabled={editingStep !== null && editingStep !== 'type'}>
                 {isTypeComplete && editingStep !== 'type' && <CheckCircle className="mr-2 h-4 w-4 text-green-500" />}
                 Tipo de Cliente
              </TabsTrigger>
-             <TabsTrigger value="info" disabled={!isTypeComplete || editingStep !== 'info'}>
+             <TabsTrigger value="info" disabled={!isTypeComplete || (editingStep !== null && editingStep !== 'info')}>
                 {isInfoComplete && editingStep !== 'info' && <CheckCircle className="mr-2 h-4 w-4 text-green-500" />}
                 Informações
              </TabsTrigger>
-             <TabsTrigger value="address" disabled={!isInfoComplete || editingStep !== 'address'}>
+             <TabsTrigger value="address" disabled={!isInfoComplete || (editingStep !== null && editingStep !== 'address')}>
                  {isAddressComplete && editingStep !== 'address' && <CheckCircle className="mr-2 h-4 w-4 text-green-500" />}
                  Endereço
              </TabsTrigger>
@@ -271,17 +298,17 @@ function ClientTypeStep({ isEditing, setEditingStep, onSave, isLoading }: StepPr
             name="personType"
             render={({ field }) => (
               <FormItem>
-                <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <RadioGroup onValueChange={field.onChange} value={field.value} className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormItem>
                     <RadioGroupItem value="cpf" id="cpf" className="peer sr-only" />
-                    <Label htmlFor="cpf" className={cn("flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground", field.value === 'cpf' && "border-green-500 bg-green-500/10")}>
-                      <Building className="mb-3 h-6 w-6" /> Pessoa Física
+                    <Label htmlFor="cpf" className={cn("flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground cursor-pointer", field.value === 'cpf' && "border-green-500 bg-green-500/10")}>
+                      <User className="mb-3 h-6 w-6" /> Pessoa Física
                     </Label>
                   </FormItem>
                    <FormItem>
                     <RadioGroupItem value="cnpj" id="cnpj" className="peer sr-only" />
-                    <Label htmlFor="cnpj" className={cn("flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground", field.value === 'cnpj' && "border-green-500 bg-green-500/10")}>
-                      <User className="mb-3 h-6 w-6" /> Pessoa Jurídica
+                    <Label htmlFor="cnpj" className={cn("flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground cursor-pointer", field.value === 'cnpj' && "border-green-500 bg-green-500/10")}>
+                      <Building className="mb-3 h-6 w-6" /> Pessoa Jurídica
                     </Label>
                   </FormItem>
                 </RadioGroup>
@@ -331,12 +358,14 @@ function InfoStep({ isEditing, setEditingStep, onSave, isLoading }: StepProps) {
       const data = await response.json();
       methods.setValue('companyName', data.razao_social, { shouldValidate: true });
       methods.setValue('email', data.email, { shouldValidate: true });
-      methods.setValue('cep', data.cep.replace(/\D/g, ''), { shouldValidate: true });
-      methods.setValue('street', data.logradouro, { shouldValidate: true });
-      methods.setValue('number', data.numero, { shouldValidate: true });
-      methods.setValue('neighborhood', data.bairro, { shouldValidate: true });
-      methods.setValue('city', data.municipio, { shouldValidate: true });
-      methods.setValue('state', data.uf, { shouldValidate: true });
+      if (data.cep) {
+        methods.setValue('cep', data.cep.replace(/\D/g, ''), { shouldValidate: true });
+      }
+      if(data.logradouro) methods.setValue('street', data.logradouro, { shouldValidate: true });
+      if(data.numero) methods.setValue('number', data.numero, { shouldValidate: true });
+      if(data.bairro) methods.setValue('neighborhood', data.bairro, { shouldValidate: true });
+      if(data.municipio) methods.setValue('city', data.municipio, { shouldValidate: true });
+      if(data.uf) methods.setValue('state', data.uf, { shouldValidate: true });
       toast({ title: 'Sucesso!', description: 'Dados do CNPJ preenchidos.' });
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Erro ao buscar CNPJ', description: error.message });
@@ -348,82 +377,73 @@ function InfoStep({ isEditing, setEditingStep, onSave, isLoading }: StepProps) {
 
   if (isEditing) {
     return (
-        <Form {...methods}>
-             <form className="space-y-8">
-                 <Card>
-                     <CardHeader>
-                        <CardTitle>Informações do Cliente</CardTitle>
-                        <CardDescription>Preencha os detalhes de acordo com o tipo de pessoa.</CardDescription>
-                     </CardHeader>
-                     <CardContent className="space-y-4">
-                        <FormField control={methods.control} name="email" render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>E-mail do Cliente</FormLabel>
-                            <FormControl><Input type="email" placeholder="email@cliente.com" {...field} /></FormControl>
-                            <FormDescription>Este e-mail será usado para enviar o código de assinatura do contrato.</FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )} />
-                        
-                        {personType === 'cnpj' && (
-                            <div className="space-y-4 pt-4">
-                                <FormField control={methods.control} name="companyName" render={({ field }) => (
-                                    <FormItem><FormLabel>Nome da Empresa</FormLabel><FormControl><Input placeholder="Empresa Contratante LTDA" {...field} /></FormControl><FormMessage /></FormItem>
-                                )}/>
-                                 <FormField control={methods.control} name="cnpj" render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>CNPJ</FormLabel>
-                                        <div className="flex items-center gap-2">
-                                            <FormControl><Input placeholder="00.000.000/0001-00" {...field} /></FormControl>
-                                            <Button type="button" size="icon" onClick={handleCnpjSearch} disabled={isFetchingCnpj}>{isFetchingCnpj ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}</Button>
-                                        </div>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}/>
-                                <FormField control={methods.control} name="representativeName" render={({ field }) => (
-                                    <FormItem><FormLabel>Nome do Representante Legal</FormLabel><FormControl><Input placeholder="Nome do representante" {...field} /></FormControl><FormMessage /></FormItem>
-                                )}/>
-                                <FormField control={methods.control} name="representativeCpf" render={({ field }) => (
-                                    <FormItem><FormLabel>CPF do Representante</FormLabel><FormControl><Input placeholder="000.000.000-00" {...field} /></FormControl><FormMessage /></FormItem>
-                                )}/>
+        <Card>
+            <CardHeader>
+            <CardTitle>Informações do Cliente</CardTitle>
+            <CardDescription>Preencha os detalhes de acordo com o tipo de pessoa.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+            <FormField control={methods.control} name="email" render={({ field }) => (
+                <FormItem>
+                <FormLabel>E-mail do Cliente</FormLabel>
+                <FormControl><Input type="email" placeholder="email@cliente.com" {...field} /></FormControl>
+                <FormDescription>Este e-mail será usado para enviar o código de assinatura do contrato.</FormDescription>
+                <FormMessage />
+                </FormItem>
+            )} />
+            
+            {personType === 'cnpj' && (
+                <div className="space-y-4 pt-4">
+                    <FormField control={methods.control} name="companyName" render={({ field }) => (
+                        <FormItem><FormLabel>Nome da Empresa</FormLabel><FormControl><Input placeholder="Empresa Contratante LTDA" {...field} /></FormControl><FormMessage /></FormItem>
+                    )}/>
+                        <FormField control={methods.control} name="cnpj" render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>CNPJ</FormLabel>
+                            <div className="flex items-center gap-2">
+                                <FormControl><Input placeholder="00.000.000/0001-00" {...field} /></FormControl>
+                                <Button type="button" size="icon" onClick={handleCnpjSearch} disabled={isFetchingCnpj}>{isFetchingCnpj ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}</Button>
                             </div>
-                        )}
+                            <FormMessage />
+                        </FormItem>
+                    )}/>
+                    <FormField control={methods.control} name="representativeName" render={({ field }) => (
+                        <FormItem><FormLabel>Nome do Representante Legal</FormLabel><FormControl><Input placeholder="Nome do representante" {...field} /></FormControl><FormMessage /></FormItem>
+                    )}/>
+                    <FormField control={methods.control} name="representativeCpf" render={({ field }) => (
+                        <FormItem><FormLabel>CPF do Representante</FormLabel><FormControl><Input placeholder="000.000.000-00" {...field} /></FormControl><FormMessage /></FormItem>
+                    )}/>
+                </div>
+            )}
 
-                        {personType === 'cpf' && (
-                             <div className="space-y-4 pt-4">
-                                 <FormField control={methods.control} name="fullName" render={({ field }) => (
-                                    <FormItem><FormLabel>Nome Completo</FormLabel><FormControl><Input placeholder="Nome completo do cliente" {...field} /></FormControl><FormMessage /></FormItem>
-                                )}/>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <FormField control={methods.control} name="nationality" render={({ field }) => (
-                                        <FormItem><FormLabel>Nacionalidade</FormLabel><FormControl><Input placeholder="Brasileira" {...field} /></FormControl><FormMessage /></FormItem>
-                                    )}/>
-                                    <FormField control={methods.control} name="civilStatus" render={({ field }) => (
-                                        <FormItem><FormLabel>Estado Civil</FormLabel><FormControl><Input placeholder="Solteiro(a)" {...field} /></FormControl><FormMessage /></FormItem>
-                                    )}/>
-                                </div>
-                                <FormField control={methods.control} name="profession" render={({ field }) => (
-                                    <FormItem><FormLabel>Profissão</FormLabel><FormControl><Input placeholder="Profissão do cliente" {...field} /></FormControl><FormMessage /></FormItem>
-                                )}/>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <FormField control={methods.control} name="rg" render={({ field }) => (
-                                        <FormItem><FormLabel>RG</FormLabel><FormControl><Input placeholder="00.000.000-0" {...field} /></FormControl><FormMessage /></FormItem>
-                                    )}/>
-                                    <FormField control={methods.control} name="cpf" render={({ field }) => (
-                                        <FormItem><FormLabel>CPF</FormLabel><FormControl><Input placeholder="000.000.000-00" {...field} /></FormControl><FormMessage /></FormItem>
-                                    )}/>
-                                </div>
-                             </div>
-                        )}
+            {personType === 'cpf' && (
+                    <div className="space-y-4 pt-4">
+                        <FormField control={methods.control} name="fullName" render={({ field }) => (
+                        <FormItem><FormLabel>Nome Completo</FormLabel><FormControl><Input placeholder="Nome completo do cliente" {...field} /></FormControl><FormMessage /></FormItem>
+                    )}/>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <FormField control={methods.control} name="nationality" render={({ field }) => (
+                            <FormItem><FormLabel>Nacionalidade</FormLabel><FormControl><Input placeholder="Brasileira" {...field} /></FormControl><FormMessage /></FormItem>
+                        )}/>
+                        <FormField control={methods.control} name="civilStatus" render={({ field }) => (
+                            <FormItem><FormLabel>Estado Civil</FormLabel><FormControl><Input placeholder="Solteiro(a)" {...field} /></FormControl><FormMessage /></FormItem>
+                        )}/>
+                    </div>
+                    <FormField control={methods.control} name="profession" render={({ field }) => (
+                        <FormItem><FormLabel>Profissão</FormLabel><FormControl><Input placeholder="Profissão do cliente" {...field} /></FormControl><FormMessage /></FormItem>
+                    )}/>
+                    <FormField control={methods.control} name="cpf" render={({ field }) => (
+                        <FormItem><FormLabel>CPF</FormLabel><FormControl><Input placeholder="000.000.000-00" {...field} /></FormControl><FormMessage /></FormItem>
+                    )}/>
+                    </div>
+            )}
 
-                     </CardContent>
-                     <CardContent className="flex justify-end gap-2">
-                        <Button variant="ghost" onClick={() => setEditingStep(null)}>Cancelar</Button>
-                        <Button onClick={onSave} disabled={isLoading}>{isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Salvar e Continuar'}</Button>
-                    </CardContent>
-                 </Card>
-             </form>
-        </Form>
+            </CardContent>
+            <CardContent className="flex justify-end gap-2">
+            <Button variant="ghost" onClick={() => setEditingStep(null)}>Cancelar</Button>
+            <Button type="button" onClick={onSave} disabled={isLoading}>{isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Salvar e Continuar'}</Button>
+        </CardContent>
+        </Card>
     );
   }
 
@@ -473,60 +493,56 @@ function AddressStep({ isEditing, setEditingStep, onSave, isLoading }: StepProps
 
     if (isEditing) {
         return (
-             <Form {...methods}>
-                 <form className="space-y-8">
-                     <Card>
-                        <CardHeader>
-                            <CardTitle>Endereço</CardTitle>
-                            <CardDescription>Informe o endereço completo do cliente.</CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <FormField control={methods.control} name="cep" render={({ field }) => (
-                                <FormItem className="md:col-span-1">
-                                    <FormLabel>CEP</FormLabel>
-                                    <div className="flex items-center gap-2">
-                                        <FormControl><Input placeholder="00000-000" {...field} /></FormControl>
-                                        <Button type="button" size="icon" onClick={handleCepSearch} disabled={isFetchingCep}>{isFetchingCep ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}</Button>
-                                    </div>
-                                    <FormMessage />
-                                </FormItem>
-                                )}/>
-                                <FormField control={methods.control} name="street" render={({ field }) => (
-                                <FormItem className="md:col-span-2">
-                                    <FormLabel>Rua / Logradouro</FormLabel>
-                                    <FormControl><Input placeholder="Ex: Rua das Flores" {...field} /></FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                                )}/>
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <FormField control={methods.control} name="number" render={({ field }) => (
-                                <FormItem><FormLabel>Número</FormLabel><FormControl><Input placeholder="123" {...field} /></FormControl><FormMessage /></FormItem>
-                                )}/>
-                                <FormField control={methods.control} name="complement" render={({ field }) => (
-                                <FormItem><FormLabel>Complemento</FormLabel><FormControl><Input placeholder="Apto 45" {...field} /></FormControl><FormMessage /></FormItem>
-                                )}/>
-                                <FormField control={methods.control} name="neighborhood" render={({ field }) => (
-                                <FormItem><FormLabel>Bairro</FormLabel><FormControl><Input placeholder="Centro" {...field} /></FormControl><FormMessage /></FormItem>
-                                )}/>
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <FormField control={methods.control} name="city" render={({ field }) => (
-                                <FormItem><FormLabel>Cidade</FormLabel><FormControl><Input placeholder="São Paulo" {...field} /></FormControl><FormMessage /></FormItem>
-                                )}/>
-                                <FormField control={methods.control} name="state" render={({ field }) => (
-                                <FormItem><FormLabel>Estado (UF)</FormLabel><FormControl><Input placeholder="SP" {...field} /></FormControl><FormMessage /></FormItem>
-                                )}/>
-                            </div>
-                        </CardContent>
-                         <CardContent className="flex justify-end gap-2">
-                            <Button variant="ghost" onClick={() => setEditingStep(null)}>Cancelar</Button>
-                            <Button onClick={onSave} disabled={isLoading}>{isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Salvar e Finalizar'}</Button>
-                        </CardContent>
-                     </Card>
-                 </form>
-            </Form>
+            <Card>
+            <CardHeader>
+                <CardTitle>Endereço</CardTitle>
+                <CardDescription>Informe o endereço completo do cliente.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <FormField control={methods.control} name="cep" render={({ field }) => (
+                    <FormItem className="md:col-span-1">
+                        <FormLabel>CEP</FormLabel>
+                        <div className="flex items-center gap-2">
+                            <FormControl><Input placeholder="00000-000" {...field} /></FormControl>
+                            <Button type="button" size="icon" onClick={handleCepSearch} disabled={isFetchingCep}>{isFetchingCep ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}</Button>
+                        </div>
+                        <FormMessage />
+                    </FormItem>
+                    )}/>
+                    <FormField control={methods.control} name="street" render={({ field }) => (
+                    <FormItem className="md:col-span-2">
+                        <FormLabel>Rua / Logradouro</FormLabel>
+                        <FormControl><Input placeholder="Ex: Rua das Flores" {...field} /></FormControl>
+                        <FormMessage />
+                    </FormItem>
+                    )}/>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <FormField control={methods.control} name="number" render={({ field }) => (
+                    <FormItem><FormLabel>Número</FormLabel><FormControl><Input placeholder="123" {...field} /></FormControl><FormMessage /></FormItem>
+                    )}/>
+                    <FormField control={methods.control} name="complement" render={({ field }) => (
+                    <FormItem><FormLabel>Complemento</FormLabel><FormControl><Input placeholder="Apto 45" {...field} /></FormControl><FormMessage /></FormItem>
+                    )}/>
+                    <FormField control={methods.control} name="neighborhood" render={({ field }) => (
+                    <FormItem><FormLabel>Bairro</FormLabel><FormControl><Input placeholder="Centro" {...field} /></FormControl><FormMessage /></FormItem>
+                    )}/>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField control={methods.control} name="city" render={({ field }) => (
+                    <FormItem><FormLabel>Cidade</FormLabel><FormControl><Input placeholder="São Paulo" {...field} /></FormControl><FormMessage /></FormItem>
+                    )}/>
+                    <FormField control={methods.control} name="state" render={({ field }) => (
+                    <FormItem><FormLabel>Estado (UF)</FormLabel><FormControl><Input placeholder="SP" {...field} /></FormControl><FormMessage /></FormItem>
+                    )}/>
+                </div>
+            </CardContent>
+                <CardContent className="flex justify-end gap-2">
+                <Button variant="ghost" onClick={() => setEditingStep(null)}>Cancelar</Button>
+                <Button type="button" onClick={onSave} disabled={isLoading}>{isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Salvar e Finalizar'}</Button>
+            </CardContent>
+            </Card>
         )
     }
     
