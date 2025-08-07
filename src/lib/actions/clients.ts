@@ -1,3 +1,4 @@
+
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
@@ -68,7 +69,7 @@ export async function getClientById(id: string) {
     return { data, error: null };
 }
 
-export async function updateClientProfile(id: string, formData: ClientFormData) {
+export async function updateClientProfile(id: string, formData: ClientFormData & { address: string }) {
   const supabase = createClient()
 
   const { data: { user } } = await supabase.auth.getUser()
@@ -83,7 +84,6 @@ export async function updateClientProfile(id: string, formData: ClientFormData) 
     company_name: formData.companyName,
     cnpj: formData.cnpj,
     representative_name: formData.representativeName,
-    representative_rg: formData.representativeRg,
     representative_cpf: formData.representativeCpf,
     full_name: formData.fullName,
     nationality: formData.nationality,
@@ -106,3 +106,5 @@ export async function updateClientProfile(id: string, formData: ClientFormData) 
   revalidatePath(`/dashboard/clientes/${id}`)
   return { error: null }
 }
+
+    

@@ -19,7 +19,7 @@ import {
 } from '@/components/ui/form'
 import { Switch } from '@/components/ui/switch'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Loader2, User, Building } from 'lucide-react'
+import { Loader2, User, Building, Search } from 'lucide-react'
 import { getClientById, updateClientProfile } from '@/lib/actions/clients'
 import { useToast } from '@/hooks/use-toast'
 import type { Cliente } from '@/lib/types'
@@ -30,13 +30,18 @@ const clientProfileSchema = z.object({
   personType: z.enum(['cpf', 'cnpj'], { required_error: "Você deve selecionar o tipo de pessoa." }),
   // Common fields
   email: z.string().email({ message: "Por favor, insira um e-mail válido." }),
-  address: z.string().min(1, { message: "O endereço é obrigatório."}),
+  cep: z.string().min(8, { message: "O CEP é obrigatório e deve ter 8 dígitos."}),
+  street: z.string().min(1, { message: "A rua é obrigatória."}),
+  number: z.string().min(1, { message: "O número é obrigatório."}),
+  complement: z.string().optional(),
+  neighborhood: z.string().min(1, { message: "O bairro é obrigatório."}),
+  city: z.string().min(1, { message: "A cidade é obrigatória."}),
+  state: z.string().min(2, { message: "O estado é obrigatório."}),
   
   // PJ Fields
   companyName: z.string().optional(),
   cnpj: z.string().optional(),
   representativeName: z.string().optional(),
-  representativeRg: z.string().optional(),
   representativeCpf: z.string().optional(),
   
   // PF Fields
@@ -47,13 +52,15 @@ const clientProfileSchema = z.object({
   rg: z.string().optional(),
   cpf: z.string().optional(),
 }).refine(data => {
+    // Transforma o endereço em uma string única para salvar
+    const address = `${data.street}, ${data.number}${data.complement ? `, ${data.complement}` : ''} - ${data.neighborhood}, ${data.city} - ${data.state}, CEP: ${data.cep}`;
     if (data.personType === 'cnpj') {
-        return !!data.companyName && !!data.cnpj && !!data.representativeName && !!data.representativeRg && !!data.representativeCpf && !!data.address;
+        return !!data.companyName && !!data.cnpj && !!data.representativeName && !!data.representativeCpf && !!address;
     }
     if (data.personType === 'cpf') {
-        return !!data.fullName && !!data.nationality && !!data.civilStatus && !!data.profession && !!data.rg && !!data.cpf && !!data.address;
+        return !!data.fullName && !!data.nationality && !!data.civilStatus && !!data.profession && !!data.rg && !!data.cpf && !!address;
     }
-    return false; // Deve ter um personType
+    return false;
 }, {
   message: "Preencha todos os campos obrigatórios para o tipo de pessoa selecionado.",
   path: ["form"],
@@ -65,17 +72,48 @@ type ClientFormData = z.infer<typeof clientProfileSchema>;
 export default function ClienteEditPage() {
   const params = useParams();
   const clientId = params.id as string;
-  const [isLoading, setIsLoading] = useState(false)
-  const [client, setClient] = useState<Cliente | null>(null)
-  const { toast } = useToast()
+  const [isLoading, setIsLoading] = useState(false);
+  const [isFetchingCep, setIsFetchingCep] = useState(false);
+  const [isFetchingCnpj, setIsFetchingCnpj] = useState(false);
+  const [client, setClient] = useState<Cliente | null>(null);
+  const { toast } = useToast();
 
   const form = useForm<ClientFormData>({
     resolver: zodResolver(clientProfileSchema),
     defaultValues: {
       email: '',
+      cep: '',
+      street: '',
+      number: '',
+      complement: '',
+      neighborhood: '',
+      city: '',
+      state: '',
     },
   })
 
+  const parseAddress = (addressString: string | null | undefined) => {
+    if (!addressString) return {};
+    const cepMatch = addressString.match(/CEP: ([\d-]+)/);
+    const streetMatch = addressString.match(/^([^,]+),/);
+    const numberMatch = addressString.match(/, ([^,]+) -/);
+    const neighborhoodMatch = addressString.match(/- ([^,]+),/);
+    const cityMatch = addressString.match(/, ([^,]+) -/);
+    const stateMatch = addressString.match(/- (\w{2}),/);
+    
+    // Fallback simple split if regex fails
+    const parts = addressString.split(', ');
+    return {
+      cep: cepMatch ? cepMatch[1].replace('-', '') : '',
+      street: streetMatch ? streetMatch[1] : parts[0] || '',
+      number: numberMatch ? numberMatch[1] : parts[1] || '',
+      neighborhood: neighborhoodMatch ? neighborhoodMatch[1] : parts[2]?.split(' - ')[1] || '',
+      city: cityMatch ? cityMatch[1] : parts[3]?.split(' - ')[0] || '',
+      state: stateMatch ? stateMatch[1] : parts[3]?.split(' - ')[1] || '',
+      complement: addressString.match(/, (.*?) - /)?.[1] || '',
+    };
+  };
+  
   const fetchClientData = useCallback(async () => {
     if (!clientId) return;
     const { data, error } = await getClientById(clientId)
@@ -87,13 +125,13 @@ export default function ClienteEditPage() {
       })
     } else if (data) {
       setClient(data)
+      const addressParts = parseAddress(data.address);
       form.reset({
         personType: data.person_type as 'cpf' | 'cnpj' | undefined,
         email: data.email || '',
         companyName: data.company_name || '',
         cnpj: data.cnpj || '',
         representativeName: data.representative_name || '',
-        representativeRg: data.representative_rg || '',
         representativeCpf: data.representative_cpf || '',
         fullName: data.full_name || '',
         nationality: data.nationality || '',
@@ -101,7 +139,7 @@ export default function ClienteEditPage() {
         profession: data.profession || '',
         rg: data.rg || '',
         cpf: data.cpf || '',
-        address: data.address || '',
+        ...addressParts,
       });
     }
   }, [clientId, toast, form])
@@ -113,10 +151,65 @@ export default function ClienteEditPage() {
 
   const personType = form.watch('personType')
 
+  const handleCnpjSearch = async () => {
+    const cnpj = form.getValues('cnpj')?.replace(/\D/g, '');
+    if (!cnpj || cnpj.length !== 14) {
+      toast({ variant: 'destructive', title: 'CNPJ Inválido', description: 'Por favor, digite um CNPJ válido.' });
+      return;
+    }
+    setIsFetchingCnpj(true);
+    try {
+      const response = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cnpj}`);
+      if (!response.ok) throw new Error('Não foi possível buscar os dados do CNPJ.');
+      const data = await response.json();
+      form.setValue('companyName', data.razao_social, { shouldValidate: true });
+      form.setValue('email', data.email, { shouldValidate: true });
+      form.setValue('cep', data.cep.replace(/\D/g, ''), { shouldValidate: true });
+      form.setValue('street', data.logradouro, { shouldValidate: true });
+      form.setValue('number', data.numero, { shouldValidate: true });
+      form.setValue('neighborhood', data.bairro, { shouldValidate: true });
+      form.setValue('city', data.municipio, { shouldValidate: true });
+      form.setValue('state', data.uf, { shouldValidate: true });
+      toast({ title: 'Sucesso!', description: 'Dados do CNPJ preenchidos.' });
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: 'Erro ao buscar CNPJ', description: error.message });
+    } finally {
+      setIsFetchingCnpj(false);
+    }
+  };
+
+  const handleCepSearch = async () => {
+    const cep = form.getValues('cep')?.replace(/\D/g, '');
+    if (!cep || cep.length !== 8) {
+      toast({ variant: 'destructive', title: 'CEP Inválido', description: 'Por favor, digite um CEP válido com 8 dígitos.' });
+      return;
+    }
+    setIsFetchingCep(true);
+    try {
+      const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+      if (!response.ok) throw new Error('Não foi possível buscar o CEP.');
+      const data = await response.json();
+      if (data.erro) throw new Error('CEP não encontrado.');
+      form.setValue('street', data.logradouro, { shouldValidate: true });
+      form.setValue('neighborhood', data.bairro, { shouldValidate: true });
+      form.setValue('city', data.localidade, { shouldValidate: true });
+      form.setValue('state', data.uf, { shouldValidate: true });
+      toast({ title: 'Sucesso!', description: 'Endereço preenchido.' });
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: 'Erro ao buscar CEP', description: error.message });
+    } finally {
+      setIsFetchingCep(false);
+    }
+  };
+
+
   const onSubmit = async (values: ClientFormData) => {
     setIsLoading(true)
     
-    const { error } = await updateClientProfile(clientId, values);
+    const address = `${values.street}, ${values.number}${values.complement ? `, ${values.complement}` : ''}, ${values.neighborhood}, ${values.city}-${values.state}, CEP: ${values.cep}`;
+    const submissionData = { ...values, address };
+    
+    const { error } = await updateClientProfile(clientId, submissionData);
 
     setIsLoading(false)
 
@@ -205,17 +298,96 @@ export default function ClienteEditPage() {
                   </FormItem>
                 )}
               />
-              <FormField
-                control={form.control}
-                name="address"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Endereço Completo</FormLabel>
-                    <FormControl><Input placeholder="Rua, Número, Bairro, CEP, Cidade, Estado" {...field} /></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <FormField
+                      control={form.control}
+                      name="cep"
+                      render={({ field }) => (
+                      <FormItem className="md:col-span-1">
+                          <FormLabel>CEP</FormLabel>
+                          <div className="flex items-center gap-2">
+                          <FormControl>
+                              <Input placeholder="00000-000" {...field} />
+                          </FormControl>
+                          <Button type="button" size="icon" onClick={handleCepSearch} disabled={isFetchingCep}>
+                              {isFetchingCep ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+                          </Button>
+                          </div>
+                          <FormMessage />
+                      </FormItem>
+                      )}
+                  />
+                  <FormField
+                      control={form.control}
+                      name="street"
+                      render={({ field }) => (
+                      <FormItem className="md:col-span-2">
+                          <FormLabel>Rua / Logradouro</FormLabel>
+                          <FormControl><Input placeholder="Ex: Rua das Flores" {...field} /></FormControl>
+                          <FormMessage />
+                      </FormItem>
+                      )}
+                  />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                   <FormField
+                      control={form.control}
+                      name="number"
+                      render={({ field }) => (
+                      <FormItem>
+                          <FormLabel>Número</FormLabel>
+                          <FormControl><Input placeholder="123" {...field} /></FormControl>
+                          <FormMessage />
+                      </FormItem>
+                      )}
+                  />
+                  <FormField
+                      control={form.control}
+                      name="complement"
+                      render={({ field }) => (
+                      <FormItem>
+                          <FormLabel>Complemento</FormLabel>
+                          <FormControl><Input placeholder="Apto 45" {...field} /></FormControl>
+                          <FormMessage />
+                      </FormItem>
+                      )}
+                  />
+                  <FormField
+                      control={form.control}
+                      name="neighborhood"
+                      render={({ field }) => (
+                      <FormItem>
+                          <FormLabel>Bairro</FormLabel>
+                          <FormControl><Input placeholder="Centro" {...field} /></FormControl>
+                          <FormMessage />
+                      </FormItem>
+                      )}
+                  />
+              </div>
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                      control={form.control}
+                      name="city"
+                      render={({ field }) => (
+                      <FormItem>
+                          <FormLabel>Cidade</FormLabel>
+                          <FormControl><Input placeholder="São Paulo" {...field} /></FormControl>
+                          <FormMessage />
+                      </FormItem>
+                      )}
+                  />
+                  <FormField
+                      control={form.control}
+                      name="state"
+                      render={({ field }) => (
+                      <FormItem>
+                          <FormLabel>Estado (UF)</FormLabel>
+                          <FormControl><Input placeholder="SP" {...field} /></FormControl>
+                          <FormMessage />
+                      </FormItem>
+                      )}
+                  />
+              </div>
             </CardContent>
           </Card>
 
@@ -235,7 +407,12 @@ export default function ClienteEditPage() {
                     <FormField control={form.control} name="cnpj" render={({ field }) => (
                         <FormItem>
                             <FormLabel>CNPJ</FormLabel>
-                            <FormControl><Input placeholder="00.000.000/0001-00" {...field} /></FormControl>
+                             <div className="flex items-center gap-2">
+                                <FormControl><Input placeholder="00.000.000/0001-00" {...field} /></FormControl>
+                                <Button type="button" size="icon" onClick={handleCnpjSearch} disabled={isFetchingCnpj}>
+                                    {isFetchingCnpj ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+                                </Button>
+                            </div>
                             <FormMessage />
                         </FormItem>
                     )} />
@@ -247,13 +424,6 @@ export default function ClienteEditPage() {
                         </FormItem>
                     )} />
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                         <FormField control={form.control} name="representativeRg" render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>RG do Representante</FormLabel>
-                                <FormControl><Input placeholder="00.000.000-0" {...field} /></FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )} />
                         <FormField control={form.control} name="representativeCpf" render={({ field }) => (
                             <FormItem>
                                 <FormLabel>CPF do Representante</FormLabel>
@@ -332,3 +502,5 @@ export default function ClienteEditPage() {
     </div>
   )
 }
+
+    
