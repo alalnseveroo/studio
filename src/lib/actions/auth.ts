@@ -10,6 +10,10 @@ export async function signInWithOtp(email: string) {
     email,
     options: {
       shouldCreateUser: true,
+      // This will be the page where the user lands after clicking the link in the email.
+      // We are not using email link authentication, but OTP, so this is not strictly necessary for the OTP flow itself.
+      // However, it's good practice to have it. The user will be redirected to the verify-otp page from the client side anyway.
+      emailRedirectTo: new URL('/verify-otp', process.env.NEXT_PUBLIC_SITE_URL).toString(),
     },
   })
 
@@ -34,7 +38,9 @@ export async function verifyOtp(email: string, token: string) {
   }
 
   revalidatePath('/', 'layout')
-  redirect('/dashboard')
+  // We will handle redirection on the client side after this action returns successfully.
+  // redirect('/dashboard')
+  return { error: null }
 }
 
 export async function signOut() {
