@@ -13,7 +13,9 @@ import {
   FileSignature,
   Package2,
   LogOut,
+  ChevronsUpDown,
 } from 'lucide-react'
+import { useState, useEffect } from 'react'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -24,6 +26,21 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from "@/components/ui/popover"
+import {
+    Command,
+    CommandEmpty,
+    CommandGroup,
+    CommandInput,
+    CommandItem,
+    CommandList,
+    CommandSeparator,
+} from "@/components/ui/command"
+
 import {
   Sidebar,
   SidebarContent,
@@ -37,7 +54,10 @@ import {
   SidebarInset,
 } from "@/components/ui/sidebar"
 import { signOut } from '@/lib/actions/auth'
-
+import { getProfile } from '@/lib/actions/profile'
+import type { Profile } from '@/lib/types'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { cn } from '@/lib/utils'
 
 const navItems = [
     { href: '/dashboard', label: 'Dashboard', icon: Home, exact: true },
@@ -45,8 +65,6 @@ const navItems = [
     { href: '/dashboard/propostas', label: 'Propostas', icon: FileText },
     { href: '/dashboard/contratos', label: 'Contratos', icon: FileSignature },
 ]
-
-const settingsItem = { href: '/dashboard/settings', label: 'Configurações', icon: Settings }
 
 function MainNav() {
     const pathname = usePathname()
@@ -74,43 +92,96 @@ function MainNav() {
     )
 }
 
+function UserNav({ user, className }: { user: (Profile & { email: string }), className?: string }) {
+    const [open, setOpen] = useState(false)
+    
+    const displayName = user.full_name || user.company_name || 'Usuário';
+    const fallback = displayName.charAt(0).toUpperCase();
+
+    return (
+        <Popover open={open} onOpenChange={setOpen}>
+            <PopoverTrigger asChild>
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    role="combobox"
+                    aria-expanded={open}
+                    aria-label="Selecionar um membro da equipe"
+                    className={cn("w-full justify-start gap-2", className)}
+                >
+                    <Avatar className="h-8 w-8">
+                        <AvatarImage src={undefined} alt="Avatar" />
+                        <AvatarFallback>{fallback}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex flex-col items-start text-left">
+                        <span className="font-medium truncate">{displayName}</span>
+                        <span className="text-xs text-muted-foreground truncate">{user.email}</span>
+                    </div>
+                    <ChevronsUpDown className="ml-auto h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-56 p-0" side="right" align="start">
+                <Command>
+                    <CommandList>
+                        <CommandGroup>
+                             <Link href="/dashboard/settings/profile">
+                                <CommandItem onSelect={() => setOpen(false)} className="cursor-pointer">
+                                    <Settings className="mr-2 h-4 w-4" />
+                                    Configurações
+                                </CommandItem>
+                            </Link>
+                        </CommandGroup>
+                        <CommandSeparator />
+                        <CommandGroup>
+                            <form action={signOut} className="w-full">
+                                <button type="submit" className="w-full">
+                                    <CommandItem onSelect={() => setOpen(false)} className="cursor-pointer">
+                                        <LogOut className="mr-2 h-4 w-4" />
+                                        Sair
+                                    </CommandItem>
+                                </button>
+                            </form>
+                        </CommandGroup>
+                    </CommandList>
+                </Command>
+            </PopoverContent>
+        </Popover>
+    )
+}
+
+
 function SettingsNav() {
+     const [userProfile, setUserProfile] = useState<(Profile & { email: string }) | null>(null)
      const pathname = usePathname()
-     const isActive = (href: string) => pathname.startsWith(href)
+     
+     useEffect(() => {
+        async function loadProfile() {
+            const { data } = await getProfile();
+            if (data) {
+                setUserProfile(data as Profile & { email: string });
+            }
+        }
+        loadProfile();
+     }, [])
+
+     if (!userProfile) {
+        return (
+             <div className="flex items-center gap-2 p-2">
+                <Avatar className="h-8 w-8">
+                    <AvatarFallback>?</AvatarFallback>
+                </Avatar>
+                 <div className="flex flex-col gap-1">
+                    <div className="h-4 w-20 rounded-md bg-muted animate-pulse" />
+                    <div className="h-3 w-28 rounded-md bg-muted animate-pulse" />
+                </div>
+            </div>
+        )
+     }
 
      return (
         <SidebarMenu>
-            <SidebarMenuItem>
-                    <Link href={settingsItem.href}>
-                    <SidebarMenuButton tooltip={settingsItem.label} isActive={isActive(settingsItem.href)}>
-                        <settingsItem.icon />
-                        <span>{settingsItem.label}</span>
-                    </SidebarMenuButton>
-                    </Link>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <SidebarMenuButton tooltip="Minha Conta">
-                            <CircleUser />
-                            <span>Minha Conta</span>
-                        </SidebarMenuButton>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent side="right" align="start">
-                        <DropdownMenuLabel>Minha Conta</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem>Suporte</DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                            <form action={signOut}>
-                            <button type="submit" className="w-full">
-                                <DropdownMenuItem>
-                                    <LogOut className="mr-2 h-4 w-4" />
-                                    <span>Sair</span>
-                                </DropdownMenuItem>
-                            </button>
-                        </form>
-                    </DropdownMenuContent>
-                </DropdownMenu>
+             <SidebarMenuItem>
+                <UserNav user={userProfile} />
             </SidebarMenuItem>
         </SidebarMenu>
      )

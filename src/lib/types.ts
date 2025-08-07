@@ -44,7 +44,7 @@ export type Proposta = {
 
 export type Profile = {
   id: string;
-  person_type: 'cpf' | 'cnpj';
+  person_type?: 'cpf' | 'cnpj';
   company_name?: string;
   cnpj?: string;
   full_name?: string;
@@ -56,6 +56,7 @@ export type Profile = {
   address?: string;
   signature?: string;
   is_completed?: boolean;
+  email?: string;
 };
 
 export type Contrato = {

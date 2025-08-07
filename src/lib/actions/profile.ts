@@ -60,5 +60,8 @@ export async function getProfile() {
         return { data: null, error: { message: 'Erro ao buscar perfil.' } };
     }
 
-    return { data, error: null };
+    // Combine profile data with user email
+    const profileWithEmail = data ? { ...data, email: user.email } : { id: user.id, email: user.email };
+
+    return { data: profileWithEmail, error: null };
 }
