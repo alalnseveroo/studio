@@ -1,3 +1,4 @@
+
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -127,52 +128,80 @@ export default function ClientesPage() {
         ) : (
           <Card>
             <CardContent className="p-0">
-              <Table>
+              {/* Mobile View - Cards */}
+              <div className="divide-y divide-border md:hidden">
+                {paginatedClients.map((client) => (
+                  <div key={client.id} className="p-4 space-y-3">
+                    <div className="flex items-center gap-3">
+                       <Avatar className="h-10 w-10 border">
+                          <AvatarImage src={client.avatar_url || ''} alt="Avatar do Cliente" />
+                          <AvatarFallback>{(client.full_name || client.company_name || 'C').charAt(0)}</AvatarFallback>
+                       </Avatar>
+                       <div className="flex-1">
+                          <p className="font-semibold text-sm truncate">{client.full_name || client.company_name}</p>
+                          <p className="text-xs text-muted-foreground">{client.client_id}</p>
+                       </div>
+                       <Button asChild variant="outline" size="sm">
+                          <Link href={`/dashboard/clientes/${client.id}`}>
+                              <FilePen className="h-4 w-4 mr-2 sm:hidden" />
+                              <span className="hidden sm:inline">Ver / Editar</span>
+                          </Link>
+                      </Button>
+                    </div>
+                     <div className="text-xs space-y-1 text-muted-foreground">
+                        <p><span className="font-medium text-foreground">E-mail:</span> {client.email || 'Não informado'}</p>
+                        <p><span className="font-medium text-foreground">Profissão:</span> {client.profession || 'Não informado'}</p>
+                        <p><span className="font-medium text-foreground">Status:</span> <Badge variant="outline" className={cn("font-normal text-xs px-1.5 py-0", getStatusClass('Ativo'))}>Ativo</Badge></p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Desktop View - Table */}
+              <Table className="hidden md:table">
                 <TableHeader>
                   <TableRow className="bg-muted/50 hover:bg-muted/50">
-                    <TableHead className="w-[60px] border-r">
+                    <TableHead className="w-[60px]">
                       <Checkbox
                         checked={selectedClients.length > 0 && selectedClients.length === paginatedClients.length}
                         onCheckedChange={handleSelectAll}
                         aria-label="Selecionar todos"
                       />
                     </TableHead>
-                    <TableHead className="w-[100px] border-r">Código</TableHead>
-                    <TableHead className="border-r">Cliente</TableHead>
-                    <TableHead className="border-r hidden md:table-cell">Profissão</TableHead>
-                    <TableHead className="border-r hidden lg:table-cell">E-mail</TableHead>
-                    <TableHead className="border-r hidden lg:table-cell">Contato</TableHead>
-                    <TableHead className="border-r hidden md:table-cell">Status</TableHead>
-                    <TableHead className="text-center">Ações</TableHead>
+                    <TableHead className="w-[120px]">Código</TableHead>
+                    <TableHead>Cliente</TableHead>
+                    <TableHead className="hidden xl:table-cell">Profissão</TableHead>
+                    <TableHead className="hidden lg:table-cell">E-mail</TableHead>
+                    <TableHead className="w-[100px]">Status</TableHead>
+                    <TableHead className="w-[80px] text-center">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {paginatedClients.map((client) => (
-                    <TableRow key={client.id} className="h-12" data-state={selectedClients.includes(client.id) ? 'selected' : ''}>
-                      <TableCell className="py-1 border-r">
+                    <TableRow key={client.id} data-state={selectedClients.includes(client.id) ? 'selected' : ''}>
+                      <TableCell>
                          <Checkbox
                           checked={selectedClients.includes(client.id)}
                           onCheckedChange={(checked) => handleSelectClient(client.id, !!checked)}
                           aria-label={`Selecionar cliente ${client.full_name}`}
                         />
                       </TableCell>
-                      <TableCell className="py-1 border-r">{client.client_id}</TableCell>
-                      <TableCell className="font-medium py-1 border-r">
+                      <TableCell>{client.client_id}</TableCell>
+                      <TableCell className="font-medium">
                          <div className="flex items-center gap-3">
                            <Avatar className="h-8 w-8">
                               <AvatarImage src={client.avatar_url || ''} alt="Avatar do Cliente" />
-                              <AvatarFallback>{client.full_name ? client.full_name.charAt(0) : 'C'}</AvatarFallback>
+                              <AvatarFallback>{(client.full_name || client.company_name || 'C').charAt(0)}</AvatarFallback>
                            </Avatar>
                            <span>{client.full_name || client.company_name}</span>
                          </div>
                       </TableCell>
-                       <TableCell className="py-1 border-r hidden md:table-cell">{client.profession || 'Não informado'}</TableCell>
-                       <TableCell className="py-1 border-r hidden lg:table-cell">{client.email || 'Não informado'}</TableCell>
-                       <TableCell className="py-1 border-r hidden lg:table-cell">{client.email || 'Não informado'}</TableCell>
-                      <TableCell className="hidden py-1 border-r md:table-cell">
+                       <TableCell className="hidden xl:table-cell">{client.profession || 'Não informado'}</TableCell>
+                       <TableCell className="hidden lg:table-cell">{client.email || 'Não informado'}</TableCell>
+                      <TableCell>
                          <Badge variant="outline" className={cn("font-normal", getStatusClass('Ativo'))}>Ativo</Badge>
                       </TableCell>
-                      <TableCell className="py-1 text-center">
+                      <TableCell className="text-center">
                          <Button asChild variant="outline" size="icon" className="h-8 w-8">
                             <Link href={`/dashboard/clientes/${client.id}`}>
                                 <FilePen className="h-4 w-4" />
