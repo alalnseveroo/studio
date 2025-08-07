@@ -57,7 +57,7 @@ export async function getClients() {
 
 export async function getClientById(id: string) {
     const supabase = createClient()
-    // A função é pública, então não verificamos o usuário aqui. A RLS cuida da segurança.
+    // A política de RLS permite leitura pública, então não filtramos por user_id aqui.
     const { data, error } = await supabase.from('clientes').select('*').eq('id', id).single();
 
     if (error) {
@@ -78,6 +78,7 @@ export async function updateClientProfile(id: string, formData: ClientFormData) 
   }
 
   const profileData = {
+    email: formData.email,
     person_type: formData.personType,
     company_name: formData.companyName,
     cnpj: formData.cnpj,

@@ -3,6 +3,7 @@ export type Cliente = {
   user_id: string;
   client_id: string;
   avatar_url: string | null;
+  email: string | null;
   person_type: 'cpf' | 'cnpj' | null;
   company_name: string | null;
   cnpj: string | null;

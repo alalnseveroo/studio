@@ -250,6 +250,91 @@ export async function signContractAsProvider(contractId: string, otp: string) {
     }
 
     revalidatePath(`/dashboard/contratos/${contractId}`);
+    revalidatePath(`/portal/${contract.cliente_id}/contrato/${contract.id}`);
     revalidatePath(`/portal/${contract.cliente_id}`);
     return { data, error: null };
+}
+
+interface SignClientArgs {
+    contractId: string;
+    otp: string;
+    signatureDataUrl: string;
+}
+
+export async function signContractAsClient({ contractId, otp, signatureDataUrl }: SignClientArgs) {
+    const supabase = createClient();
+    
+    // 1. Buscar contrato e e-mail do cliente
+    const { data: contract, error: contractError } = await supabase
+        .from('contratos')
+        .select('*, clientes(*), propostas(*)')
+        .eq('id', contractId)
+        .single();
+
+    if (contractError || !contract || !contract.clientes?.email) {
+        return { error: { message: 'Contrato ou e-mail do cliente não encontrado.' } };
+    }
+    
+    // 2. Verificar o OTP
+    const { error: otpError } = await supabase.auth.verifyOtp({
+        email: contract.clientes.email,
+        token: otp,
+        type: 'email'
+    });
+
+    if (otpError) {
+        return { error: { message: `Código OTP inválido ou expirado. ${otpError.message}` } };
+    }
+    
+    // 3. Buscar perfil da contratada para gerar o texto final
+    const { data: contratada, error: providerError } = await getProviderProfile(supabase, contract.user_id);
+    if (providerError || !contratada) {
+         return { error: { message: 'Perfil da contratada não encontrado.' } };
+    }
+
+    // 4. Coletar metadados da assinatura
+    const headersList = headers();
+    const ipAddress = headersList.get('x-forwarded-for') || 'IP não detectado';
+    const userAgent = headersList.get('user-agent') || 'User agent não detectado';
+
+    const clientSignatureMetadata = {
+        signed_at: new Date().toISOString(),
+        ip_address: ipAddress,
+        user_agent: userAgent,
+        email_verified: contract.clientes.email,
+    };
+    
+    // 5. Gerar texto final do contrato com ambas as assinaturas
+     const finalContractData = { 
+        ...contract, 
+        client_signature_data: clientSignatureMetadata,
+        client_signature_image_url: signatureDataUrl
+    };
+
+    const finalContractText = getContractTemplate({
+        contratada,
+        contratante: contract.clientes,
+        proposta: contract.propostas,
+        contract: finalContractData as Contrato,
+    });
+
+    // 6. Atualizar o contrato no banco
+    const { error: updateError } = await supabase
+        .from('contratos')
+        .update({
+            status: 'signed_by_client',
+            client_signature_data: clientSignatureMetadata,
+            client_signature_image_url: signatureDataUrl,
+            full_contract_text: finalContractText
+        })
+        .eq('id', contractId);
+
+    if (updateError) {
+         return { error: { message: `Não foi possível assinar o contrato: ${updateError.message}` } };
+    }
+
+    revalidatePath(`/dashboard/contratos/${contractId}`);
+    revalidatePath(`/portal/${contract.cliente_id}/contrato/${contract.id}`);
+    revalidatePath(`/portal/${contract.cliente_id}`);
+    return { error: null };
 }

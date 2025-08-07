@@ -26,12 +26,17 @@ import type { Cliente } from '@/lib/types'
 
 const clientProfileSchema = z.object({
   personType: z.enum(['cpf', 'cnpj']),
+  // Common fields
+  email: z.string().email({ message: "Por favor, insira um e-mail válido." }),
+  address: z.string().optional(),
+  
   // PJ Fields
   companyName: z.string().optional(),
   cnpj: z.string().optional(),
   representativeName: z.string().optional(),
   representativeRg: z.string().optional(),
   representativeCpf: z.string().optional(),
+  
   // PF Fields
   fullName: z.string().optional(),
   nationality: z.string().optional(),
@@ -39,8 +44,6 @@ const clientProfileSchema = z.object({
   profession: z.string().optional(),
   rg: z.string().optional(),
   cpf: z.string().optional(),
-  // Common field
-  address: z.string().optional(),
 }).refine(data => {
     if (data.personType === 'cnpj') {
         return !!data.companyName && !!data.cnpj && !!data.representativeName && !!data.representativeRg && !!data.representativeCpf && !!data.address;
@@ -65,6 +68,7 @@ export default function ClienteEditPage() {
     resolver: zodResolver(clientProfileSchema),
     defaultValues: {
       personType: 'cpf',
+      email: '',
     },
   })
 
@@ -81,6 +85,7 @@ export default function ClienteEditPage() {
       setClient(data)
       form.reset({
         personType: data.person_type || 'cpf',
+        email: data.email || '',
         companyName: data.company_name || '',
         cnpj: data.cnpj || '',
         representativeName: data.representative_name || '',
@@ -173,6 +178,37 @@ export default function ClienteEditPage() {
             </CardContent>
           </Card>
           
+          <Card>
+            <CardHeader>
+              <CardTitle>Informações de Contato e Endereço</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+               <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>E-mail do Cliente</FormLabel>
+                    <FormControl><Input type="email" placeholder="email@cliente.com" {...field} /></FormControl>
+                    <FormDescription>Este e-mail será usado para enviar o código de assinatura do contrato.</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="address"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Endereço Completo</FormLabel>
+                    <FormControl><Input placeholder="Rua, Número, Bairro, CEP, Cidade, Estado" {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </CardContent>
+          </Card>
+
           {personType === 'cnpj' && (
              <Card>
                 <CardHeader>
@@ -216,13 +252,6 @@ export default function ClienteEditPage() {
                             </FormItem>
                         )} />
                     </div>
-                     <FormField control={form.control} name="address" render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Endereço Completo</FormLabel>
-                            <FormControl><Input placeholder="Rua, Número, Bairro, CEP, Cidade, Estado" {...field} /></FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )} />
                 </CardContent>
              </Card>
           )}
@@ -279,13 +308,6 @@ export default function ClienteEditPage() {
                             </FormItem>
                         )} />
                     </div>
-                     <FormField control={form.control} name="address" render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Endereço Completo</FormLabel>
-                            <FormControl><Input placeholder="Rua, Número, Bairro, CEP, Cidade, Estado" {...field} /></FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )} />
                 </CardContent>
             </Card>
           )}
