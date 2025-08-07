@@ -19,10 +19,13 @@ import {
 import { Switch } from '@/components/ui/switch'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { CheckCircle, AlertTriangle, Loader2 } from 'lucide-react'
+import { CheckCircle, AlertTriangle, Loader2, User, Building } from 'lucide-react'
 import { getClientById, updateClientProfile } from '@/lib/actions/clients'
 import { useToast } from '@/hooks/use-toast'
 import type { Cliente } from '@/lib/types'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Badge } from '@/components/ui/badge'
+import { cn } from '@/lib/utils'
 
 const clientProfileSchema = z.object({
   personType: z.enum(['cpf', 'cnpj']),
@@ -137,46 +140,48 @@ export default function ClienteEditPage() {
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-4 p-4 sm:gap-6 sm:p-6">
-      <div className="flex items-center">
-        <h1 className="text-lg font-semibold md:text-2xl">Editar Cliente: {client.full_name || client.company_name}</h1>
+    <div className="flex flex-1 flex-col gap-6 p-4 sm:p-6">
+      <div className="flex flex-col items-center text-center">
+        <Avatar className="h-24 w-24 mb-4">
+          <AvatarImage src={client.avatar_url || ''} alt="Avatar do Cliente" />
+          <AvatarFallback>{client.full_name ? client.full_name.charAt(0) : 'C'}</AvatarFallback>
+        </Avatar>
+        <h2 className="text-2xl font-bold">{client.full_name || client.company_name}</h2>
+        <Badge variant="outline" className="mt-2 border-green-500 bg-green-500/10 text-green-700">Ativo</Badge>
       </div>
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-          <Card>
-            <CardHeader>
-              <CardTitle>Tipo de Contratação</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <FormField
+            <FormField
                 control={form.control}
                 name="personType"
                 render={({ field }) => (
-                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                    <div className="space-y-0.5">
-                      <FormLabel className="text-base">
-                        Selecione o tipo de pessoa
-                      </FormLabel>
-                      <FormDescription>
-                        O cliente é Pessoa Física (CPF) ou Pessoa Jurídica (CNPJ)?
-                      </FormDescription>
-                    </div>
-                    <FormControl>
-                      <div className="flex items-center space-x-2">
-                        <span className={personType === 'cpf' ? 'font-bold' : ''}>CPF</span>
+                  <FormItem className="space-y-4">
+                     <div className="flex items-center justify-center space-x-2">
+                        <span className={personType === 'cpf' ? 'font-bold' : ''}>Pessoa Física</span>
                         <Switch
                           checked={field.value === 'cnpj'}
                           onCheckedChange={(checked) => field.onChange(checked ? 'cnpj' : 'cpf')}
                         />
-                        <span className={personType === 'cnpj' ? 'font-bold' : ''}>CNPJ</span>
+                        <span className={personType === 'cnpj' ? 'font-bold' : ''}>Pessoa Jurídica</span>
                       </div>
-                    </FormControl>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <Card className={cn("cursor-pointer transition-all", personType === 'cpf' ? "border-green-500 bg-green-500/10" : "")} onClick={() => field.onChange('cpf')}>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2"><User className="h-5 w-5" /> Pessoa Física</CardTitle>
+                                <CardDescription>Para contratar serviços como pessoa individual, usando seu CPF.</CardDescription>
+                            </CardHeader>
+                        </Card>
+                         <Card className={cn("cursor-pointer transition-all", personType === 'cnpj' ? "border-green-500 bg-green-500/10" : "")} onClick={() => field.onChange('cnpj')}>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2"><Building className="h-5 w-5" /> Pessoa Jurídica</CardTitle>
+                                <CardDescription>Para contratar serviços em nome de uma empresa, usando um CNPJ.</CardDescription>
+                            </CardHeader>
+                        </Card>
+                    </div>
                   </FormItem>
                 )}
               />
-            </CardContent>
-          </Card>
           
           <Card>
             <CardHeader>
