@@ -4,7 +4,7 @@ import { Toaster } from "@/components/ui/toaster"
 
 export const metadata: Metadata = {
   title: 'DASH: Hub de Segurança de Acesso Digital',
-  description': 'Um Hub de Segurança de Acesso Digital com autenticação Supabase.',
+  description: 'Um Hub de Segurança de Acesso Digital com autenticação Supabase.',
 };
 
 export default function RootLayout({
