@@ -11,8 +11,15 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { PlusCircle, FileSignature } from 'lucide-react'
+import { PlusCircle, FileSignature, Loader2, Eye, MoreVertical, Send, Trash2 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { CreateContractModal } from '@/components/create-contract-modal'
 import { getContracts } from '@/lib/actions/contratos'
@@ -20,6 +27,8 @@ import { getClients } from '@/lib/actions/clients'
 import { getProposals } from '@/lib/actions/propostas'
 import type { Contrato, Cliente, Proposta } from '@/lib/types'
 import { format } from 'date-fns'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { cn } from '@/lib/utils'
 
 export default function ContratosPage() {
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -27,6 +36,7 @@ export default function ContratosPage() {
   const [clients, setClients] = useState<Cliente[]>([])
   const [proposals, setProposals] = useState<Proposta[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [selectedContracts, setSelectedContracts] = useState<string[]>([])
 
   useEffect(() => {
     async function fetchData() {
@@ -65,6 +75,19 @@ export default function ContratosPage() {
         return 'secondary'
     }
   }
+  
+  const getStatusClass = (status: string) => {
+    switch (status) {
+      case 'signed_by_client':
+        return 'border-green-500 bg-green-500/10 text-green-700' // Finalizado
+      case 'signed_by_provider':
+        return 'border-orange-500 bg-orange-500/10 text-orange-700' // Aguardando Cliente
+      case 'draft':
+        return 'border-gray-500 bg-gray-500/10 text-gray-700' // Rascunho
+      default:
+        return 'border-gray-500 bg-gray-500/10 text-gray-700'
+    }
+  }
 
   const getStatusText = (status: string) => {
     switch (status) {
@@ -73,15 +96,31 @@ export default function ContratosPage() {
       case 'signed_by_provider':
         return 'Aguardando Cliente'
       case 'signed_by_client':
-        return 'Assinado'
+        return 'Finalizado'
       default:
         return 'Desconhecido'
     }
   }
+  
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedContracts(contracts.map((contract) => contract.id));
+    } else {
+      setSelectedContracts([]);
+    }
+  };
+
+  const handleSelectContract = (contractId: string, checked: boolean) => {
+    if (checked) {
+      setSelectedContracts((prev) => [...prev, contractId]);
+    } else {
+      setSelectedContracts((prev) => prev.filter((id) => id !== contractId));
+    }
+  };
 
   return (
     <>
-      <div className="flex flex-1 flex-col gap-4 rounded-lg bg-card p-4 shadow-sm sm:gap-6 sm:p-6">
+      <div className="flex flex-1 flex-col gap-4 p-4 sm:gap-6 sm:p-6">
         <div className="flex items-center">
           <h1 className="text-lg font-semibold md:text-2xl">Contratos</h1>
           <div className="ml-auto flex items-center gap-2">
@@ -96,7 +135,7 @@ export default function ContratosPage() {
 
         {isLoading ? (
           <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm">
-            <p>Carregando contratos...</p>
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
           </div>
         ) : contracts.length === 0 ? (
           <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm">
@@ -108,6 +147,7 @@ export default function ContratosPage() {
               <p className="text-sm text-muted-foreground">
                 Gere seu primeiro contrato para vê-lo aqui.
               </p>
+               <Button className="mt-4" onClick={() => setIsModalOpen(true)}>Gerar Contrato</Button>
             </div>
           </div>
         ) : (
@@ -115,37 +155,81 @@ export default function ContratosPage() {
             <CardContent className="p-0">
               <Table>
                 <TableHeader>
-                  <TableRow>
-                    <TableHead>Código</TableHead>
-                    <TableHead>Cliente</TableHead>
-                    <TableHead className="hidden md:table-cell">Proposta</TableHead>
-                     <TableHead className="hidden md:table-cell">Criado em</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>
-                      <span className="sr-only">Ações</span>
+                  <TableRow className="bg-muted/50 hover:bg-muted/50">
+                    <TableHead className="w-[60px] border-r">
+                       <Checkbox
+                        checked={selectedContracts.length > 0 && selectedContracts.length === contracts.length}
+                        onCheckedChange={handleSelectAll}
+                        aria-label="Selecionar todos"
+                      />
                     </TableHead>
+                    <TableHead className="w-[100px] border-r">Código</TableHead>
+                    <TableHead className="border-r">Cliente</TableHead>
+                    <TableHead className="border-r hidden md:table-cell">Proposta</TableHead>
+                    <TableHead className="border-r hidden lg:table-cell">Valor</TableHead>
+                    <TableHead className="border-r hidden lg:table-cell">Criado em</TableHead>
+                    <TableHead className="border-r hidden md:table-cell">Status</TableHead>
+                    <TableHead className="w-[100px] text-center">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {contracts.map((contract) => (
-                    <TableRow key={contract.id}>
-                      <TableCell className="font-medium">{contract.contract_code}</TableCell>
-                      <TableCell>{contract.clientes?.full_name || contract.clientes?.company_name}</TableCell>
-                      <TableCell className="hidden md:table-cell">{contract.propostas?.name}</TableCell>
-                       <TableCell className="hidden md:table-cell">
+                    <TableRow key={contract.id} className="h-12" data-state={selectedContracts.includes(contract.id) ? 'selected' : ''}>
+                       <TableCell className="py-1 border-r">
+                         <Checkbox
+                          checked={selectedContracts.includes(contract.id)}
+                          onCheckedChange={(checked) => handleSelectContract(contract.id, !!checked)}
+                          aria-label={`Selecionar contrato ${contract.contract_code}`}
+                        />
+                      </TableCell>
+                      <TableCell className="py-1 border-r font-medium">{contract.contract_code}</TableCell>
+                      <TableCell className="font-medium py-1 border-r">
+                         <div className="flex items-center gap-3">
+                           <Avatar className="h-8 w-8">
+                              <AvatarImage src={contract.clientes?.avatar_url || ''} alt="Avatar do Cliente" />
+                              <AvatarFallback>{contract.clientes?.full_name ? contract.clientes.full_name.charAt(0) : 'C'}</AvatarFallback>
+                           </Avatar>
+                           <span>{contract.clientes?.full_name || contract.clientes?.company_name}</span>
+                         </div>
+                      </TableCell>
+                      <TableCell className="py-1 border-r hidden md:table-cell">{contract.propostas?.name}</TableCell>
+                      <TableCell className="py-1 border-r hidden lg:table-cell">
+                        {contract.propostas?.value ? `R$ ${Number(contract.propostas.value).toFixed(2)}` : 'N/A'}
+                      </TableCell>
+                      <TableCell className="hidden py-1 border-r lg:table-cell">
                         {format(new Date(contract.created_at), 'dd/MM/yyyy')}
                       </TableCell>
-                      <TableCell>
-                        <Badge variant={getStatusVariant(contract.status) as any}>
+                      <TableCell className="hidden py-1 border-r md:table-cell">
+                        <Badge variant="outline" className={cn("font-normal", getStatusClass(contract.status))}>
                           {getStatusText(contract.status)}
                         </Badge>
                       </TableCell>
-                      <TableCell>
-                        <Button asChild variant="outline" size="sm">
-                          <Link href={`/dashboard/contratos/${contract.id}`}>
-                            Ver
-                          </Link>
-                        </Button>
+                      <TableCell className="py-1 text-center">
+                        <div className="flex items-center justify-center gap-1">
+                            <Button asChild variant="outline" size="icon" className="h-8 w-8">
+                                <Link href={`/dashboard/contratos/${contract.id}`}>
+                                    <Eye className="h-4 w-4" />
+                                    <span className="sr-only">Ver</span>
+                                </Link>
+                            </Button>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                                        <MoreVertical className="h-4 w-4" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                    <DropdownMenuItem>
+                                      <Send className="mr-2 h-4 w-4" />
+                                      Reenviar E-mail
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem className="text-destructive">
+                                      <Trash2 className="mr-2 h-4 w-4" />
+                                      Excluir
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -166,3 +250,5 @@ export default function ContratosPage() {
     </>
   )
 }
+
+    
