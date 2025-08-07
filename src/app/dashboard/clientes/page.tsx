@@ -26,7 +26,7 @@ import { getClients } from '@/lib/actions/clients'
 import type { Cliente } from '@/lib/types'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import Link from 'next/link'
-import { PlusCircle, Loader2 } from 'lucide-react'
+import { PlusCircle, Loader2, Eye } from 'lucide-react'
 
 const ITEMS_PER_PAGE = 10;
 
@@ -105,31 +105,30 @@ export default function ClientesPage() {
                     <TableHead className="border-r">Nome</TableHead>
                     <TableHead className="border-r">ID Cliente</TableHead>
                     <TableHead className="hidden border-r md:table-cell">Status</TableHead>
-                    <TableHead>
-                      <span className="sr-only">Ações</span>
-                    </TableHead>
+                    <TableHead className="text-center">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {paginatedClients.map((client) => (
-                    <TableRow key={client.id}>
-                      <TableCell className="hidden py-2 border-r sm:table-cell">
+                    <TableRow key={client.id} className="h-14">
+                      <TableCell className="hidden py-1 border-r sm:table-cell">
                         <Avatar className="h-9 w-9">
                             <AvatarImage src={client.avatar_url || ''} alt="Avatar do Cliente" />
                             <AvatarFallback>{client.full_name ? client.full_name.charAt(0) : 'C'}</AvatarFallback>
                         </Avatar>
                       </TableCell>
-                      <TableCell className="font-medium py-2 border-r">{client.full_name || client.company_name}</TableCell>
-                       <TableCell className="py-2 border-r">
+                      <TableCell className="font-medium py-1 border-r">{client.full_name || client.company_name}</TableCell>
+                       <TableCell className="py-1 border-r">
                         <Badge variant="outline">{client.client_id}</Badge>
                       </TableCell>
-                      <TableCell className="hidden py-2 border-r md:table-cell">
+                      <TableCell className="hidden py-1 border-r md:table-cell">
                          <Badge variant="secondary">Ativo</Badge>
                       </TableCell>
-                      <TableCell className="py-2">
-                         <Button asChild variant="outline" size="sm">
+                      <TableCell className="py-1 text-center">
+                         <Button asChild variant="outline" size="icon" className="h-8 w-8">
                             <Link href={`/dashboard/clientes/${client.id}`}>
-                                Editar
+                                <Eye className="h-4 w-4" />
+                                <span className="sr-only">Visualizar</span>
                             </Link>
                         </Button>
                       </TableCell>
