@@ -30,7 +30,7 @@ const clientProfileSchema = z.object({
   personType: z.enum(['cpf', 'cnpj'], { required_error: "Você deve selecionar o tipo de pessoa." }),
   // Common fields
   email: z.string().email({ message: "Por favor, insira um e-mail válido." }),
-  address: z.string().optional(),
+  address: z.string().min(1, { message: "O endereço é obrigatório."}),
   
   // PJ Fields
   companyName: z.string().optional(),
