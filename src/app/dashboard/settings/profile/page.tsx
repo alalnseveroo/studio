@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef } from 'react'
-import { useForm, Controller } from 'react-hook-form'
+import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
 import { Button } from '@/components/ui/button'
@@ -20,6 +20,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { CheckCircle, AlertTriangle, Loader2 } from 'lucide-react'
 import SignatureCanvas from 'react-signature-canvas'
+import { saveProfile } from '@/lib/actions/profile'
+import { useToast } from '@/hooks/use-toast'
 
 const profileSchema = z.object({
   personType: z.enum(['cpf', 'cnpj']),
@@ -46,13 +48,15 @@ const profileSchema = z.object({
   path: ["form"],
 });
 
+export type ProfileFormData = z.infer<typeof profileSchema>;
 
 export default function ProfilePage() {
   const [isLoading, setIsLoading] = useState(false)
   const [isSaved, setIsSaved] = useState(false)
   const sigCanvas = useRef<SignatureCanvas>(null);
+  const { toast } = useToast()
 
-  const form = useForm<z.infer<typeof profileSchema>>({
+  const form = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
       personType: 'cpf',
@@ -61,7 +65,7 @@ export default function ProfilePage() {
 
   const personType = form.watch('personType')
 
-  const onSubmit = (values: z.infer<typeof profileSchema>) => {
+  const onSubmit = async (values: ProfileFormData) => {
     setIsLoading(true)
 
     const signatureData = sigCanvas.current?.getTrimmedCanvas().toDataURL('image/png');
@@ -73,13 +77,19 @@ export default function ProfilePage() {
 
     const data = { ...values, signature: signatureData };
     
-    console.log(data)
-    
-    // Simulating API call
-    setTimeout(() => {
-      setIsLoading(false)
+    const { error } = await saveProfile(data);
+
+    setIsLoading(false)
+
+    if (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao Salvar Perfil',
+        description: error.message,
+      })
+    } else {
       setIsSaved(true)
-    }, 1500)
+    }
   }
 
   const clearSignature = () => {
