@@ -81,31 +81,31 @@ function getSignatureBlock(
     title: string,
     signerName: string,
     signerDocument: string,
-    signatureData: SignatureData | null
+    signatureMetadata: SignatureData | null,
+    signatureImageUrl: string | null
 ): string {
-    if (!signatureData) {
+    if (!signatureMetadata || !signatureImageUrl) {
         return `
-        <div style="margin-top: 20px;">
-            <strong>${title}:</strong><br>
-            <p>Nome: ${signerName}</p>
-            <p>CPF/CNPJ: ${signerDocument}</p>
-            <div style="height: 50px; border-bottom: 1px solid #ccc; margin-top: 10px;"></div>
-            <p style="text-align: center;">(Aguardando assinatura digital)</p>
+        <div style="margin-top: 20px; text-align: center;">
+            <div style="height: 60px; width: 250px; margin: 10px auto; border-bottom: 1px solid #333;"></div>
+            <p style="margin: 0;">${signerName}</p>
+            <p style="margin: 0;">CPF/CNPJ: ${signerDocument}</p>
+            <p style="margin-top: 10px; font-style: italic; color: #888;">(Aguardando assinatura digital)</p>
         </div>
         `;
     }
 
     return `
-        <div style="margin-top: 20px; border: 1px solid #eee; padding: 15px; border-radius: 8px;">
-            <strong>${title} (ASSINADO DIGITALMENTE):</strong><br>
-            <p>Nome: ${signerName}</p>
-            <p>CPF/CNPJ: ${signerDocument}</p>
-            <div style="margin-top: 10px; padding: 10px; background-color: #f9f9f9; border-radius: 4px;">
-                <img src="${signatureData.signature_image_url}" alt="Assinatura" style="height: 60px; object-fit: contain;"/>
+        <div style="margin-top: 20px; border: 1px solid #eee; padding: 15px; border-radius: 8px; text-align: center;">
+            <strong>${title} (ASSINADO DIGITALMENTE)</strong><br>
+            <div style="margin-top: 10px; padding: 10px; background-color: #f9f9f9; border-radius: 4px; display: inline-block;">
+                <img src="${signatureImageUrl}" alt="Assinatura de ${signerName}" style="height: 60px; object-fit: contain;"/>
             </div>
-            <small style="color: #555;">
-                Assinado em: ${format(new Date(signatureData.signed_at), 'dd/MM/yyyy HH:mm:ss', { locale: ptBR })}<br>
-                Endereço IP: ${signatureData.ip_address}
+            <p style="margin: 5px 0 0 0;">${signerName}</p>
+            <p style="margin: 0 0 10px 0;">CPF/CNPJ: ${signerDocument}</p>
+            <small style="color: #555; display: block; font-size: 0.75em;">
+                Assinado em: ${format(new Date(signatureMetadata.signed_at), 'dd/MM/yyyy HH:mm:ss', { locale: ptBR })}<br>
+                Endereço IP: ${signatureMetadata.ip_address}
             </small>
         </div>
     `;
@@ -153,18 +153,20 @@ export function getContractTemplate(data: TemplateData): string {
 <br>
 <br>
 
-<div id="assinaturas">
+<div id="assinaturas" style="display: flex; justify-content: space-around; flex-wrap: wrap;">
     ${getSignatureBlock(
         'CONTRATANTE',
         contratante.full_name || contratante.company_name || '',
         contratante.cpf || contratante.cnpj || '',
-        contract?.client_signature_data || null
+        contract?.client_signature_data || null,
+        contract?.client_signature_image_url || null
     )}
     ${getSignatureBlock(
         'CONTRATADA',
         contratada.full_name || contratada.company_name || '',
         contratada.cpf || contratada.cnpj || '',
-        contract?.provider_signature_data || null
+        contract?.provider_signature_data || null,
+        contract?.provider_signature_image_url || null
     )}
 </div>
 `;

@@ -153,20 +153,25 @@ export async function signContractAsProvider(contractId: string) {
         return { data: null, error: { message: 'Perfil da contratada ou assinatura não encontrados.' } };
     }
 
-    // 2. Coletar os dados da assinatura
+    // 2. Coletar os metadados da assinatura
     const headersList = headers();
     const ipAddress = headersList.get('x-forwarded-for') || 'IP não detectado';
     const userAgent = headersList.get('user-agent') || 'User agent não detectado';
 
-    const signatureData = {
+    const signatureMetadata = {
         signed_at: new Date().toISOString(),
         ip_address: ipAddress,
         user_agent: userAgent,
-        signature_image_url: contratada.signature // Adiciona a imagem da assinatura
     };
 
-    // 3. Gerar o novo texto do contrato, agora com a assinatura da contratada
-    const updatedContractData = { ...contract, provider_signature_data: signatureData };
+    // 3. Preparar dados para atualização
+    const updatedContractData = { 
+        ...contract, 
+        provider_signature_data: signatureMetadata,
+        provider_signature_image_url: contratada.signature // Salva a imagem da assinatura do perfil
+    };
+
+    // 4. Gerar o novo texto do contrato, agora com a assinatura da contratada
     const finalContractText = getContractTemplate({
         contratada,
         contratante: contract.clientes,
@@ -174,12 +179,13 @@ export async function signContractAsProvider(contractId: string) {
         contract: updatedContractData as Contrato,
     });
 
-    // 4. Atualizar o contrato no banco de dados com o novo status, dados da assinatura e texto final
+    // 5. Atualizar o contrato no banco de dados com o novo status, metadados e a URL da imagem da assinatura
     const { data, error: updateError } = await supabase
         .from('contratos')
         .update({
             status: 'signed_by_provider',
-            provider_signature_data: signatureData,
+            provider_signature_data: signatureMetadata,
+            provider_signature_image_url: contratada.signature, // Adiciona a imagem da assinatura
             full_contract_text: finalContractText // Atualiza o texto do contrato com a assinatura
         })
         .eq('id', contractId)
