@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useParams } from 'next/navigation'
-import { useForm, FormProvider } from 'react-hook-form'
+import { useForm, FormProvider, useFormContext } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
 import { Button } from '@/components/ui/button'
@@ -28,6 +28,7 @@ import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { cn } from '@/lib/utils'
+import { Label } from '@/components/ui/label'
 
 // Schemas for each step
 const clientTypeSchema = z.object({
@@ -302,7 +303,7 @@ function ClientTypeStep({ isEditing, setEditingStep, onSave, isLoading }: StepPr
       <CardHeader className="flex flex-row items-center justify-between">
         <div className="space-y-1">
           <CardTitle>Tipo de Pessoa</CardTitle>
-          <CardDescription>{personType === 'cpf' ? 'Pessoa Física (CPF)' : 'Pessoa Jurídica (CNPJ)'}</CardDescription>
+          <CardDescription>{personType === 'cpf' ? 'Pessoa Física (CPF)' : personType === 'cnpj' ? 'Pessoa Jurídica (CNPJ)' : 'Não definido'}</CardDescription>
         </div>
         <Button variant="outline" size="sm" onClick={() => setEditingStep('type')}><Edit className="mr-2 h-4 w-4" />Editar</Button>
       </CardHeader>
@@ -432,7 +433,7 @@ function InfoStep({ isEditing, setEditingStep, onSave, isLoading }: StepProps) {
             <div className="space-y-1">
                 <CardTitle>Informações do Cliente</CardTitle>
                 <CardDescription>
-                    {personType === 'cpf' ? `CPF: ${methods.getValues('cpf')}` : `CNPJ: ${methods.getValues('cnpj')}`}
+                    {personType === 'cpf' ? `CPF: ${methods.getValues('cpf') || 'Não preenchido'}` : `CNPJ: ${methods.getValues('cnpj') || 'Não preenchido'}`}
                 </CardDescription>
             </div>
             <Button variant="outline" size="sm" onClick={() => setEditingStep('info')}><Edit className="mr-2 h-4 w-4" />Editar</Button>
@@ -534,12 +535,10 @@ function AddressStep({ isEditing, setEditingStep, onSave, isLoading }: StepProps
             <CardHeader className="flex flex-row items-center justify-between">
                 <div className="space-y-1">
                     <CardTitle>Endereço</CardTitle>
-                    <CardDescription>{methods.getValues('street')}, {methods.getValues('number')} - {methods.getValues('city')}</CardDescription>
+                    <CardDescription>{methods.getValues('street') ? `${methods.getValues('street')}, ${methods.getValues('number')} - ${methods.getValues('city')}` : 'Não preenchido'}</CardDescription>
                 </div>
                 <Button variant="outline" size="sm" onClick={() => setEditingStep('address')}><Edit className="mr-2 h-4 w-4" />Editar</Button>
             </CardHeader>
         </Card>
     )
 }
-
-    
