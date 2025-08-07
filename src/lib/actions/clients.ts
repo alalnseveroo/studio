@@ -11,7 +11,7 @@ const AVATAR_URLS = [
     'https://ktgckactmaqioszffuyx.supabase.co/storage/v1/object/public/icons/Ellipse%203.png'
 ];
 
-export async function addClient(name: string) {
+export async function addClient(name: string, personType: 'cpf' | 'cnpj') {
   const supabase = createClient()
 
   const { data: { user } } = await supabase.auth.getUser()
@@ -22,13 +22,19 @@ export async function addClient(name: string) {
   const clientId = `CL#${Math.floor(100000 + Math.random() * 900000)}`;
   const avatarUrl = AVATAR_URLS[Math.floor(Math.random() * AVATAR_URLS.length)];
 
-  const clientData = {
+  const clientData: any = {
     user_id: user.id,
     client_id: clientId,
     avatar_url: avatarUrl,
-    full_name: name,
-    person_type: 'cpf'
+    person_type: personType
   };
+  
+  if (personType === 'cpf') {
+      clientData.full_name = name;
+  } else {
+      clientData.company_name = name;
+  }
+
 
   const { data, error } = await supabase.from('clientes').insert(clientData).select().single()
 
@@ -81,16 +87,15 @@ export async function updateClientProfile(id: string, formData: ClientFormData &
   const profileData = {
     email: formData.email,
     person_type: formData.personType,
-    company_name: formData.companyName,
-    cnpj: formData.cnpj,
-    representative_name: formData.representativeName,
-    representative_cpf: formData.representativeCpf,
-    full_name: formData.fullName,
-    nationality: formData.nationality,
-    civil_status: formData.civilStatus,
-    profession: formData.profession,
-    rg: formData.rg,
-    cpf: formData.cpf,
+    company_name: formData.personType === 'cnpj' ? formData.companyName : null,
+    cnpj: formData.personType === 'cnpj' ? formData.cnpj : null,
+    representative_name: formData.personType === 'cnpj' ? formData.representativeName : null,
+    representative_cpf: formData.personType === 'cnpj' ? formData.representativeCpf : null,
+    full_name: formData.personType === 'cpf' ? formData.fullName : null,
+    nationality: formData.personType === 'cpf' ? formData.nationality : null,
+    civil_status: formData.personType === 'cpf' ? formData.civilStatus : null,
+    profession: formData.personType === 'cpf' ? formData.profession : null,
+    cpf: formData.personType === 'cpf' ? formData.cpf : null,
     address: formData.address,
     updated_at: new Date().toISOString(),
   };
