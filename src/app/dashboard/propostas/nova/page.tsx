@@ -71,7 +71,16 @@ export default function NovaPropostaPage() {
       name: '',
       services: [],
       payment_type: 'fixed',
+      value: '',
+      value_in_words: '',
+      payment_day: '',
+      payment_method: '',
       contract_duration_type: 'indefinite',
+      contract_duration_months: '',
+      start_date: '',
+      end_date: '',
+      jurisdiction_city: '',
+      jurisdiction_state: '',
     },
   })
 
