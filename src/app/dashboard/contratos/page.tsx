@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import {
@@ -29,6 +29,7 @@ import type { Contrato, Cliente, Proposta } from '@/lib/types'
 import { format } from 'date-fns'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { cn } from '@/lib/utils'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 export default function ContratosPage() {
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -37,6 +38,9 @@ export default function ContratosPage() {
   const [proposals, setProposals] = useState<Proposta[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [selectedContracts, setSelectedContracts] = useState<string[]>([])
+  const [statusFilter, setStatusFilter] = useState('all')
+  const [sortOrder, setSortOrder] = useState('desc')
+
 
   useEffect(() => {
     async function fetchData() {
@@ -101,10 +105,20 @@ export default function ContratosPage() {
         return 'Desconhecido'
     }
   }
+
+  const filteredAndSortedContracts = useMemo(() => {
+    return contracts
+      .filter(contract => statusFilter === 'all' || contract.status === statusFilter)
+      .sort((a, b) => {
+        const dateA = new Date(a.created_at).getTime()
+        const dateB = new Date(b.created_at).getTime()
+        return sortOrder === 'desc' ? dateB - dateA : dateA - dateB
+      })
+  }, [contracts, statusFilter, sortOrder])
   
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      setSelectedContracts(contracts.map((contract) => contract.id));
+      setSelectedContracts(filteredAndSortedContracts.map((contract) => contract.id));
     } else {
       setSelectedContracts([]);
     }
@@ -132,20 +146,44 @@ export default function ContratosPage() {
             </Button>
           </div>
         </div>
+        
+        <div className="flex items-center gap-2">
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Filtrar por status" />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectItem value="all">Todos os Status</SelectItem>
+                    <SelectItem value="draft">Rascunho</SelectItem>
+                    <SelectItem value="signed_by_provider">Aguardando Cliente</SelectItem>
+                    <SelectItem value="signed_by_client">Finalizado</SelectItem>
+                </SelectContent>
+            </Select>
+            <Select value={sortOrder} onValueChange={setSortOrder}>
+                <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Ordenar por data" />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectItem value="desc">Mais Recentes</SelectItem>
+                    <SelectItem value="asc">Mais Antigos</SelectItem>
+                </SelectContent>
+            </Select>
+        </div>
+
 
         {isLoading ? (
           <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm">
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
           </div>
-        ) : contracts.length === 0 ? (
+        ) : filteredAndSortedContracts.length === 0 ? (
           <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm">
             <div className="flex flex-col items-center gap-1 text-center">
               <FileSignature className="h-10 w-10 text-muted-foreground" />
               <h3 className="text-2xl font-bold tracking-tight">
-                Você ainda não tem contratos
+                Nenhum contrato encontrado
               </h3>
               <p className="text-sm text-muted-foreground">
-                Gere seu primeiro contrato para vê-lo aqui.
+                {statusFilter === 'all' ? 'Gere seu primeiro contrato para vê-lo aqui.' : 'Nenhum contrato corresponde ao filtro selecionado.'}
               </p>
                <Button className="mt-4" onClick={() => setIsModalOpen(true)}>Gerar Contrato</Button>
             </div>
@@ -158,7 +196,7 @@ export default function ContratosPage() {
                   <TableRow className="bg-muted/50 hover:bg-muted/50">
                     <TableHead className="w-[60px] border-r">
                        <Checkbox
-                        checked={selectedContracts.length > 0 && selectedContracts.length === contracts.length}
+                        checked={selectedContracts.length > 0 && selectedContracts.length === filteredAndSortedContracts.length}
                         onCheckedChange={handleSelectAll}
                         aria-label="Selecionar todos"
                       />
@@ -173,7 +211,7 @@ export default function ContratosPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {contracts.map((contract) => (
+                  {filteredAndSortedContracts.map((contract) => (
                     <TableRow key={contract.id} className="h-12" data-state={selectedContracts.includes(contract.id) ? 'selected' : ''}>
                        <TableCell className="py-1 border-r">
                          <Checkbox
@@ -250,5 +288,3 @@ export default function ContratosPage() {
     </>
   )
 }
-
-    

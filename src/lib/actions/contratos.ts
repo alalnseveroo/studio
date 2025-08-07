@@ -92,8 +92,8 @@ export async function getContracts() {
         .from('contratos')
         .select(`
             *,
-            clientes (id, full_name, company_name),
-            propostas (id, name)
+            clientes (id, full_name, company_name, avatar_url),
+            propostas (id, name, value)
         `)
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
