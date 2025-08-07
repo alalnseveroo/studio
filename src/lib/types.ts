@@ -75,6 +75,7 @@ export type SignatureData = {
   signed_at: string;
   ip_address: string;
   user_agent: string;
+  signature_image_url: string; // Adicionado para armazenar a imagem da assinatura
   // Geo-localização pode ser mais complexa de obter, deixamos como opcional
   geolocation?: {
     latitude: number;

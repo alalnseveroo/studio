@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { headers } from 'next/headers'
 import { getContractTemplate } from '@/lib/contract-template'
-import type { Profile } from '@/lib/types'
+import type { Profile, Contrato } from '@/lib/types'
 
 // Helper para buscar o perfil da contratada (usuário logado)
 async function getProviderProfile(supabase: any, userId: string): Promise<{ data: Profile | null, error: any }> {
@@ -36,15 +36,21 @@ export async function createContract(clienteId: string, propostaId: string) {
   ]);
 
   if (clienteError || propostaError || contratadaError) {
-      return { data: null, error: { message: 'Não foi possível buscar os dados para gerar o contrato.' } };
+      const errorMsg = clienteError?.message || propostaError?.message || contratadaError?.message;
+      return { data: null, error: { message: `Não foi possível buscar os dados para gerar o contrato. Detalhes: ${errorMsg}` } };
+  }
+
+  if (!contratada) {
+    return { data: null, error: { message: 'Perfil da contratada não encontrado. Por favor, preencha seu perfil nas configurações.' } };
   }
   
-  if (!contratada?.signature) {
+  if (!contratada.signature) {
     return { data: null, error: { message: 'Perfil incompleto. Por favor, preencha sua assinatura nas configurações antes de gerar um contrato.' } };
   }
 
   // 2. Gerar o texto completo do contrato
-  const fullContractText = getContractTemplate({ contratada, contratante: cliente, proposta });
+  // Neste momento, o contrato ainda não foi assinado, então passamos null para os dados de assinatura.
+  const fullContractText = getContractTemplate({ contratada, contratante: cliente, proposta, contract: null });
   
   // 3. Gerar código único do contrato
   const contractCode = `CT#${Math.floor(100000 + Math.random() * 900000)}`;
@@ -58,7 +64,7 @@ export async function createContract(clienteId: string, propostaId: string) {
       proposta_id: propostaId,
       contract_code: contractCode,
       status: 'draft',
-      full_contract_text: fullContractText
+      full_contract_text: fullContractText // Salva a versão inicial do texto
     })
     .select(`
         *,
@@ -129,7 +135,25 @@ export async function signContractAsProvider(contractId: string) {
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { data: null, error: { message: 'Usuário não autenticado.' } };
+    
+    // 1. Buscar o contrato, o perfil e a proposta para gerar o texto final
+    const { data: contract, error: contractError } = await supabase
+        .from('contratos')
+        .select('*, clientes(*), propostas(*)')
+        .eq('id', contractId)
+        .single();
 
+    if (contractError || !contract) {
+        return { data: null, error: { message: 'Contrato não encontrado.' } };
+    }
+
+    const { data: contratada, error: providerError } = await getProviderProfile(supabase, user.id);
+
+    if (providerError || !contratada || !contratada.signature) {
+        return { data: null, error: { message: 'Perfil da contratada ou assinatura não encontrados.' } };
+    }
+
+    // 2. Coletar os dados da assinatura
     const headersList = headers();
     const ipAddress = headersList.get('x-forwarded-for') || 'IP não detectado';
     const userAgent = headersList.get('user-agent') || 'User agent não detectado';
@@ -137,23 +161,35 @@ export async function signContractAsProvider(contractId: string) {
     const signatureData = {
         signed_at: new Date().toISOString(),
         ip_address: ipAddress,
-        user_agent: userAgent
+        user_agent: userAgent,
+        signature_image_url: contratada.signature // Adiciona a imagem da assinatura
     };
 
-    const { data, error } = await supabase
+    // 3. Gerar o novo texto do contrato, agora com a assinatura da contratada
+    const updatedContractData = { ...contract, provider_signature_data: signatureData };
+    const finalContractText = getContractTemplate({
+        contratada,
+        contratante: contract.clientes,
+        proposta: contract.propostas,
+        contract: updatedContractData as Contrato,
+    });
+
+    // 4. Atualizar o contrato no banco de dados com o novo status, dados da assinatura e texto final
+    const { data, error: updateError } = await supabase
         .from('contratos')
         .update({
             status: 'signed_by_provider',
-            provider_signature_data: signatureData
+            provider_signature_data: signatureData,
+            full_contract_text: finalContractText // Atualiza o texto do contrato com a assinatura
         })
         .eq('id', contractId)
         .eq('user_id', user.id)
         .select()
         .single();
 
-    if (error) {
-        console.error('Supabase update error:', error);
-        return { data: null, error: { message: `Não foi possível assinar o contrato: ${error.message}` } };
+    if (updateError) {
+        console.error('Supabase update error:', updateError);
+        return { data: null, error: { message: `Não foi possível assinar o contrato: ${updateError.message}` } };
     }
 
     revalidatePath(`/dashboard/contratos/${contractId}`);

@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { getContractById, signContractAsProvider } from '@/lib/actions/contratos'
 import { useToast } from '@/hooks/use-toast'
 import type { Contrato } from '@/lib/types'
-import { Loader2, ArrowLeft, FileText, CheckCircle, Info, ChevronRight, UserCheck } from 'lucide-react'
+import { Loader2, ArrowLeft, UserCheck, Info } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -62,7 +62,8 @@ export default function ContratoDetailPage() {
     } else {
       toast({
         title: 'Contrato Assinado!',
-        description: 'Sua assinatura foi registrada. Aguardando assinatura do cliente.',
+        description: 'Sua assinatura foi registrada com sucesso.',
+        className: 'bg-green-100 border-green-200 text-green-800'
       })
       fetchContract() // Re-fetch contract to update status
     }
@@ -84,7 +85,19 @@ export default function ContratoDetailPage() {
     )
   }
   
-  const isSignedByProvider = contract.status === 'signed_by_provider' || contract.status === 'signed_by_client';
+  const isSignedByProvider = !!contract.provider_signature_data;
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case 'draft':
+        return 'Rascunho'
+      case 'signed_by_provider':
+        return 'Aguardando Cliente'
+      case 'signed_by_client':
+        return 'Assinado por Todos'
+      default:
+        return 'Desconhecido'
+    }
+  }
 
   return (
     <>
@@ -100,14 +113,14 @@ export default function ContratoDetailPage() {
             Contrato {contract.contract_code}
           </h1>
           <Badge variant="outline" className="ml-auto sm:ml-0">
-            {contract.status === 'draft' ? 'Rascunho' : contract.status === 'signed_by_provider' ? 'Aguardando Cliente' : 'Assinado'}
+            {getStatusText(contract.status)}
           </Badge>
           <div className="hidden items-center gap-2 md:ml-auto md:flex">
              {!isSignedByProvider && (
               <Button onClick={() => setIsSheetOpen(true)}>Assinar Contrato</Button>
             )}
              {isSignedByProvider && (
-              <Button variant="secondary" disabled>Assinado</Button>
+              <Button variant="secondary" disabled>Assinado por Você</Button>
             )}
           </div>
         </div>
@@ -133,7 +146,7 @@ export default function ContratoDetailPage() {
             </CardHeader>
             <CardContent>
                 <div 
-                    className="prose prose-sm max-w-none rounded-md border bg-gray-50 p-6 whitespace-pre-wrap font-mono"
+                    className="prose prose-sm max-w-none rounded-md border bg-gray-50 p-6"
                     dangerouslySetInnerHTML={{ __html: contract.full_contract_text || '' }}
                 />
             </CardContent>
