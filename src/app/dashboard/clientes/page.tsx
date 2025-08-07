@@ -133,7 +133,7 @@ export default function ClientesPage() {
                 {paginatedClients.map((client) => (
                   <div key={client.id} className="p-4 space-y-3">
                     <div className="flex items-center gap-3">
-                       <Avatar className="h-9 w-9 border">
+                       <Avatar className="h-10 w-10 border">
                           <AvatarImage src={client.avatar_url || ''} alt="Avatar do Cliente" />
                           <AvatarFallback>{(client.full_name || client.company_name || 'C').charAt(0)}</AvatarFallback>
                        </Avatar>
@@ -143,8 +143,8 @@ export default function ClientesPage() {
                        </div>
                        <Button asChild variant="outline" size="sm">
                           <Link href={`/dashboard/clientes/${client.id}`}>
-                              <FilePen className="h-4 w-4 mr-2 sm:hidden" />
-                              <span className="hidden sm:inline">Ver / Editar</span>
+                              <FilePen className="h-4 w-4" />
+                              <span className="sr-only">Ver / Editar</span>
                           </Link>
                       </Button>
                     </div>
@@ -161,47 +161,47 @@ export default function ClientesPage() {
               <Table className="hidden md:table">
                 <TableHeader>
                   <TableRow className="bg-muted/50 hover:bg-muted/50">
-                    <TableHead className="w-[60px]">
+                    <TableHead className="w-[60px] border-r">
                       <Checkbox
                         checked={selectedClients.length > 0 && selectedClients.length === paginatedClients.length}
                         onCheckedChange={handleSelectAll}
                         aria-label="Selecionar todos"
                       />
                     </TableHead>
-                    <TableHead className="w-[120px]">Código</TableHead>
-                    <TableHead>Cliente</TableHead>
-                    <TableHead className="hidden xl:table-cell">Profissão</TableHead>
-                    <TableHead className="hidden lg:table-cell">E-mail</TableHead>
-                    <TableHead className="w-[100px]">Status</TableHead>
+                    <TableHead className="w-[120px] border-r">Código</TableHead>
+                    <TableHead className="border-r">Cliente</TableHead>
+                    <TableHead className="hidden xl:table-cell border-r">Profissão</TableHead>
+                    <TableHead className="hidden lg:table-cell border-r">E-mail</TableHead>
+                    <TableHead className="w-[100px] border-r">Status</TableHead>
                     <TableHead className="w-[80px] text-center">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {paginatedClients.map((client) => (
-                    <TableRow key={client.id} data-state={selectedClients.includes(client.id) ? 'selected' : ''}>
-                      <TableCell>
+                    <TableRow key={client.id} data-state={selectedClients.includes(client.id) ? 'selected' : ''} className="h-12">
+                      <TableCell className="py-1 border-r">
                          <Checkbox
                           checked={selectedClients.includes(client.id)}
                           onCheckedChange={(checked) => handleSelectClient(client.id, !!checked)}
                           aria-label={`Selecionar cliente ${client.full_name}`}
                         />
                       </TableCell>
-                      <TableCell>{client.client_id}</TableCell>
-                      <TableCell className="font-medium">
+                      <TableCell className="py-1 border-r">{client.client_id}</TableCell>
+                      <TableCell className="font-medium py-1 border-r">
                          <div className="flex items-center gap-3">
-                           <Avatar className="h-8 w-8">
+                           <Avatar className="h-6 w-6">
                               <AvatarImage src={client.avatar_url || ''} alt="Avatar do Cliente" />
                               <AvatarFallback>{(client.full_name || client.company_name || 'C').charAt(0)}</AvatarFallback>
                            </Avatar>
                            <span>{client.full_name || client.company_name}</span>
                          </div>
                       </TableCell>
-                       <TableCell className="hidden xl:table-cell">{client.profession || 'Não informado'}</TableCell>
-                       <TableCell className="hidden lg:table-cell">{client.email || 'Não informado'}</TableCell>
-                      <TableCell>
+                       <TableCell className="hidden xl:table-cell py-1 border-r">{client.profession || 'Não informado'}</TableCell>
+                       <TableCell className="hidden lg:table-cell py-1 border-r">{client.email || 'Não informado'}</TableCell>
+                      <TableCell className="py-1 border-r">
                          <Badge variant="outline" className={cn("font-normal", getStatusClass('Ativo'))}>Ativo</Badge>
                       </TableCell>
-                      <TableCell className="text-center">
+                      <TableCell className="py-1 text-center">
                          <Button asChild variant="outline" size="icon" className="h-8 w-8">
                             <Link href={`/dashboard/clientes/${client.id}`}>
                                 <FilePen className="h-4 w-4" />
