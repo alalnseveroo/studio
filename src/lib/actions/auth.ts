@@ -56,16 +56,18 @@ export async function sendClientSignatureOtp(contractId: string) {
     .single();
 
   if (contractError || !contract || !contract.clientes?.email) {
-      return { error: { message: 'Contrato ou e--mail do cliente não encontrado.' }, success: false };
+      return { error: { message: 'Contrato ou e-mail do cliente não encontrado.' }, success: false };
   }
 
   const clientEmail = contract.clientes.email;
 
-  // Usa o método 'resend' que é mais adequado para enviar um OTP para um não-usuário
-  // sem acionar a lógica de "signup".
-  const { error } = await supabase.auth.resend({
-    type: 'signup', // Este tipo funciona para enviar um código de verificação genérico
-    email: clientEmail
+  // Para um não-usuário, usamos signInWithOtp, mas explicitamente desabilitamos a criação de usuário.
+  // O Supabase enviará um código de verificação para o e-mail.
+  const { error } = await supabase.auth.signInWithOtp({
+    email: clientEmail,
+    options: {
+      shouldCreateUser: false,
+    },
   });
 
   if (error) {
