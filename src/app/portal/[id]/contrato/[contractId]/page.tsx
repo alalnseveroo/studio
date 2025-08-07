@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, notFound } from 'next/navigation'
 import { getContractForClientById, signContractAsClient } from '@/lib/actions/contratos'
-import { sendClientSignatureOtp } from '@/lib/actions/auth'
+import { sendClientVerificationCode } from '@/lib/actions/auth'
 import { useToast } from '@/hooks/use-toast'
 import type { Contrato } from '@/lib/types'
 import { Loader2, ArrowLeft, UserCheck, ShieldCheck, Download, Edit, Send, Info, MailCheck } from 'lucide-react'
@@ -58,7 +58,7 @@ export default function ContratoPortalPage() {
     }
   }
 
-  const handleSendOtp = async () => {
+  const handleSendCode = async () => {
     const signatureData = sigCanvas.current?.getTrimmedCanvas().toDataURL('image/png')
     if (!signatureData || sigCanvas.current?.isEmpty()) {
       toast({ variant: 'destructive', title: 'Assinatura Faltando', description: 'Por favor, desenhe sua assinatura.' })
@@ -67,12 +67,17 @@ export default function ContratoPortalPage() {
     setSignature(signatureData)
     setSheetStep('verifying')
     
-    const { success, error } = await sendClientSignatureOtp(contract!.id)
+    const { success, error, code } = await sendClientVerificationCode(contract!.id)
     if (error) {
-      toast({ variant: 'destructive', title: 'Erro ao Enviar Código', description: error.message })
+      toast({ variant: 'destructive', title: 'Erro ao Gerar Código', description: error.message })
       setSheetStep('initial')
     } else if (success) {
-      toast({ title: 'Código Enviado!', description: `Enviamos um código para o e-mail cadastrado.` })
+      // Como não podemos enviar o email, vamos informar ao usuário para pegar o código com a contratada.
+      toast({ 
+        title: 'Código Gerado!', 
+        description: `Um código foi gerado. Por favor, contate a contratada para recebê-lo e continuar a assinatura.`,
+        duration: 10000 
+      })
       setSheetStep('otp_sent')
     }
   }
@@ -213,7 +218,7 @@ export default function ContratoPortalPage() {
           <SheetHeader>
             <SheetTitle>Confirmar Assinatura Digital</SheetTitle>
             <SheetDescription>
-              Para sua segurança, desenhe sua assinatura e confirme com o código que enviaremos para seu e-mail.
+              Para sua segurança, desenhe sua assinatura e confirme com o código de 6 dígitos que será fornecido pela contratada.
             </SheetDescription>
           </SheetHeader>
 
@@ -249,9 +254,9 @@ export default function ContratoPortalPage() {
              <div className="grid gap-6 py-4">
                  <Alert variant="default" className="bg-blue-50 border-blue-200">
                     <MailCheck className="h-4 w-4 text-blue-600" />
-                    <AlertTitle className="text-blue-800">Verifique seu E-mail</AlertTitle>
+                    <AlertTitle className="text-blue-800">Solicite seu Código</AlertTitle>
                     <AlertDescription className="text-blue-700">
-                        Enviamos um código de 6 dígitos para <strong>{contract?.clientes.email}</strong>. Por favor, insira-o abaixo.
+                        Um código de 6 dígitos foi gerado. Entre em contato com a contratada, solicite seu código e insira-o abaixo para validar sua assinatura.
                     </AlertDescription>
                 </Alert>
                 <div className="flex flex-col items-center justify-center gap-2">
@@ -267,9 +272,6 @@ export default function ContratoPortalPage() {
                             <InputOTPSlot index={5} />
                         </InputOTPGroup>
                     </InputOTP>
-                     <Button variant="link" size="sm" className="text-xs" onClick={handleSendOtp}>
-                        Não recebeu? Reenviar código
-                    </Button>
                 </div>
              </div>
           )}
@@ -277,9 +279,9 @@ export default function ContratoPortalPage() {
           <SheetFooter>
             <Button variant="outline" onClick={resetSheet}>Cancelar</Button>
             {sheetStep === 'initial' && (
-                 <Button onClick={handleSendOtp}>
+                 <Button onClick={handleSendCode}>
                     <Send className="mr-2 h-4 w-4" />
-                    Confirmar e Enviar Código
+                    Confirmar Assinatura e Gerar Código
                 </Button>
             )}
              {sheetStep === 'otp_sent' && (

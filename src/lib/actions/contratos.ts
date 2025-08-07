@@ -131,8 +131,6 @@ export async function getContractById(id: string) {
 
 export async function getContractForClientById(contractId: string) {
     const supabase = createClient()
-    // Esta função é para o portal público, então não há verificação de usuário.
-    // A segurança é garantida pelas RLS.
     const { data, error } = await supabase
         .from('contratos')
         .select(`
@@ -154,7 +152,6 @@ export async function getContractForClientById(contractId: string) {
 
 export async function getContractsForClientPortal(clientId: string) {
     const supabase = createClient()
-    // Esta função é para o portal público.
     const { data, error } = await supabase
         .from('contratos')
         .select('*')
@@ -175,7 +172,6 @@ export async function signContractAsProvider(contractId: string, otp: string) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user || !user.email) return { data: null, error: { message: 'Usuário não autenticado.' } };
 
-    // Etapa 0: Verificar o OTP
     const { error: otpError } = await supabase.auth.verifyOtp({
         email: user.email,
         token: otp,
@@ -186,7 +182,6 @@ export async function signContractAsProvider(contractId: string, otp: string) {
         return { data: null, error: { message: `Código OTP inválido ou expirado. ${otpError.message}` } };
     }
     
-    // 1. Buscar o contrato, o perfil e a proposta para gerar o texto final
     const { data: contract, error: contractError } = await supabase
         .from('contratos')
         .select('*, clientes(*), propostas(*)')
@@ -203,7 +198,6 @@ export async function signContractAsProvider(contractId: string, otp: string) {
         return { data: null, error: { message: 'Perfil da contratada ou assinatura não encontrados.' } };
     }
 
-    // 2. Coletar os metadados da assinatura
     const headersList = headers();
     const ipAddress = headersList.get('x-forwarded-for') || 'IP não detectado';
     const userAgent = headersList.get('user-agent') || 'User agent não detectado';
@@ -215,14 +209,12 @@ export async function signContractAsProvider(contractId: string, otp: string) {
         email_verified: user.email,
     };
 
-    // 3. Preparar dados para atualização
     const updatedContractData = { 
         ...contract, 
         provider_signature_data: signatureMetadata,
         provider_signature_image_url: contratada.signature
     };
 
-    // 4. Gerar o novo texto do contrato, agora com a assinatura da contratada
     const finalContractText = getContractTemplate({
         contratada,
         contratante: contract.clientes,
@@ -230,7 +222,6 @@ export async function signContractAsProvider(contractId: string, otp: string) {
         contract: updatedContractData as Contrato,
     });
 
-    // 5. Atualizar o contrato no banco de dados
     const { data, error: updateError } = await supabase
         .from('contratos')
         .update({
@@ -264,7 +255,6 @@ interface SignClientArgs {
 export async function signContractAsClient({ contractId, otp, signatureDataUrl }: SignClientArgs) {
     const supabase = createClient();
     
-    // 1. Buscar contrato e e-mail do cliente
     const { data: contract, error: contractError } = await supabase
         .from('contratos')
         .select('*, clientes(*), propostas(*)')
@@ -275,24 +265,23 @@ export async function signContractAsClient({ contractId, otp, signatureDataUrl }
         return { error: { message: 'Contrato ou e-mail do cliente não encontrado.' } };
     }
     
-    // 2. Verificar o OTP. O tipo 'email' é genérico para verificação de e-mail.
-    const { error: otpError } = await supabase.auth.verifyOtp({
-        email: contract.clientes.email,
-        token: otp,
-        type: 'email'
-    });
+    if (!contract.client_signature_otp || !contract.client_signature_otp_expires_at) {
+        return { error: { message: 'Nenhum código de verificação foi gerado para este contrato.' } };
+    }
 
-    if (otpError) {
-        return { error: { message: `Código OTP inválido ou expirado. ${otpError.message}` } };
+    if (new Date() > new Date(contract.client_signature_otp_expires_at)) {
+        return { error: { message: 'O código de verificação expirou. Por favor, solicite um novo.' } };
     }
     
-    // 3. Buscar perfil da contratada para gerar o texto final
+    if (contract.client_signature_otp !== otp) {
+        return { error: { message: 'O código de verificação está incorreto.' } };
+    }
+
     const { data: contratada, error: providerError } = await getProviderProfile(supabase, contract.user_id);
     if (providerError || !contratada) {
          return { error: { message: 'Perfil da contratada não encontrado.' } };
     }
 
-    // 4. Coletar metadados da assinatura
     const headersList = headers();
     const ipAddress = headersList.get('x-forwarded-for') || 'IP não detectado';
     const userAgent = headersList.get('user-agent') || 'User agent não detectado';
@@ -304,7 +293,6 @@ export async function signContractAsClient({ contractId, otp, signatureDataUrl }
         email_verified: contract.clientes.email,
     };
     
-    // 5. Gerar texto final do contrato com ambas as assinaturas
      const finalContractData = { 
         ...contract, 
         client_signature_data: clientSignatureMetadata,
@@ -318,14 +306,15 @@ export async function signContractAsClient({ contractId, otp, signatureDataUrl }
         contract: finalContractData as Contrato,
     });
 
-    // 6. Atualizar o contrato no banco
     const { error: updateError } = await supabase
         .from('contratos')
         .update({
             status: 'signed_by_client',
             client_signature_data: clientSignatureMetadata,
             client_signature_image_url: signatureDataUrl,
-            full_contract_text: finalContractText
+            full_contract_text: finalContractText,
+            client_signature_otp: null, // Limpa o código após o uso
+            client_signature_otp_expires_at: null, // Limpa a data de expiração
         })
         .eq('id', contractId);
 

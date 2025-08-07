@@ -70,6 +70,8 @@ export type Contrato = {
   full_contract_text: string;
   created_at: string;
   updated_at: string;
+  client_signature_otp: string | null;
+  client_signature_otp_expires_at: string | null;
   clientes: Cliente; 
   propostas: Proposta;
 };
