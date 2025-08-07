@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import crypto from 'crypto';
 import { addOrUpdateContact, sendTransactionalEmail } from '../brevo';
 import { createAdminClient } from '../supabase/admin';
+import { redirect } from 'next/navigation';
 
 export async function signInWithOtp(email: string) {
   const supabase = createClient()
@@ -84,7 +85,7 @@ export async function sendClientVerificationCode(contractId: string) {
     return { success: true, message: `Um e-mail com o código de verificação foi enviado para ${clientEmail}.` };
   } catch (brevoError: any) {
     console.error("Brevo API Error:", brevoError);
-    return { success: false, error: { message: `Falha ao enviar o e-mail de verificação. Detalhes: ${brevoError.message}` } };
+    return { success: false, error: { message: `Falha ao enviar o e--mail de verificação. Detalhes: ${brevoError.message}` } };
   }
 }
 
@@ -102,7 +103,6 @@ export async function verifyOtp(email: string, token: string) {
     return { error: { message: `Não foi possível verificar o OTP. O código pode ser inválido ou ter expirado. Por favor, tente novamente. ${error?.message || ''}` } }
   }
 
-  revalidatePath('/', 'layout')
   return { error: null }
 }
 
