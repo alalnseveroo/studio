@@ -27,4 +27,15 @@ export type Proposta = {
   services: string[];
   created_at: string;
   updated_at: string;
+  payment_type?: 'fixed' | 'hourly' | 'project';
+  value?: number;
+  value_in_words?: string;
+  payment_day?: number;
+  payment_method?: string;
+  contract_duration_type?: 'indefinite' | 'definite';
+  contract_duration_months?: number;
+  start_date?: string;
+  end_date?: string;
+  jurisdiction_city?: string;
+  jurisdiction_state?: string;
 };

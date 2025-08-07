@@ -2,14 +2,8 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
-import { redirect } from 'next/navigation'
 
-interface PropostaFormData {
-  name: string;
-  services: string[];
-}
-
-export async function createProposal(formData: PropostaFormData) {
+export async function createProposal(formData: any) {
   const supabase = createClient()
 
   const { data: { user } } = await supabase.auth.getUser()
@@ -17,12 +11,25 @@ export async function createProposal(formData: PropostaFormData) {
     return { error: { message: 'Usuário não autenticado.' } }
   }
 
+  const { name, services, payment_type, value, value_in_words, payment_day, payment_method, contract_duration_type, contract_duration_months, start_date, end_date, jurisdiction_city, jurisdiction_state } = formData;
+
   const { data, error } = await supabase
     .from('propostas')
     .insert({
       user_id: user.id,
-      name: formData.name,
-      services: formData.services,
+      name,
+      services,
+      payment_type,
+      value,
+      value_in_words,
+      payment_day: parseInt(payment_day, 10),
+      payment_method,
+      contract_duration_type,
+      contract_duration_months: contract_duration_type === 'definite' ? parseInt(contract_duration_months, 10) : null,
+      start_date,
+      end_date: contract_duration_type === 'definite' ? end_date : null,
+      jurisdiction_city,
+      jurisdiction_state,
     })
     .select()
     .single()
@@ -33,7 +40,6 @@ export async function createProposal(formData: PropostaFormData) {
   }
 
   revalidatePath('/dashboard/propostas')
-  // O redirect vai ser chamado do lado do cliente após a resposta de sucesso
   return { data, error: null }
 }
 
