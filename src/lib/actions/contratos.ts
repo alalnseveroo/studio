@@ -276,6 +276,7 @@ export async function signContractAsClient({ contractId, otp, signatureDataUrl }
     }
     
     // 2. Verificar o OTP
+    // Usamos o tipo 'email' aqui, pois foi o tipo enviado pelo signInWithOtp
     const { error: otpError } = await supabase.auth.verifyOtp({
         email: contract.clientes.email,
         token: otp,

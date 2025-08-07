@@ -61,10 +61,13 @@ export async function sendClientSignatureOtp(contractId: string) {
 
   const clientEmail = contract.clientes.email;
 
+  // Para enviar um OTP para um e-mail que não é um usuário registrado sem acionar um erro de "signup",
+  // usamos o método `sendOtp` que é mais genérico.
   const { error } = await supabase.auth.signInWithOtp({
     email: clientEmail,
     options: {
-      shouldCreateUser: false, // Não cria um novo usuário
+      // Esta opção é crucial: impede que o Supabase tente criar um novo usuário.
+      shouldCreateUser: false,
     },
   });
 
