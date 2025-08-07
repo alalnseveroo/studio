@@ -17,7 +17,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form'
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
+import { Switch } from '@/components/ui/switch'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Loader2, User, Building } from 'lucide-react'
 import { getClientById, updateClientProfile } from '@/lib/actions/clients'
@@ -25,7 +25,6 @@ import { useToast } from '@/hooks/use-toast'
 import type { Cliente } from '@/lib/types'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
-import { cn } from '@/lib/utils'
 
 const clientProfileSchema = z.object({
   personType: z.enum(['cpf', 'cnpj'], { required_error: "Você deve selecionar o tipo de pessoa." }),
@@ -154,54 +153,40 @@ export default function ClienteEditPage() {
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-            <FormField
-              control={form.control}
-              name="personType"
-              render={({ field }) => (
-                <FormItem className="space-y-4">
-                  <FormLabel>Tipo de Pessoa</FormLabel>
-                   <RadioGroup
-                      onValueChange={field.onChange}
-                      value={field.value}
-                      className="grid grid-cols-1 md:grid-cols-2 gap-4"
-                    >
-                      <FormItem>
-                         <FormControl>
-                            <Card 
-                                className={cn("cursor-pointer transition-all", field.value === 'cpf' ? "border-primary bg-primary/10" : "")}
-                                onClick={() => field.onChange('cpf')}
-                            >
-                                <CardHeader className="flex flex-row items-center justify-between p-4">
-                                    <div className="space-y-1">
-                                        <CardTitle className="flex items-center gap-2 text-base"><User className="h-5 w-5" /> Pessoa Física</CardTitle>
-                                        <CardDescription className="text-xs">Para contratar serviços como pessoa individual.</CardDescription>
-                                    </div>
-                                    <RadioGroupItem value="cpf" id="cpf" className="translate-y-2" />
-                                </CardHeader>
-                            </Card>
-                         </FormControl>
-                      </FormItem>
-                      <FormItem>
-                        <FormControl>
-                            <Card 
-                                className={cn("cursor-pointer transition-all", field.value === 'cnpj' ? "border-primary bg-primary/10" : "")}
-                                onClick={() => field.onChange('cnpj')}
-                             >
-                                <CardHeader className="flex flex-row items-center justify-between p-4">
-                                     <div className="space-y-1">
-                                        <CardTitle className="flex items-center gap-2 text-base"><Building className="h-5 w-5" /> Pessoa Jurídica</CardTitle>
-                                        <CardDescription className="text-xs">Para contratar serviços em nome de uma empresa.</CardDescription>
-                                    </div>
-                                    <RadioGroupItem value="cnpj" id="cnpj" className="translate-y-2" />
-                                </CardHeader>
-                            </Card>
-                         </FormControl>
-                      </FormItem>
-                   </RadioGroup>
-                   <FormMessage />
-                </FormItem>
-              )}
-            />
+            <Card>
+                <CardHeader>
+                    <CardTitle>Tipo de Pessoa</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <FormField
+                    control={form.control}
+                    name="personType"
+                    render={({ field }) => (
+                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                            <div className="space-y-0.5">
+                            <FormLabel className="text-base">
+                                Selecione o tipo de pessoa
+                            </FormLabel>
+                            <FormDescription>
+                                O cliente é Pessoa Física (CPF) ou Pessoa Jurídica (CNPJ)?
+                            </FormDescription>
+                            </div>
+                            <FormControl>
+                            <div className="flex items-center space-x-2">
+                                <span className={personType === 'cpf' ? 'font-bold' : ''}>CPF</span>
+                                <Switch
+                                checked={field.value === 'cnpj'}
+                                onCheckedChange={(checked) => field.onChange(checked ? 'cnpj' : 'cpf')}
+                                />
+                                <span className={personType === 'cnpj' ? 'font-bold' : ''}>CNPJ</span>
+                            </div>
+                            </FormControl>
+                        </FormItem>
+                    )}
+                    />
+                </CardContent>
+            </Card>
+
 
           <Card>
             <CardHeader>
