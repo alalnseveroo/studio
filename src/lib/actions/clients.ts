@@ -25,8 +25,8 @@ export async function addClient(name: string) {
     user_id: user.id,
     client_id: clientId,
     avatar_url: avatarUrl,
-    full_name: name, // Começamos com o nome no campo de pessoa física
-    person_type: 'cpf' // Default to CPF, can be changed later
+    full_name: name,
+    person_type: 'cpf'
   };
 
   const { data, error } = await supabase.from('clientes').insert(clientData).select().single()
@@ -42,7 +42,10 @@ export async function addClient(name: string) {
 
 export async function getClients() {
     const supabase = createClient()
-    const { data, error } = await supabase.from('clientes').select('*').order('created_at', { ascending: false });
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { data: [], error: { message: 'Usuário não autenticado.' } };
+
+    const { data, error } = await supabase.from('clientes').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
 
     if (error) {
         console.error('Supabase error:', error);
@@ -54,6 +57,7 @@ export async function getClients() {
 
 export async function getClientById(id: string) {
     const supabase = createClient()
+    // A função é pública, então não verificamos o usuário aqui. A RLS cuida da segurança.
     const { data, error } = await supabase.from('clientes').select('*').eq('id', id).single();
 
     if (error) {
