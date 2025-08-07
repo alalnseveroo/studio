@@ -99,12 +99,12 @@ export default function ClientesPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="hidden w-[100px] sm:table-cell">
+                    <TableHead className="hidden w-[100px] border-r sm:table-cell">
                       <span className="sr-only">Avatar</span>
                     </TableHead>
-                    <TableHead>Nome</TableHead>
-                    <TableHead>ID Cliente</TableHead>
-                    <TableHead className="hidden md:table-cell">Status</TableHead>
+                    <TableHead className="border-r">Nome</TableHead>
+                    <TableHead className="border-r">ID Cliente</TableHead>
+                    <TableHead className="hidden border-r md:table-cell">Status</TableHead>
                     <TableHead>
                       <span className="sr-only">Ações</span>
                     </TableHead>
@@ -113,20 +113,20 @@ export default function ClientesPage() {
                 <TableBody>
                   {paginatedClients.map((client) => (
                     <TableRow key={client.id}>
-                      <TableCell className="hidden sm:table-cell">
+                      <TableCell className="hidden py-2 border-r sm:table-cell">
                         <Avatar className="h-9 w-9">
                             <AvatarImage src={client.avatar_url || ''} alt="Avatar do Cliente" />
                             <AvatarFallback>{client.full_name ? client.full_name.charAt(0) : 'C'}</AvatarFallback>
                         </Avatar>
                       </TableCell>
-                      <TableCell className="font-medium">{client.full_name || client.company_name}</TableCell>
-                       <TableCell>
+                      <TableCell className="font-medium py-2 border-r">{client.full_name || client.company_name}</TableCell>
+                       <TableCell className="py-2 border-r">
                         <Badge variant="outline">{client.client_id}</Badge>
                       </TableCell>
-                      <TableCell className="hidden md:table-cell">
+                      <TableCell className="hidden py-2 border-r md:table-cell">
                          <Badge variant="secondary">Ativo</Badge>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="py-2">
                          <Button asChild variant="outline" size="sm">
                             <Link href={`/dashboard/clientes/${client.id}`}>
                                 Editar
