@@ -80,7 +80,7 @@ export default async function DashboardLayout({
           </form>
         </SidebarFooter>
       </Sidebar>
-      <SidebarInset className="bg-background p-2 md:p-4">{children}</SidebarInset>
+      <SidebarInset className="bg-background">{children}</SidebarInset>
     </SidebarProvider>
   )
 }
