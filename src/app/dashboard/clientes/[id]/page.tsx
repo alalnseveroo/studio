@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { useParams } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
@@ -53,7 +54,9 @@ const clientProfileSchema = z.object({
 
 type ClientFormData = z.infer<typeof clientProfileSchema>;
 
-export default function ClienteEditPage({ params }: { params: { id: string } }) {
+export default function ClienteEditPage() {
+  const params = useParams();
+  const clientId = params.id as string;
   const [isLoading, setIsLoading] = useState(false)
   const [client, setClient] = useState<Cliente | null>(null)
   const { toast } = useToast()
@@ -66,7 +69,8 @@ export default function ClienteEditPage({ params }: { params: { id: string } }) 
   })
 
   const fetchClientData = useCallback(async () => {
-    const { data, error } = await getClientById(params.id)
+    if (!clientId) return;
+    const { data, error } = await getClientById(clientId)
     if (error) {
       toast({
         variant: 'destructive',
@@ -91,7 +95,7 @@ export default function ClienteEditPage({ params }: { params: { id: string } }) 
         address: data.address || '',
       });
     }
-  }, [params.id, toast, form])
+  }, [clientId, toast, form])
 
   useEffect(() => {
     fetchClientData()
@@ -103,7 +107,7 @@ export default function ClienteEditPage({ params }: { params: { id: string } }) 
   const onSubmit = async (values: ClientFormData) => {
     setIsLoading(true)
     
-    const { error } = await updateClientProfile(params.id, values);
+    const { error } = await updateClientProfile(clientId, values);
 
     setIsLoading(false)
 
