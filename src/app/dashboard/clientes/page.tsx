@@ -151,7 +151,7 @@ export default function ClientesPage() {
                      <div className="text-xs space-y-1 text-muted-foreground">
                         <p><span className="font-medium text-foreground">E-mail:</span> {client.email || 'Não informado'}</p>
                         <p><span className="font-medium text-foreground">Profissão:</span> {client.profession || 'Não informado'}</p>
-                        <p><span className="font-medium text-foreground">Status:</span> <Badge variant="outline" className={cn("font-normal text-xs px-1.5 py-0", getStatusClass('Ativo'))}>Ativo</Badge></p>
+                        <div className="flex items-center gap-1.5"><span className="font-medium text-foreground">Status:</span> <Badge variant="outline" className={cn("font-normal text-xs px-1.5 py-0", getStatusClass('Ativo'))}>Ativo</Badge></div>
                     </div>
                   </div>
                 ))}
