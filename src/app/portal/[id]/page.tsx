@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { useParams } from 'next/navigation'
 import { getClientById } from '@/lib/actions/clients'
 import { getContractsForClientPortal } from '@/lib/actions/contratos'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -12,24 +13,22 @@ import Link from 'next/link'
 import type { Cliente, Contrato } from '@/lib/types'
 import { Badge } from '@/components/ui/badge'
 
-interface PortalPageProps {
-  params: {
-    id: string
-  }
-}
+export default function ClientPortalPage() {
+  const params = useParams()
+  const clientId = params.id as string
 
-export default function ClientPortalPage({ params }: PortalPageProps) {
   const [client, setClient] = useState<Cliente | null>(null)
   const [contracts, setContracts] = useState<Contrato[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   const fetchData = useCallback(async () => {
+    if (!clientId) return
     setIsLoading(true)
     setError(null)
     const [clientResult, contractsResult] = await Promise.all([
-      getClientById(params.id),
-      getContractsForClientPortal(params.id),
+      getClientById(clientId),
+      getContractsForClientPortal(clientId),
     ])
 
     if (clientResult.error || !clientResult.data) {
@@ -44,7 +43,7 @@ export default function ClientPortalPage({ params }: PortalPageProps) {
       setContracts(contractsResult.data || [])
     }
     setIsLoading(false)
-  }, [params.id])
+  }, [clientId])
 
   useEffect(() => {
     fetchData()
