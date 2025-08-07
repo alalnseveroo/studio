@@ -10,9 +10,6 @@ export async function signInWithOtp(email: string) {
     email,
     options: {
       shouldCreateUser: true,
-      // This will be the page where the user lands after clicking the link in the email.
-      // We are not using email link authentication, but OTP, so this is not strictly necessary for the OTP flow itself.
-      // However, it's good practice to have it. The user will be redirected to the verify-otp page from the client side anyway.
       emailRedirectTo: new URL('/verify-otp', process.env.NEXT_PUBLIC_SITE_URL).toString(),
     },
   })
@@ -23,6 +20,27 @@ export async function signInWithOtp(email: string) {
 
   return { error: null }
 }
+
+
+export async function sendSignatureOtp() {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user || !user.email) {
+    return { error: { message: 'Usuário não autenticado ou e-mail não encontrado.' } };
+  }
+
+  // Envia um OTP que pode ser verificado sem alterar a sessão do usuário.
+  // Usa o template de "Email change" como um OTP genérico de verificação.
+  const { error } = await supabase.auth.reauthenticate();
+  
+  if (error) {
+     return { error: { message: `Não foi possível enviar o OTP: ${error.message}` } };
+  }
+
+  return { error: null, success: true, email: user.email };
+}
+
 
 export async function verifyOtp(email: string, token: string) {
   const supabase = createClient()
@@ -38,8 +56,6 @@ export async function verifyOtp(email: string, token: string) {
   }
 
   revalidatePath('/', 'layout')
-  // We will handle redirection on the client side after this action returns successfully.
-  // redirect('/dashboard')
   return { error: null }
 }
 

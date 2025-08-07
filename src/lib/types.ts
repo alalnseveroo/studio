@@ -64,22 +64,18 @@ export type Contrato = {
   status: 'draft' | 'signed_by_provider' | 'signed_by_client';
   provider_signature_data: SignatureData | null;
   client_signature_data: SignatureData | null;
-  provider_signature_image_url: string | null; // Assinatura da contratada
-  client_signature_image_url: string | null; // Assinatura do cliente
+  provider_signature_image_url: string | null;
+  client_signature_image_url: string | null;
   full_contract_text: string;
   created_at: string;
   updated_at: string;
-  clientes: Cliente; // Relação para obter o nome do cliente
-  propostas: Proposta; // Relação para obter o nome da proposta
+  clientes: Cliente; 
+  propostas: Proposta;
 };
 
 export type SignatureData = {
   signed_at: string;
   ip_address: string;
   user_agent: string;
-  // Geo-localização pode ser mais complexa de obter, deixamos como opcional
-  geolocation?: {
-    latitude: number;
-    longitude: number;
-  };
+  email_verified: string;
 };

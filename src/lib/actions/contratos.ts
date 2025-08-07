@@ -49,7 +49,6 @@ export async function createContract(clienteId: string, propostaId: string) {
   }
 
   // 2. Gerar o texto completo do contrato
-  // Neste momento, o contrato ainda não foi assinado, então passamos null para os dados de assinatura.
   const fullContractText = getContractTemplate({ contratada, contratante: cliente, proposta, contract: null });
   
   // 3. Gerar código único do contrato
@@ -64,7 +63,7 @@ export async function createContract(clienteId: string, propostaId: string) {
       proposta_id: propostaId,
       contract_code: contractCode,
       status: 'draft',
-      full_contract_text: fullContractText // Salva a versão inicial do texto
+      full_contract_text: fullContractText
     })
     .select(`
         *,
@@ -131,10 +130,21 @@ export async function getContractById(id: string) {
 }
 
 
-export async function signContractAsProvider(contractId: string) {
+export async function signContractAsProvider(contractId: string, otp: string) {
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { data: null, error: { message: 'Usuário não autenticado.' } };
+    if (!user || !user.email) return { data: null, error: { message: 'Usuário não autenticado.' } };
+
+    // Etapa 0: Verificar o OTP
+    const { error: otpError } = await supabase.auth.verifyOtp({
+        email: user.email,
+        token: otp,
+        type: 'email' // O tipo 'email' aqui é para confirmar uma ação, não para login
+    });
+    
+    if (otpError) {
+        return { data: null, error: { message: `Código OTP inválido ou expirado. ${otpError.message}` } };
+    }
     
     // 1. Buscar o contrato, o perfil e a proposta para gerar o texto final
     const { data: contract, error: contractError } = await supabase
@@ -162,13 +172,14 @@ export async function signContractAsProvider(contractId: string) {
         signed_at: new Date().toISOString(),
         ip_address: ipAddress,
         user_agent: userAgent,
+        email_verified: user.email,
     };
 
     // 3. Preparar dados para atualização
     const updatedContractData = { 
         ...contract, 
         provider_signature_data: signatureMetadata,
-        provider_signature_image_url: contratada.signature // Salva a imagem da assinatura do perfil
+        provider_signature_image_url: contratada.signature
     };
 
     // 4. Gerar o novo texto do contrato, agora com a assinatura da contratada
@@ -179,14 +190,14 @@ export async function signContractAsProvider(contractId: string) {
         contract: updatedContractData as Contrato,
     });
 
-    // 5. Atualizar o contrato no banco de dados com o novo status, metadados e a URL da imagem da assinatura
+    // 5. Atualizar o contrato no banco de dados
     const { data, error: updateError } = await supabase
         .from('contratos')
         .update({
             status: 'signed_by_provider',
             provider_signature_data: signatureMetadata,
-            provider_signature_image_url: contratada.signature, // Adiciona a imagem da assinatura
-            full_contract_text: finalContractText // Atualiza o texto do contrato com a assinatura
+            provider_signature_image_url: contratada.signature,
+            full_contract_text: finalContractText
         })
         .eq('id', contractId)
         .eq('user_id', user.id)
