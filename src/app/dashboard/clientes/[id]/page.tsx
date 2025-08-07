@@ -35,14 +35,11 @@ const clientTypeSchema = z.object({
 });
 
 const clientInfoSchema = z.object({
-  // Common
   email: z.string().email({ message: "Por favor, insira um e-mail válido." }),
-  // PJ Fields
   companyName: z.string().optional(),
   cnpj: z.string().optional(),
   representativeName: z.string().optional(),
   representativeCpf: z.string().optional(),
-  // PF Fields
   fullName: z.string().optional(),
   nationality: z.string().optional(),
   civilStatus: z.string().optional(),
@@ -85,7 +82,7 @@ const combinedSchema = z.object({
     if (data.personType === 'cnpj') {
         return !!data.companyName && !!data.cnpj && !!data.representativeName && !!data.representativeCpf;
     }
-    return true; // Return true if not 'cnpj' so it can be validated by the next refine
+    return true;
 }, {
     message: "Para Pessoa Jurídica, preencha: Nome da Empresa, CNPJ, Nome e CPF do representante.",
     path: ["companyName"],
@@ -116,9 +113,24 @@ export default function ClienteEditPage() {
     resolver: zodResolver(combinedSchema),
     mode: 'onBlur',
     defaultValues: {
-      personType: undefined,
-      fullName: '',
-      email: '',
+        personType: undefined,
+        email: '',
+        companyName: '',
+        cnpj: '',
+        representativeName: '',
+        representativeCpf: '',
+        fullName: '',
+        nationality: '',
+        civilStatus: '',
+        profession: '',
+        cpf: '',
+        cep: '',
+        street: '',
+        number: '',
+        complement: '',
+        neighborhood: '',
+        city: '',
+        state: '',
     },
   });
 
@@ -228,9 +240,8 @@ export default function ClienteEditPage() {
     } else {
       toast({ variant: 'default', title: 'Salvo!', description: 'As informações foram atualizadas.', className: 'bg-green-100 border-green-200 text-green-800' });
       setEditingStep(null);
-      await fetchClientData(); // Refresh data to re-evaluate completion status
+      await fetchClientData();
       
-      // Move to next logical tab
       if (step === 'type') setActiveTab('info');
       else if (step === 'info') setActiveTab('address');
 
@@ -298,7 +309,6 @@ export default function ClienteEditPage() {
 }
 
 
-// Step Components
 interface StepProps {
   isEditing: boolean;
   setEditingStep: (step: StepName | null) => void;
