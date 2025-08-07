@@ -29,7 +29,7 @@ export default async function DashboardLayout({
 
   return (
     <SidebarProvider>
-      <Sidebar>
+      <Sidebar className="bg-background border-r-0">
         <SidebarHeader className="p-2">
             <div className="flex items-center justify-between">
                 <h1 className="text-2xl font-bold text-primary font-headline px-2">
@@ -80,7 +80,7 @@ export default async function DashboardLayout({
           </form>
         </SidebarFooter>
       </Sidebar>
-      <SidebarInset className="bg-background">{children}</SidebarInset>
+      <SidebarInset className="bg-background p-4">{children}</SidebarInset>
     </SidebarProvider>
   )
 }
