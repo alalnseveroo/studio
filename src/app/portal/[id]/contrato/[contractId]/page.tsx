@@ -20,7 +20,6 @@ import SignatureCanvas from 'react-signature-canvas'
 import PixQRCode from '@/components/pix-qrcode'
 import { cn } from '@/lib/utils'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
-import Confetti from 'react-confetti'
 
 
 type Step = 'review' | 'sign' | 'payment';
@@ -36,7 +35,6 @@ export default function ContratoPortalPage() {
   const [provider, setProvider] = useState<(Profile & {email: string}) | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [activeStep, setActiveStep] = useState<Step>('review');
-  const [showConfetti, setShowConfetti] = useState(false);
   
   const [otpStep, setOtpStep] = useState<OtpStep>('initial');
   const [otp, setOtp] = useState('');
@@ -64,7 +62,6 @@ export default function ContratoPortalPage() {
       }
       if (data.client_signature_data) {
         setActiveStep('payment');
-        setShowConfetti(true);
       } else if (data.provider_signature_data) {
         setActiveStep('review');
       }
@@ -157,7 +154,6 @@ export default function ContratoPortalPage() {
 
   return (
     <>
-      {showConfetti && <Confetti recycle={false} onConfettiComplete={() => setShowConfetti(false)} />}
       <div className="flex min-h-screen w-full justify-center bg-muted/40 px-4 py-8 md:py-16">
         <main className="w-full max-w-4xl space-y-6">
           <div className="flex items-center gap-4">
@@ -182,7 +178,6 @@ export default function ContratoPortalPage() {
               className="w-full space-y-4"
               value={activeStep}
               onValueChange={(value) => {
-                // Permite abrir apenas se a etapa ainda não foi concluída
                 if (value === 'review' && !isReviewStepComplete) setActiveStep('review');
                 if (value === 'sign' && isReviewStepComplete && !isSignStepComplete) setActiveStep('sign');
                 if (value === 'payment' && isSignStepComplete) setActiveStep('payment');
@@ -374,5 +369,3 @@ export default function ContratoPortalPage() {
     </>
   )
 }
-
-    
