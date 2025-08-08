@@ -8,19 +8,22 @@ import { getProfile } from '@/lib/actions/profile'
 import { sendClientVerificationCode } from '@/lib/actions/auth'
 import { useToast } from '@/hooks/use-toast'
 import type { Contrato, Profile } from '@/lib/types'
-import { Loader2, ArrowLeft, UserCheck, ShieldCheck, Download, Edit, Send, Info, MailCheck } from 'lucide-react'
+import { Loader2, ArrowLeft, UserCheck, ShieldCheck, Download, Edit, Send, Info, MailCheck, FileText, Lock, CreditCard } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { format } from 'date-fns'
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from '@/components/ui/sheet'
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp'
 import SignatureCanvas from 'react-signature-canvas'
 import PixQRCode from '@/components/pix-qrcode'
+import { cn } from '@/lib/utils'
 
-type SheetStep = 'initial' | 'otp_sent' | 'verifying'
+
+type Step = 1 | 2 | 3;
+type OtpStep = 'initial' | 'otp_sent' | 'verifying';
+
 
 export default function ContratoPortalPage() {
   const params = useParams()
@@ -30,11 +33,12 @@ export default function ContratoPortalPage() {
   const [contract, setContract] = useState<Contrato | null>(null)
   const [provider, setProvider] = useState<(Profile & {email: string}) | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const [isSheetOpen, setIsSheetOpen] = useState(false)
-  const [sheetStep, setSheetStep] = useState<SheetStep>('initial')
-  const [otp, setOtp] = useState('')
-  const [signature, setSignature] = useState<string | null>(null)
-  const sigCanvas = useRef<SignatureCanvas>(null)
+  const [currentStep, setCurrentStep] = useState<Step>(1);
+  
+  const [otpStep, setOtpStep] = useState<OtpStep>('initial');
+  const [otp, setOtp] = useState('');
+  const [signature, setSignature] = useState<string | null>(null);
+  const sigCanvas = useRef<SignatureCanvas>(null);
   const { toast } = useToast()
 
   const fetchContract = useCallback(async () => {
@@ -55,6 +59,10 @@ export default function ContratoPortalPage() {
           setProvider(providerData as Profile & { email: string });
         }
       }
+      // Se já assinado, vai direto para a etapa final
+      if (data.client_signature_data) {
+        setCurrentStep(3);
+      }
     }
     setIsLoading(false)
   }, [contractId, clientId])
@@ -63,14 +71,6 @@ export default function ContratoPortalPage() {
     fetchContract()
   }, [fetchContract])
 
-  const handleOpenSignatureSheet = () => {
-    if (contract?.clientes.email) {
-      setIsSheetOpen(true)
-    } else {
-      toast({ variant: 'destructive', title: 'Erro', description: 'O e-mail do cliente não está configurado para enviar o código de assinatura.' })
-    }
-  }
-
   const handleSendCode = async () => {
     const signatureData = sigCanvas.current?.getTrimmedCanvas().toDataURL('image/png')
     if (!signatureData || sigCanvas.current?.isEmpty()) {
@@ -78,19 +78,19 @@ export default function ContratoPortalPage() {
       return
     }
     setSignature(signatureData)
-    setSheetStep('verifying')
+    setOtpStep('verifying')
     
     const { success, error, message } = await sendClientVerificationCode(contract!.id)
     if (error) {
       toast({ variant: 'destructive', title: 'Erro ao Enviar Código', description: error.message })
-      setSheetStep('initial')
+      setOtpStep('initial')
     } else if (success) {
       toast({ 
         title: 'Verifique seu E-mail!', 
         description: message,
         duration: 10000 
       })
-      setSheetStep('otp_sent')
+      setOtpStep('otp_sent')
     }
   }
 
@@ -99,12 +99,12 @@ export default function ContratoPortalPage() {
       toast({ variant: 'destructive', title: 'Dados Inválidos', description: 'O código deve ter 6 dígitos e a assinatura deve ser fornecida.' })
       return
     }
-    setSheetStep('verifying')
+    setOtpStep('verifying')
     
     const { error } = await signContractAsClient({ contractId: contract!.id, otp, signatureDataUrl: signature })
     if (error) {
       toast({ variant: 'destructive', title: 'Erro ao Assinar', description: error.message })
-      setSheetStep('otp_sent')
+      setOtpStep('otp_sent')
       setOtp('')
     } else {
       toast({
@@ -113,18 +113,8 @@ export default function ContratoPortalPage() {
         className: 'bg-green-100 border-green-200 text-green-800'
       })
       await fetchContract()
-      resetSheet()
+      setCurrentStep(3);
     }
-  }
-
-  const resetSheet = () => {
-    setIsSheetOpen(false)
-    setTimeout(() => {
-      setSheetStep('initial')
-      setOtp('')
-      setSignature(null)
-      sigCanvas.current?.clear()
-    }, 300)
   }
 
   const handleDownloadPdf = async () => {
@@ -152,15 +142,13 @@ export default function ContratoPortalPage() {
 
   const isSignedByProvider = !!contract.provider_signature_data
   const isSignedByClient = !!contract.client_signature_data
+  const isReadyToSign = isSignedByProvider && !isSignedByClient;
 
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'draft': return 'Rascunho'
-      case 'signed_by_provider': return 'Aguardando sua Assinatura'
-      case 'signed_by_client': return 'Finalizado'
-      default: return 'Desconhecido'
-    }
-  }
+  const steps = [
+    { id: 1, name: 'Revisar o contrato', icon: FileText },
+    { id: 2, name: 'Solicitar verificação e assinar', icon: Lock },
+    { id: 3, name: 'Concretizar parceria', icon: CreditCard },
+  ];
 
   return (
     <>
@@ -174,72 +162,179 @@ export default function ContratoPortalPage() {
               </Link>
             </Button>
             <h1 className="flex-1 text-2xl font-bold">Contrato {contract.contract_code}</h1>
-            <div className="flex items-center gap-2">
-                {isSignedByClient && (
-                    <Button onClick={handleDownloadPdf}>
-                        <Download className="mr-2 h-4 w-4" />
-                        Baixar PDF
-                    </Button>
-                )}
-                {isSignedByProvider && !isSignedByClient && (
-                    <Button onClick={handleOpenSignatureSheet}>
-                        <Edit className="mr-2 h-4 w-4" />
-                        Assinar Contrato
-                    </Button>
-                )}
-            </div>
+             {isSignedByClient && (
+                <Button onClick={handleDownloadPdf} size="sm">
+                    <Download className="mr-2 h-4 w-4" />
+                    Baixar PDF
+                </Button>
+            )}
           </div>
+          
+           {/* Steps Navigator */}
+           <div className="p-4 rounded-lg border bg-card">
+              <nav aria-label="Progress">
+                <ol role="list" className="space-y-4 md:flex md:space-x-8 md:space-y-0">
+                  {steps.map((step, index) => (
+                    <li key={step.name} className="md:flex-1">
+                      <div
+                        className={cn(
+                          "group flex flex-col border-l-4 py-2 pl-4 md:border-l-0 md:border-t-4 md:pb-0 md:pl-0 md:pt-4",
+                          currentStep > step.id ? "border-primary" : "border-gray-200",
+                           currentStep === step.id ? "border-primary" : "group-hover:border-gray-300",
+                        )}
+                      >
+                        <span
+                           className={cn(
+                            "text-sm font-semibold uppercase tracking-wider",
+                            currentStep > step.id ? "text-primary" : "text-muted-foreground",
+                            currentStep === step.id ? "text-primary" : ""
+                          )}
+                        >
+                          ETAPA {step.id}
+                        </span>
+                        <span className="text-sm font-medium">{step.name}</span>
+                      </div>
+                    </li>
+                  ))}
+                </ol>
+              </nav>
+            </div>
+          
+            {/* Step 1: Review Contract */}
+            {currentStep === 1 && (
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Etapa 1: Revise os Termos do Contrato</CardTitle>
+                        <CardDescription>
+                            Leia atentamente todo o contrato abaixo. Se estiver de acordo, prossiga para a próxima etapa.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <div
+                            id="contract-content"
+                            className="prose prose-sm max-w-none rounded-md border bg-gray-50 p-6"
+                            dangerouslySetInnerHTML={{ __html: contract.full_contract_text || '' }}
+                        />
+                    </CardContent>
+                    <CardFooter>
+                         <Button onClick={() => setCurrentStep(2)} disabled={!isReadyToSign} className="ml-auto">
+                            {isReadyToSign ? 'Li e concordo, avançar para assinatura' : 'Aguardando assinatura da contratada'}
+                        </Button>
+                    </CardFooter>
+                </Card>
+            )}
+            
+            {/* Step 2: Sign */}
+            {currentStep === 2 && (
+                <Card>
+                     <CardHeader>
+                        <CardTitle>Etapa 2: Assinatura Digital</CardTitle>
+                        <CardDescription>
+                          Para sua segurança, desenhe sua assinatura e confirme com o código de 6 dígitos que será enviado para o seu e-mail.
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-6">
+                        {otpStep === 'initial' && (
+                             <div className="grid gap-4 py-4">
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium">1. Desenhe sua assinatura</label>
+                                    <div className="w-full h-48 rounded-md border border-input bg-background">
+                                        <SignatureCanvas
+                                            ref={sigCanvas}
+                                            penColor='black'
+                                            canvasProps={{className: 'w-full h-full'}}
+                                        />
+                                    </div>
+                                    <Button type="button" variant="outline" size="sm" onClick={() => sigCanvas.current?.clear()} className="mt-2">
+                                        Limpar
+                                    </Button>
+                                </div>
+                             </div>
+                        )}
+                        {otpStep === 'otp_sent' && (
+                             <div className="grid gap-6 py-4">
+                                 <Alert variant="default" className="bg-blue-50 border-blue-200">
+                                    <MailCheck className="h-4 w-4 text-blue-600" />
+                                    <AlertTitle className="text-blue-800">Verifique seu E-mail</AlertTitle>
+                                    <AlertDescription className="text-blue-700">
+                                        Um e-mail com um código de 6 dígitos foi enviado para você. Insira-o abaixo para validar sua assinatura.
+                                    </AlertDescription>
+                                </Alert>
+                                <div className="flex flex-col items-center justify-center gap-2">
+                                    <label className="text-sm font-medium">2. Insira o código de verificação</label>
+                                    <InputOTP maxLength={6} value={otp} onChange={(value) => setOtp(value)}>
+                                        <InputOTPGroup>
+                                            <InputOTPSlot index={0} />
+                                            <InputOTPSlot index={1} />
+                                            <InputOTPSlot index={2} />
+                                        </InputOTPGroup>
+                                        <InputOTPGroup>
+                                            <InputOTPSlot index={3} />
+                                            <InputOTPSlot index={4} />
+                                            <InputOTPSlot index={5} />
+                                        </InputOTPGroup>
+                                    </InputOTP>
+                                </div>
+                             </div>
+                        )}
+                         {otpStep === 'verifying' && (
+                            <div className="flex justify-center items-center py-12">
+                                <Loader2 className="mr-2 h-8 w-8 animate-spin" />
+                                <p>Processando...</p>
+                            </div>
+                         )}
+                      </CardContent>
+                      <CardFooter className="gap-2">
+                         <Button variant="outline" onClick={() => setCurrentStep(1)}>Voltar</Button>
+                         <div className="flex-grow" />
+                         {otpStep === 'initial' && (
+                             <Button onClick={handleSendCode}>
+                                <Send className="mr-2 h-4 w-4" />
+                                Confirmar Assinatura e Enviar Código
+                            </Button>
+                         )}
+                         {otpStep === 'otp_sent' && (
+                             <Button onClick={handleVerifyAndSign}>
+                                <ShieldCheck className="mr-2 h-4 w-4" />
+                                Verificar e Assinar Contrato
+                            </Button>
+                         )}
+                      </CardFooter>
+                </Card>
+            )}
 
-          {isSignedByClient && (
-            <Alert variant="default" className="bg-green-50 border-green-200">
-              <ShieldCheck className="h-4 w-4 text-green-600" />
-              <AlertTitle className="text-green-800">Assinado por Você!</AlertTitle>
-              <AlertDescription className="text-green-700">
-                Este contrato foi finalizado e assinado por você em {format(new Date(contract.client_signature_data!.signed_at), 'dd/MM/yyyy HH:mm:ss')}.
-              </AlertDescription>
-            </Alert>
-          )}
-
-          {isSignedByProvider && !isSignedByClient && (
-            <Alert>
-              <UserCheck className="h-4 w-4" />
-              <AlertTitle>Pronto para Assinar</AlertTitle>
-              <AlertDescription>
-                Este contrato já foi assinado pela contratada e está aguardando a sua assinatura para ser finalizado.
-              </AlertDescription>
-            </Alert>
-          )}
-
-          {isSignedByClient && provider && (
-            <Card>
-                <CardHeader>
-                    <CardTitle>Pagamento via PIX</CardTitle>
-                    <CardDescription>Realize o pagamento da primeira parcela para ativar os serviços.</CardDescription>
-                </CardHeader>
-                <CardContent className="flex justify-center">
-                    <PixQRCode
-                        pixKey={provider.cpf || provider.cnpj || ''}
-                        value={contract.propostas?.value || 0}
-                        beneficiaryName={provider.full_name || provider.company_name || 'Beneficiário'}
-                        beneficiaryCity={provider.address?.split(',').slice(-2, -1)[0]?.trim() || 'CIDADE'}
-                    />
-                </CardContent>
-            </Card>
-          )}
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Detalhes do Contrato</CardTitle>
-              <CardDescription>Status: {getStatusText(contract.status)}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div
-                id="contract-content"
-                className="prose prose-sm max-w-none rounded-md border bg-gray-50 p-6"
-                dangerouslySetInnerHTML={{ __html: contract.full_contract_text || '' }}
-              />
-            </CardContent>
-          </Card>
+            {/* Step 3: Payment */}
+             {currentStep === 3 && (
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Etapa 3: Concretize a Parceria</CardTitle>
+                        <Alert variant="default" className="bg-green-50 border-green-200 mt-4">
+                          <ShieldCheck className="h-4 w-4 text-green-600" />
+                          <AlertTitle className="text-green-800">Contrato Assinado com Sucesso!</AlertTitle>
+                          <AlertDescription className="text-green-700">
+                            Obrigado! Sua assinatura foi registrada. Para iniciar os serviços, realize o pagamento da primeira parcela.
+                          </AlertDescription>
+                        </Alert>
+                    </CardHeader>
+                    <CardContent className="flex justify-center">
+                        {provider ? (
+                             <PixQRCode
+                                pixKey={provider.cpf || provider.cnpj || ''}
+                                value={contract.propostas?.value || 0}
+                                beneficiaryName={provider.full_name || provider.company_name || 'Beneficiário'}
+                                beneficiaryCity={provider.address?.split(',').slice(-2, -1)[0]?.trim() || 'CIDADE'}
+                            />
+                        ) : (
+                            <p>Carregando informações de pagamento...</p>
+                        )}
+                    </CardContent>
+                    <CardFooter>
+                        <p className="text-xs text-muted-foreground text-center w-full">
+                            Após o pagamento, a contratada será notificada para dar início aos trabalhos.
+                        </p>
+                    </CardFooter>
+                </Card>
+            )}
           
           {/* Div oculta para geração de PDF */}
           <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
@@ -248,92 +343,6 @@ export default function ContratoPortalPage() {
 
         </main>
       </div>
-
-       <Sheet open={isSheetOpen} onOpenChange={resetSheet}>
-        <SheetContent className="sm:max-w-lg">
-          <SheetHeader>
-            <SheetTitle>Confirmar Assinatura Digital</SheetTitle>
-            <SheetDescription>
-              Para sua segurança, desenhe sua assinatura e confirme com o código de 6 dígitos que será enviado para o seu e-mail.
-            </SheetDescription>
-          </SheetHeader>
-
-          {sheetStep === 'initial' && (
-             <div className="grid gap-4 py-4">
-                <div className="space-y-2">
-                    <label className="text-sm font-medium">Desenhe sua assinatura</label>
-                    <div className="w-full h-48 rounded-md border border-input bg-background">
-                        <SignatureCanvas
-                            ref={sigCanvas}
-                            penColor='black'
-                            canvasProps={{className: 'w-full h-full'}}
-                        />
-                    </div>
-                    <Button type="button" variant="outline" size="sm" onClick={() => sigCanvas.current?.clear()} className="mt-2">
-                        Limpar
-                    </Button>
-                </div>
-                 <Alert>
-                    <Info className="h-4 w-4" />
-                    <AlertTitle>Termos de Assinatura</AlertTitle>
-                    <AlertDescription>
-                      <ul className="list-inside list-disc space-y-2 py-2 text-xs">
-                        <li>Você confirma que leu e concorda com todos os termos deste contrato.</li>
-                        <li>Sua assinatura será registrada com seu endereço de IP, data e hora.</li>
-                      </ul>
-                    </AlertDescription>
-                </Alert>
-             </div>
-          )}
-          
-           {sheetStep === 'otp_sent' && (
-             <div className="grid gap-6 py-4">
-                 <Alert variant="default" className="bg-blue-50 border-blue-200">
-                    <MailCheck className="h-4 w-4 text-blue-600" />
-                    <AlertTitle className="text-blue-800">Verifique seu E-mail</AlertTitle>
-                    <AlertDescription className="text-blue-700">
-                        Um e-mail com um código de 6 dígitos foi enviado para você. Insira-o abaixo para validar sua assinatura.
-                    </AlertDescription>
-                </Alert>
-                <div className="flex flex-col items-center justify-center gap-2">
-                    <InputOTP maxLength={6} value={otp} onChange={(value) => setOtp(value)}>
-                        <InputOTPGroup>
-                            <InputOTPSlot index={0} />
-                            <InputOTPSlot index={1} />
-                            <InputOTPSlot index={2} />
-                        </InputOTPGroup>
-                        <InputOTPGroup>
-                            <InputOTPSlot index={3} />
-                            <InputOTPSlot index={4} />
-                            <InputOTPSlot index={5} />
-                        </InputOTPGroup>
-                    </InputOTP>
-                </div>
-             </div>
-          )}
-
-          <SheetFooter>
-            <Button variant="outline" onClick={resetSheet}>Cancelar</Button>
-            {sheetStep === 'initial' && (
-                 <Button onClick={handleSendCode}>
-                    <Send className="mr-2 h-4 w-4" />
-                    Confirmar Assinatura e Enviar Código
-                </Button>
-            )}
-             {sheetStep === 'otp_sent' && (
-                <Button onClick={handleVerifyAndSign}>
-                  Verificar e Assinar
-                </Button>
-            )}
-            {sheetStep === 'verifying' && (
-                <Button disabled>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Processando...
-                </Button>
-            )}
-          </SheetFooter>
-        </SheetContent>
-      </Sheet>
     </>
   )
 }
