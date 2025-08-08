@@ -18,13 +18,14 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Loader2, User, Building, Search, CheckCircle, Edit } from 'lucide-react'
+import { Loader2, User, Building, Search, CheckCircle, Edit, ArrowLeft } from 'lucide-react'
 import { getClientById, updateClientProfile } from '@/lib/actions/clients'
 import { useToast } from '@/hooks/use-toast'
 import type { Cliente } from '@/lib/types'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import Link from 'next/link'
 
 
 const clientInfoSchema = z.object({
@@ -258,6 +259,12 @@ export default function ClienteEditPage() {
     <FormProvider {...methods}>
       <div className="flex flex-1 flex-col gap-6 p-4 sm:p-6">
         <div className="flex items-center gap-4">
+             <Button asChild variant="outline" size="icon" className="h-7 w-7">
+              <Link href="/dashboard/clientes">
+              <ArrowLeft className="h-4 w-4" />
+              <span className="sr-only">Voltar</span>
+              </Link>
+            </Button>
             <Avatar className="h-24 w-24">
             <AvatarImage src={client.avatar_url || ''} alt="Avatar do Cliente" />
             <AvatarFallback>{(client.full_name || client.company_name || 'C').charAt(0)}</AvatarFallback>
@@ -552,3 +559,5 @@ function AddressStep({ isEditing, setEditingStep, onSave, isLoading }: StepProps
         </Card>
     )
 }
+
+    

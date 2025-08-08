@@ -19,11 +19,12 @@ import {
 import { Switch } from '@/components/ui/switch'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { CheckCircle, AlertTriangle, Loader2 } from 'lucide-react'
+import { CheckCircle, AlertTriangle, Loader2, ArrowLeft } from 'lucide-react'
 import SignatureCanvas from 'react-signature-canvas'
 import { saveProfile, getProfile } from '@/lib/actions/profile'
 import { useToast } from '@/hooks/use-toast'
 import type { Profile } from '@/lib/types'
+import Link from 'next/link'
 
 const profileSchema = z.object({
   personType: z.enum(['cpf', 'cnpj']),
@@ -146,6 +147,15 @@ export default function ProfilePage() {
   if (isSaved) {
     return (
       <div className="flex flex-1 flex-col gap-4 p-4 sm:gap-6 sm:p-6">
+        <div className="flex items-center gap-4">
+           <Button asChild variant="outline" size="icon" className="h-7 w-7">
+              <Link href="/dashboard">
+              <ArrowLeft className="h-4 w-4" />
+              <span className="sr-only">Voltar</span>
+              </Link>
+            </Button>
+            <h1 className="text-lg font-semibold md:text-2xl">Perfil da Contratada</h1>
+        </div>
         <Alert variant="default" className="bg-green-50 border-green-200">
             <CheckCircle className="h-4 w-4 !text-green-600" />
             <AlertTitle className="text-green-800">Perfil Completo!</AlertTitle>
@@ -159,7 +169,13 @@ export default function ProfilePage() {
 
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 sm:gap-6 sm:p-6">
-      <div className="flex items-center">
+      <div className="flex items-center gap-4">
+        <Button asChild variant="outline" size="icon" className="h-7 w-7">
+            <Link href="/dashboard">
+            <ArrowLeft className="h-4 w-4" />
+            <span className="sr-only">Voltar</span>
+            </Link>
+        </Button>
         <h1 className="text-lg font-semibold md:text-2xl">Perfil da Contratada</h1>
       </div>
 
@@ -341,3 +357,5 @@ export default function ProfilePage() {
     </div>
   )
 }
+
+    

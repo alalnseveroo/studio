@@ -19,18 +19,11 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp
 import SignatureCanvas from 'react-signature-canvas'
 import PixQRCode from '@/components/pix-qrcode'
 import { cn } from '@/lib/utils'
-import { Stepper, Step, StepLabel, StepContent } from '@/components/stepper'
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
+
 
 type StepId = 'review' | 'sign' | 'payment';
 type OtpStep = 'initial' | 'otp_sent' | 'verifying' | 'signed';
-
-
-const steps: { id: StepId; label: string; icon: React.ElementType }[] = [
-  { id: 'review', label: 'Revise o contrato', icon: FileText },
-  { id: 'sign', label: 'Solicitar verificação e assinar', icon: Lock },
-  { id: 'payment', label: 'Concretizar parceria', icon: CreditCard },
-];
-
 
 export default function ContratoPortalPage() {
   const params = useParams()
@@ -40,7 +33,7 @@ export default function ContratoPortalPage() {
   const [contract, setContract] = useState<Contrato | null>(null)
   const [provider, setProvider] = useState<(Profile & {email: string}) | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const [activeStep, setActiveStep] = useState<number>(0);
+  const [activeStep, setActiveStep] = useState<StepId>('review');
   
   const [otpStep, setOtpStep] = useState<OtpStep>('initial');
   const [otp, setOtp] = useState('');
@@ -68,9 +61,9 @@ export default function ContratoPortalPage() {
         }
       }
       if (data.client_signature_data) {
-        setActiveStep(2); // Payment step
+        setActiveStep('payment'); 
       } else if (data.provider_signature_data) {
-        setActiveStep(0); // Review step
+        setActiveStep('review');
       }
     }
     setIsLoading(false)
@@ -155,7 +148,8 @@ export default function ContratoPortalPage() {
   const isSignedByClient = !!contract.client_signature_data
   const isReadyToSign = isSignedByProvider && !isSignedByClient;
   
-  const currentStepId = steps[activeStep]?.id;
+  const isReviewComplete = isReadyToSign;
+  const isSignComplete = isSignedByClient;
 
   return (
     <>
@@ -177,38 +171,48 @@ export default function ContratoPortalPage() {
             )}
           </div>
           
-           <div className="p-6 rounded-lg bg-card border">
-                <Stepper activeStep={activeStep}>
-                    {steps.map(({ id, label, icon }) => (
-                        <Step key={id}>
-                            <StepLabel icon={icon}>{label}</StepLabel>
-                        </Step>
-                    ))}
-                </Stepper>
-            </div>
-
-
-            <Card>
-                <CardContent className="p-6">
-                    {currentStepId === 'review' && (
-                        <div className="space-y-6">
-                            <h3 className="font-semibold text-lg">Etapa 1: Revise o contrato</h3>
-                            <div
-                                id="contract-content"
-                                className="prose prose-sm max-w-none rounded-md border bg-gray-50 p-6"
-                                dangerouslySetInnerHTML={{ __html: contract.full_contract_text || '' }}
-                            />
-                            <div className="flex justify-end">
-                                <Button onClick={() => setActiveStep(1)} disabled={!isReadyToSign}>
-                                    {isReadyToSign ? 'Li e concordo, avançar para assinatura' : 'Aguardando assinatura da contratada'}
-                                </Button>
+            <Accordion type="single" value={activeStep} onValueChange={(v) => setActiveStep(v as StepId)} collapsible className="w-full space-y-4">
+                <Card>
+                    <AccordionItem value="review" className="border-b-0">
+                        <AccordionTrigger 
+                          disabled={isReviewComplete}
+                          className={cn("p-6 hover:no-underline", isReviewComplete && "text-green-600")}
+                        >
+                            <div className="flex items-center gap-4">
+                                {isReviewComplete ? <CheckCircle className="h-6 w-6 text-green-500"/> : <FileText className="h-6 w-6"/>}
+                                <span className="text-lg font-semibold">Etapa 1: Revise o contrato</span>
                             </div>
-                        </div>
-                    )}
-                    
-                    {currentStepId === 'sign' && (
-                        <div className="space-y-6">
-                            <h3 className="font-semibold text-lg">Etapa 2: Solicitar verificação e assinar</h3>
+                        </AccordionTrigger>
+                        <AccordionContent className="p-6 pt-0">
+                            <div className="space-y-6">
+                                <div
+                                    id="contract-content"
+                                    className="prose prose-sm max-w-none rounded-md border bg-gray-50 p-6"
+                                    dangerouslySetInnerHTML={{ __html: contract.full_contract_text || '' }}
+                                />
+                                <div className="flex justify-end">
+                                    <Button onClick={() => setActiveStep('sign')} disabled={!isReadyToSign}>
+                                        {isReadyToSign ? 'Li e concordo, avançar para assinatura' : 'Aguardando assinatura da contratada'}
+                                    </Button>
+                                </div>
+                            </div>
+                        </AccordionContent>
+                    </AccordionItem>
+                </Card>
+                
+                <Card>
+                    <AccordionItem value="sign" className="border-b-0">
+                         <AccordionTrigger 
+                          disabled={!isReviewComplete || isSignComplete}
+                          className={cn("p-6 hover:no-underline", isSignComplete && "text-green-600")}
+                        >
+                            <div className="flex items-center gap-4">
+                                {isSignComplete ? <CheckCircle className="h-6 w-6 text-green-500"/> : <Lock className="h-6 w-6"/>}
+                                <span className="text-lg font-semibold">Etapa 2: Solicitar verificação e assinar</span>
+                            </div>
+                        </AccordionTrigger>
+                        <AccordionContent className="p-6 pt-0">
+                           <div className="space-y-6">
                              {otpStep === 'signed' ? (
                                 <>
                                     <Alert variant="default" className="bg-green-50 border-green-200">
@@ -223,7 +227,7 @@ export default function ContratoPortalPage() {
                                         dangerouslySetInnerHTML={{ __html: contract.full_contract_text || '' }}
                                     />
                                     <div className="flex justify-end">
-                                        <Button onClick={() => setActiveStep(2)}>
+                                        <Button onClick={() => setActiveStep('payment')}>
                                             Avançar para Pagamento
                                         </Button>
                                     </div>
@@ -282,7 +286,7 @@ export default function ContratoPortalPage() {
                                     )}
 
                                     <div className="flex justify-end gap-2">
-                                        <Button variant="outline" onClick={() => setActiveStep(0)}>Voltar</Button>
+                                        <Button variant="outline" onClick={() => setActiveStep('review')}>Voltar</Button>
                                         {otpStep === 'initial' && (
                                             <Button onClick={handleSendCode}>
                                                 <Send className="mr-2 h-4 w-4" />
@@ -299,11 +303,23 @@ export default function ContratoPortalPage() {
                                 </>
                             )}
                         </div>
-                    )}
+                        </AccordionContent>
+                    </AccordionItem>
+                </Card>
 
-                    {currentStepId === 'payment' && (
-                        <div className="space-y-6">
-                            <h3 className="font-semibold text-lg">Etapa 3: Concretizar parceria</h3>
+                 <Card>
+                    <AccordionItem value="payment" className="border-b-0">
+                         <AccordionTrigger 
+                          disabled={!isSignComplete}
+                          className="p-6 hover:no-underline"
+                        >
+                            <div className="flex items-center gap-4">
+                                <CreditCard className="h-6 w-6"/>
+                                <span className="text-lg font-semibold">Etapa 3: Concretizar parceria</span>
+                            </div>
+                        </AccordionTrigger>
+                        <AccordionContent className="p-6 pt-0">
+                           <div className="space-y-6">
                              <Alert variant="default" className="bg-green-50 border-green-200 mt-4">
                                 <ShieldCheck className="h-4 w-4 text-green-600" />
                                 <AlertTitle className="text-green-800">Contrato Assinado com Sucesso!</AlertTitle>
@@ -336,12 +352,15 @@ export default function ContratoPortalPage() {
                                 />
                             </div>
                         </div>
-                    )}
-                </CardContent>
-            </Card>
+                        </AccordionContent>
+                    </AccordionItem>
+                </Card>
 
+            </Accordion>
         </main>
       </div>
     </>
   )
 }
+
+    
