@@ -7,7 +7,6 @@ import { getClientById } from '@/lib/actions/clients'
 import { getContractsForClientPortal } from '@/lib/actions/contratos'
 import { getProfile } from '@/lib/actions/profile'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Card } from '@/components/ui/card'
 import { AlertCircle, User, FileText, Check, Clock, Verified, Briefcase, Mail } from 'lucide-react'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
@@ -16,6 +15,8 @@ import type { Cliente, Contrato, Profile } from '@/lib/types'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Separator } from '@/components/ui/separator'
+import { Card } from '@/components/ui/card'
+import PixQRCode from '@/components/pix-qrcode'
 
 
 interface InfoRowProps {
@@ -237,7 +238,18 @@ export default function ClientPortalPage() {
             
              <TabsContent value="pagamentos" className="mt-6 space-y-6">
                 <h2 className="text-xl font-bold">Pagamentos e Notas</h2>
-                <p className="text-sm text-muted-foreground">Informações sobre pagamentos e notas fiscais serão exibidas aqui.</p>
+                 {contracts.length > 0 && provider ? (
+                    <PixQRCode
+                        pixKey={provider.cpf || provider.cnpj || ''}
+                        value={contracts[0].propostas?.value || 0}
+                        beneficiaryName={provider.full_name || provider.company_name || 'Beneficiário'}
+                        beneficiaryCity={provider.address?.split(',').slice(-2, -1)[0]?.trim() || 'CIDADE'}
+                    />
+                ) : (
+                    <p className="text-sm text-muted-foreground">
+                        Informações de pagamento estarão disponíveis quando houver um contrato ativo e o perfil da contratada estiver completo.
+                    </p>
+                )}
             </TabsContent>
         </Tabs>
       </main>

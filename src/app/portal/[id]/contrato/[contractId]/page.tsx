@@ -3,9 +3,10 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, notFound } from 'next/navigation'
 import { getContractForClientById, signContractAsClient } from '@/lib/actions/contratos'
+import { getProfile } from '@/lib/actions/profile'
 import { sendClientVerificationCode } from '@/lib/actions/auth'
 import { useToast } from '@/hooks/use-toast'
-import type { Contrato } from '@/lib/types'
+import type { Contrato, Profile } from '@/lib/types'
 import { Loader2, ArrowLeft, UserCheck, ShieldCheck, Download, Edit, Send, Info, MailCheck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
@@ -16,6 +17,7 @@ import { format } from 'date-fns'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from '@/components/ui/sheet'
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp'
 import SignatureCanvas from 'react-signature-canvas'
+import PixQRCode from '@/components/pix-qrcode'
 
 type SheetStep = 'initial' | 'otp_sent' | 'verifying'
 
@@ -25,6 +27,7 @@ export default function ContratoPortalPage() {
   const contractId = params.contractId as string
 
   const [contract, setContract] = useState<Contrato | null>(null)
+  const [provider, setProvider] = useState<(Profile & {email: string}) | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSheetOpen, setIsSheetOpen] = useState(false)
   const [sheetStep, setSheetStep] = useState<SheetStep>('initial')
@@ -39,9 +42,18 @@ export default function ContratoPortalPage() {
     const { data, error } = await getContractForClientById(contractId)
     if (error || !data || data.cliente_id !== clientId) {
       setContract(null)
+      setProvider(null)
       notFound()
     } else {
       setContract(data)
+       if (data.user_id) {
+        const { data: providerData, error: providerError } = await getProfile(data.user_id);
+        if (providerError) {
+          console.error("Could not fetch provider profile for contract portal", providerError);
+        } else {
+          setProvider(providerData as Profile & { email: string });
+        }
+      }
     }
     setIsLoading(false)
   }, [contractId, clientId])
@@ -187,6 +199,23 @@ export default function ContratoPortalPage() {
             </Alert>
           )}
 
+           {isSignedByClient && provider && (
+            <Card>
+                <CardHeader>
+                    <CardTitle>Pagamento via PIX</CardTitle>
+                    <CardDescription>Realize o pagamento da primeira parcela para ativar os serviços.</CardDescription>
+                </CardHeader>
+                <CardContent className="flex justify-center">
+                    <PixQRCode
+                        pixKey={provider.cpf || provider.cnpj || ''}
+                        value={contract.propostas?.value || 0}
+                        beneficiaryName={provider.full_name || provider.company_name || 'Beneficiário'}
+                        beneficiaryCity={provider.address?.split(',').slice(-2, -1)[0]?.trim() || 'CIDADE'}
+                    />
+                </CardContent>
+            </Card>
+          )}
+
           {isSignedByProvider && !isSignedByClient && (
             <Alert>
               <UserCheck className="h-4 w-4" />
@@ -204,6 +233,7 @@ export default function ContratoPortalPage() {
             </CardHeader>
             <CardContent>
               <div
+                id="contract-content"
                 className="prose prose-sm max-w-none rounded-md border bg-gray-50 p-6"
                 dangerouslySetInnerHTML={{ __html: contract.full_contract_text || '' }}
               />
@@ -211,8 +241,8 @@ export default function ContratoPortalPage() {
           </Card>
           
           {/* Div oculta para geração de PDF */}
-          <div style={{ display: 'none' }}>
-            <div id="contract-content-for-pdf" dangerouslySetInnerHTML={{ __html: contract.full_contract_text || '' }} />
+          <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
+            <div id="contract-content-for-pdf" className="prose" dangerouslySetInnerHTML={{ __html: contract.full_contract_text || '' }} />
           </div>
 
         </main>
@@ -306,3 +336,5 @@ export default function ContratoPortalPage() {
     </>
   )
 }
+
+    
