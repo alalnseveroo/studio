@@ -1,3 +1,4 @@
+
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
@@ -282,24 +283,24 @@ export async function signContractAsClient({ contractId, otp, signatureDataUrl }
         .single();
 
     if (contractError || !contract || !contract.clientes?.email) {
-        return { error: { message: 'Contrato ou e-mail do cliente não encontrado.' } };
+        return { data: null, error: { message: 'Contrato ou e-mail do cliente não encontrado.' } };
     }
     
     if (!contract.client_signature_otp || !contract.client_signature_otp_expires_at) {
-        return { error: { message: 'Nenhum código de verificação foi gerado para este contrato.' } };
+        return { data: null, error: { message: 'Nenhum código de verificação foi gerado para este contrato.' } };
     }
 
     if (new Date() > new Date(contract.client_signature_otp_expires_at)) {
-        return { error: { message: 'O código de verificação expirou. Por favor, solicite um novo.' } };
+        return { data: null, error: { message: 'O código de verificação expirou. Por favor, solicite um novo.' } };
     }
     
     if (contract.client_signature_otp !== otp) {
-        return { error: { message: 'O código de verificação está incorreto.' } };
+        return { data: null, error: { message: 'O código de verificação está incorreto.' } };
     }
 
     const { data: contratada, error: providerError } = await getProviderProfile(supabase, contract.user_id);
     if (providerError || !contratada) {
-         return { error: { message: 'Perfil da contratada não encontrado.' } };
+         return { data: null, error: { message: 'Perfil da contratada não encontrado.' } };
     }
 
     const headersList = headers();
@@ -326,7 +327,7 @@ export async function signContractAsClient({ contractId, otp, signatureDataUrl }
         contract: finalContractData as Contrato,
     });
 
-    const { error: updateError } = await supabase
+    const { data: updatedContract, error: updateError } = await supabase
         .from('contratos')
         .update({
             status: 'signed_by_client',
@@ -336,17 +337,21 @@ export async function signContractAsClient({ contractId, otp, signatureDataUrl }
             client_signature_otp: null, // Limpa o código após o uso
             client_signature_otp_expires_at: null, // Limpa a data de expiração
         })
-        .eq('id', contractId);
+        .eq('id', contractId)
+        .select('*, clientes(*), propostas(*)')
+        .single();
 
     if (updateError) {
-         return { error: { message: `Não foi possível assinar o contrato: ${updateError.message}` } };
+         return { data: null, error: { message: `Não foi possível assinar o contrato: ${updateError.message}` } };
     }
 
     revalidatePath(`/dashboard/contratos/${contractId}`);
     revalidatePath(`/portal/${contract.cliente_id}/contrato/${contract.id}`);
     revalidatePath(`/portal/${contract.cliente_id}`);
-    return { error: null };
+    return { data: updatedContract, error: null };
 }
 
+
+    
 
     

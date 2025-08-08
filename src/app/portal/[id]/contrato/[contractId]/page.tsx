@@ -64,15 +64,13 @@ export default function ContratoPortalPage() {
       }
       if (data.client_signature_data) {
         setActiveStep('payment');
-        if (!showConfetti) {
-            setShowConfetti(true);
-        }
+        setShowConfetti(true);
       } else if (data.provider_signature_data) {
         setActiveStep('review');
       }
     }
     setIsLoading(false)
-  }, [contractId, clientId, showConfetti])
+  }, [contractId, clientId])
 
   useEffect(() => {
     fetchContract()
@@ -108,7 +106,7 @@ export default function ContratoPortalPage() {
     }
     setOtpStep('verifying')
     
-    const { error } = await signContractAsClient({ contractId: contract!.id, otp, signatureDataUrl: signature })
+    const { data, error } = await signContractAsClient({ contractId: contract!.id, otp, signatureDataUrl: signature })
     if (error) {
       toast({ variant: 'destructive', title: 'Erro ao Assinar', description: error.message })
       setOtpStep('otp_sent')
@@ -120,8 +118,10 @@ export default function ContratoPortalPage() {
         className: 'bg-green-100 border-green-200 text-green-800'
       })
       setOtpStep('signed');
-      await fetchContract()
-      // Não avança para 'payment' aqui. Fica no 'signed' para o usuário clicar em avançar.
+      // Atualiza o contrato no estado local para refletir a assinatura
+      if (data) {
+        setContract(data);
+      }
     }
   }
 
@@ -140,7 +140,7 @@ export default function ContratoPortalPage() {
     }
   }
 
-  if (isLoading) {
+  if (isLoading && !contract) {
     return <div className="flex min-h-screen items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>
   }
 
@@ -180,13 +180,18 @@ export default function ContratoPortalPage() {
               type="single" 
               collapsible 
               className="w-full space-y-4"
-              value={isSignedByClient ? 'payment' : activeStep}
-              onValueChange={(value) => !isSignedByClient && setActiveStep(value as Step)}
+              value={activeStep}
+              onValueChange={(value) => {
+                // Permite abrir apenas se a etapa ainda não foi concluída
+                if (value === 'review' && !isReviewStepComplete) setActiveStep('review');
+                if (value === 'sign' && isReviewStepComplete && !isSignStepComplete) setActiveStep('sign');
+                if (value === 'payment' && isSignStepComplete) setActiveStep('payment');
+              }}
             >
             <AccordionItem value="review" className="rounded-lg border bg-card p-0">
                 <AccordionTrigger 
-                    className={cn("flex w-full items-center justify-between p-6 hover:no-underline", !isReadyToSign && "text-muted-foreground")}
-                    disabled={isReviewStepComplete || !isReadyToSign}
+                    className={cn("flex w-full items-center justify-between p-6 hover:no-underline")}
+                    disabled={isReviewStepComplete}
                 >
                      <div className="flex items-center gap-4">
                         {isReviewStepComplete ? <CheckCircle className="h-6 w-6 text-green-500" /> : <FileText className="h-6 w-6 text-primary" />}
@@ -235,7 +240,7 @@ export default function ContratoPortalPage() {
                             dangerouslySetInnerHTML={{ __html: contract.full_contract_text || '' }}
                          />
                          <div className="flex justify-end">
-                             <Button onClick={() => { setActiveStep('payment'); setShowConfetti(true); }}>
+                             <Button onClick={() => { setActiveStep('payment'); }}>
                                 Avançar para Pagamento
                              </Button>
                          </div>
