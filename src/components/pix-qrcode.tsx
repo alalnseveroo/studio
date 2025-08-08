@@ -14,7 +14,7 @@ interface PixQRCodeProps {
     beneficiaryCity: string;
 }
 
-const calcularCRC16 = (payload: string) => {
+const calcularCRC16 = (payload: string): string => {
     let crc = 0xFFFF;
     const polynomial = 0x1021;
     for (let i = 0; i < payload.length; i++) {
@@ -27,21 +27,21 @@ const calcularCRC16 = (payload: string) => {
     return (crc & 0xFFFF).toString(16).toUpperCase().padStart(4, '0');
 };
 
+
 const gerarPixCopiaCola = (chave: string, nome: string, cidade: string, valor: number, txid: string) => {
     const sanitize = (text: string, maxLength: number) => {
         return text
             .normalize("NFD")
             .replace(/[\u0300-\u036f]/g, "") 
-            .replace(/[^a-zA-Z0-9 ]/g, '') 
+            .replace(/[^a-zA-Z0-9 ]/g, '')
             .substring(0, maxLength)
+            .toUpperCase()
             .trim();
     };
 
-    const sanitizeKey = (key: string) => key.replace(/\D/g, '');
-    
-    const chaveSanitizada = sanitizeKey(chave);
-    const nomeSanitizado = sanitize(nome, 25).toUpperCase();
-    const cidadeSanitizada = sanitize(cidade, 15).toUpperCase();
+    const chaveSanitizada = chave.replace(/\D/g, '');
+    const nomeSanitizado = sanitize(nome, 25);
+    const cidadeSanitizada = sanitize(cidade, 15);
     const txidSanitizado = sanitize(txid, 25).replace(/\s/g, '');
     const valorFormatado = valor.toFixed(2);
 
@@ -52,8 +52,8 @@ const gerarPixCopiaCola = (chave: string, nome: string, cidade: string, valor: n
 
     const merchantAccountInfo = formatField('00', 'br.gov.bcb.pix') + formatField('01', chaveSanitizada);
     const additionalData = formatField('05', txidSanitizado);
-
-    const payload = [
+    
+    let payload = [
         formatField('00', '01'),
         formatField('26', merchantAccountInfo),
         formatField('52', '0000'),
