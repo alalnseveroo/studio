@@ -1,4 +1,5 @@
 
+
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
@@ -44,7 +45,7 @@ export default function ClientPortalPage() {
   const clientId = params.id as string
 
   const [client, setClient] = useState<Cliente | null>(null)
-  const [provider, setProvider] = useState<Profile | null>(null)
+  const [provider, setProvider] = useState<(Profile & {email: string}) | null>(null)
   const [contracts, setContracts] = useState<Contrato[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -54,35 +55,32 @@ export default function ClientPortalPage() {
     setIsLoading(true)
     setError(null)
     
-    const { data: clientData, error: clientError } = await getClientById(clientId)
-
-    if (clientError || !clientData) {
-      setError('Não foi possível carregar os dados do cliente.')
-      setIsLoading(false)
-      return
-    }
-    
-    setClient(clientData);
-
-    // Fetch provider data based on client's user_id
-    if (clientData.user_id) {
-        const { data: providerData, error: providerError } = await getProfile(clientData.user_id);
-        if (providerError) {
-             console.error("Could not fetch provider profile for portal");
-        } else {
-            setProvider(providerData);
+    try {
+        const { data: clientData, error: clientError } = await getClientById(clientId);
+        if (clientError || !clientData) {
+            throw new Error('Não foi possível carregar os dados do cliente.');
         }
-    }
+        setClient(clientData);
 
+        if (clientData.user_id) {
+            const { data: providerData, error: providerError } = await getProfile(clientData.user_id);
+            if (providerError || !providerData) {
+                 console.error("Could not fetch provider profile for portal", providerError);
+            } else {
+                setProvider(providerData as Profile & { email: string });
+            }
+        }
 
-    const { data: contractsData, error: contractsError } = await getContractsForClientPortal(clientId)
-    if (contractsError) {
-       setError('Não foi possível carregar os contratos.')
-    } else {
-      setContracts(contractsData || [])
+        const { data: contractsData, error: contractsError } = await getContractsForClientPortal(clientId)
+        if (contractsError) {
+          console.error('Could not fetch contracts for portal', contractsError)
+        }
+        setContracts(contractsData || []);
+    } catch (e: any) {
+        setError(e.message);
+    } finally {
+        setIsLoading(false)
     }
-    
-    setIsLoading(false)
   }, [clientId])
 
   useEffect(() => {
@@ -110,6 +108,8 @@ export default function ClientPortalPage() {
   const displayName = client.full_name || client.company_name || 'Cliente'
   const fallbackLetter = displayName.charAt(0).toUpperCase()
   const providerName = provider?.full_name || provider?.company_name || 'Assistente Virtual'
+  const providerFallbackLetter = providerName.charAt(0).toUpperCase();
+
 
   const getStatusVariant = (status: string) => {
     switch (status) {
@@ -151,14 +151,22 @@ export default function ClientPortalPage() {
 
   return (
     <div className="relative min-h-screen w-full bg-background">
-        <Avatar className="absolute left-[30px] top-[30px] h-24 w-24 border-4 border-background shadow-md">
-            <AvatarImage src={client.avatar_url || undefined} alt={`Avatar de ${displayName}`} />
-            <AvatarFallback className="text-4xl">
-                {fallbackLetter}
-            </AvatarFallback>
-        </Avatar>
+        <div className="absolute left-[60px] top-[60px]">
+            <Avatar className="h-40 w-40 border-4 border-background shadow-md">
+                <AvatarImage src={client.avatar_url || undefined} alt={`Avatar de ${displayName}`} />
+                <AvatarFallback className="text-6xl">
+                    {fallbackLetter}
+                </AvatarFallback>
+            </Avatar>
+            {provider && (
+              <Avatar className="absolute bottom-0 right-0 h-16 w-16 border-4 border-background">
+                 <AvatarImage src={undefined} alt={`Avatar de ${providerName}`} />
+                 <AvatarFallback>{providerFallbackLetter}</AvatarFallback>
+              </Avatar>
+            )}
+        </div>
 
-      <main className="w-full max-w-2xl space-y-6 px-4 pb-8 pt-24 md:mx-auto md:pt-32">
+      <main className="w-full max-w-2xl space-y-6 px-4 pb-8 pt-48 md:mx-auto md:pt-56">
         <div className="space-y-1">
              <h1 className="text-2xl font-bold">{displayName}</h1>
              <p className="text-muted-foreground">Em parceria com {providerName}</p>
