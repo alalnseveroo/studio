@@ -56,6 +56,7 @@ export default function ContratoPortalPage() {
         const { data: providerData, error: providerError } = await getProfile(data.user_id);
         if (providerError) {
           console.error("Could not fetch provider profile for contract portal", providerError);
+           setProvider(null);
         } else {
           setProvider(providerData as Profile & { email: string });
         }
@@ -115,7 +116,6 @@ export default function ContratoPortalPage() {
         className: 'bg-green-100 border-green-200 text-green-800'
       })
       setOtpStep('signed');
-      // Atualiza o contrato no estado local para refletir a assinatura
       if (data) {
         setContract(data);
       }
@@ -178,14 +178,14 @@ export default function ContratoPortalPage() {
               className="w-full space-y-4"
               value={activeStep}
               onValueChange={(value) => {
-                if (value === 'review' && !isReviewStepComplete) setActiveStep('review');
-                if (value === 'sign' && isReviewStepComplete && !isSignStepComplete) setActiveStep('sign');
+                if (value === 'review' && !isSignedByClient) setActiveStep('review');
+                if (value === 'sign' && isReviewStepComplete && !isSignedByClient) setActiveStep('sign');
                 if (value === 'payment' && isSignStepComplete) setActiveStep('payment');
               }}
             >
             <AccordionItem value="review" className="rounded-lg border bg-card p-0">
                 <AccordionTrigger 
-                    className={cn("flex w-full items-center justify-between p-6 hover:no-underline")}
+                    className={cn("flex w-full items-center justify-between p-6 hover:no-underline", isReviewStepComplete && "cursor-default")}
                     disabled={isReviewStepComplete}
                 >
                      <div className="flex items-center gap-4">
@@ -211,7 +211,7 @@ export default function ContratoPortalPage() {
             </AccordionItem>
             
              <AccordionItem value="sign" className="rounded-lg border bg-card p-0">
-                <AccordionTrigger className={cn("flex w-full items-center justify-between p-6 hover:no-underline", !isReviewStepComplete && "text-muted-foreground")} disabled={!isReviewStepComplete || isSignStepComplete}>
+                <AccordionTrigger className={cn("flex w-full items-center justify-between p-6 hover:no-underline", !isReviewStepComplete && "text-muted-foreground", isSignStepComplete && "cursor-default")} disabled={!isReviewStepComplete || isSignStepComplete}>
                      <div className="flex items-center gap-4">
                         {isSignStepComplete ? <CheckCircle className="h-6 w-6 text-green-500" /> : <Lock className="h-6 w-6 text-primary" />}
                         <div>
