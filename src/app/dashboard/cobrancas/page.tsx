@@ -15,10 +15,12 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Loader2, DollarSign, Send, FileWarning } from 'lucide-react'
 import { getContracts } from '@/lib/actions/contratos'
-import type { Contrato } from '@/lib/types'
+import type { Contrato, Profile } from '@/lib/types'
 import { format, isAfter, startOfMonth, addMonths } from 'date-fns'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { useToast } from '@/hooks/use-toast'
+import { getProfile } from '@/lib/actions/profile'
+import { sendTransactionalEmail } from '@/lib/brevo'
 
 
 interface PendingCharge extends Contrato {
@@ -28,23 +30,30 @@ interface PendingCharge extends Contrato {
 export default function CobrancasPage() {
   const [pendingCharges, setPendingCharges] = useState<PendingCharge[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [isSending, setIsSending] = useState<string | null>(null);
+  const [providerProfile, setProviderProfile] = useState<(Profile & {email: string}) | null>(null);
   const { toast } = useToast()
 
 
   useEffect(() => {
-    async function fetchPendingCharges() {
+    async function fetchData() {
       setIsLoading(true)
-      const { data: contracts, error } = await getContracts()
+      const [{ data: contracts, error }, { data: profileData }] = await Promise.all([
+        getContracts(),
+        getProfile()
+      ]);
 
       if (error || !contracts) {
         toast({
             variant: 'destructive',
-            title: 'Erro ao buscar contratos',
+            title: 'Erro ao buscar dados',
             description: error?.message || 'Não foi possível carregar os dados.'
         })
         setIsLoading(false)
         return
       }
+
+      setProviderProfile(profileData as (Profile & { email: string; }) | null);
 
       const today = new Date();
       const charges: PendingCharge[] = [];
@@ -77,16 +86,63 @@ export default function CobrancasPage() {
       setIsLoading(false)
     }
 
-    fetchPendingCharges()
+    fetchData()
   }, [toast])
 
-  const handleSendCharge = (charge: PendingCharge) => {
-      console.log("Enviando cobrança para:", charge.clientes.email);
-      toast({
-          title: "Cobrança Enviada!",
-          description: `Um e-mail de cobrança foi enviado para ${charge.clientes.full_name || charge.clientes.company_name}.`
-      })
-      // No futuro, aqui chamaria uma server action para registrar a cobrança e enviar o e-mail
+  const handleSendCharge = async (charge: PendingCharge) => {
+      setIsSending(charge.id);
+      const clientName = charge.clientes.full_name || charge.clientes.company_name;
+      const clientEmail = charge.clientes.email;
+      
+      if (!clientEmail) {
+          toast({ variant: 'destructive', title: "E-mail não encontrado", description: `O cliente ${clientName} não possui um e-mail cadastrado.` });
+          setIsSending(null);
+          return;
+      }
+      
+      if (!providerProfile || !providerProfile.email) {
+           toast({ variant: 'destructive', title: "Perfil incompleto", description: `Seu perfil ou e-mail de remetente não foram encontrados.` });
+           setIsSending(null);
+           return;
+      }
+      
+      const senderName = providerProfile.full_name || providerProfile.company_name || 'Seu Assistente Virtual';
+      const senderEmail = providerProfile.email; // Idealmente um e-mail verificado na Brevo
+
+      try {
+        // ID do template da Brevo para o e-mail de cobrança
+        const BREVO_TEMPLATE_ID = 58; 
+        
+        const portalUrl = new URL(`/portal/${charge.cliente_id}`, process.env.NEXT_PUBLIC_SITE_URL).toString();
+
+        await sendTransactionalEmail(
+            clientEmail,
+            BREVO_TEMPLATE_ID,
+            {
+                nome_cliente: clientName,
+                nome_contratada: senderName,
+                valor_cobranca: charge.propostas?.value?.toFixed(2),
+                data_vencimento: format(charge.nextDueDate, 'dd/MM/yyyy'),
+                link_portal: portalUrl,
+            },
+            senderName,
+            senderEmail
+        );
+        
+        toast({
+            title: "Cobrança Enviada!",
+            description: `Um e-mail de cobrança foi enviado para ${clientName}.`
+        });
+
+      } catch (error: any) {
+          toast({
+              variant: 'destructive',
+              title: "Erro ao enviar cobrança",
+              description: error.message || "Não foi possível enviar o e-mail."
+          })
+      } finally {
+        setIsSending(null);
+      }
   }
 
   return (
@@ -150,8 +206,12 @@ export default function CobrancasPage() {
                         {format(charge.nextDueDate, 'dd/MM/yyyy')}
                       </TableCell>
                       <TableCell className="text-center">
-                         <Button size="sm" onClick={() => handleSendCharge(charge)}>
-                            <Send className="mr-2 h-4 w-4" />
+                         <Button size="sm" onClick={() => handleSendCharge(charge)} disabled={isSending === charge.id}>
+                            {isSending === charge.id ? (
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            ) : (
+                                <Send className="mr-2 h-4 w-4" />
+                            )}
                             Enviar Cobrança
                          </Button>
                       </TableCell>
@@ -165,4 +225,3 @@ export default function CobrancasPage() {
     </div>
   )
 }
-
