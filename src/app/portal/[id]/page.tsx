@@ -5,6 +5,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useParams } from 'next/navigation'
 import { getClientById } from '@/lib/actions/clients'
 import { getContractsForClientPortal } from '@/lib/actions/contratos'
+import { getProfile } from '@/lib/actions/profile'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card'
 import { AlertCircle, User, FileText, Check, Clock, Verified, Briefcase, Mail } from 'lucide-react'
@@ -53,7 +54,6 @@ export default function ClientPortalPage() {
     setIsLoading(true)
     setError(null)
     
-    // Agora getClientById busca os dados do provedor também
     const { data: clientData, error: clientError } = await getClientById(clientId)
 
     if (clientError || !clientData) {
@@ -62,8 +62,18 @@ export default function ClientPortalPage() {
       return
     }
     
-    setClient(clientData.client)
-    setProvider(clientData.provider)
+    setClient(clientData);
+
+    // Fetch provider data based on client's user_id
+    if (clientData.user_id) {
+        const { data: providerData, error: providerError } = await getProfile(clientData.user_id);
+        if (providerError) {
+             console.error("Could not fetch provider profile for portal");
+        } else {
+            setProvider(providerData);
+        }
+    }
+
 
     const { data: contractsData, error: contractsError } = await getContractsForClientPortal(clientId)
     if (contractsError) {
@@ -173,7 +183,7 @@ export default function ClientPortalPage() {
                         <InfoRow icon={User} label="CNPJ / CPF" value={provider?.cnpj || provider?.cpf || 'Não informado'} />
                         <Separator />
                         <InfoRow icon={FileText} label="Status" value={getOverallStatus()} />
-                        <InfoRow 
+                         <InfoRow 
                           label="Objetivo" 
                           icon={Check} 
                           value={contracts.length > 0 ? (contracts[0].propostas?.name || 'Serviços de Assistência Virtual') : 'Nenhum contrato ativo'} 

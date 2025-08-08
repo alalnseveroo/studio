@@ -64,8 +64,13 @@ export async function getClients() {
 
 export async function getClientById(id: string) {
     const supabase = createClient()
-    // A política de RLS permite leitura pública, então não filtramos por user_id aqui.
-    const { data, error } = await supabase.from('clientes').select('*').eq('id', id).single();
+    
+    // A política de RLS foi ajustada para permitir leitura pública se o id do cliente for correspondente.
+    const { data, error } = await supabase
+        .from('clientes')
+        .select('*')
+        .eq('id', id)
+        .single();
 
     if (error) {
         console.error('Supabase error:', error);

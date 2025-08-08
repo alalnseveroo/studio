@@ -41,27 +41,35 @@ export async function saveProfile(formData: ProfileFormData & { is_completed: bo
 }
 
 
-export async function getProfile() {
+export async function getProfile(userId?: string) {
     const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    let targetUserId = userId;
 
-    if (!user) {
-        return { data: null, error: { message: 'Usuário não autenticado' } };
+    if (!targetUserId) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+            return { data: null, error: { message: 'Usuário não autenticado' } };
+        }
+        targetUserId = user.id;
     }
 
     const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .eq('id', user.id)
+        .eq('id', targetUserId)
         .single();
 
     if (error && error.code !== 'PGRST116') { // Ignore 'exact-one' error for new users
         console.error('Error fetching profile:', error);
         return { data: null, error: { message: 'Erro ao buscar perfil.' } };
     }
+    
+    const { data: authUser, error: authErr } = await supabase.auth.admin.getUserById(targetUserId);
+    const email = authUser?.user?.email;
+
 
     // Combine profile data with user email
-    const profileWithEmail = data ? { ...data, email: user.email } : { id: user.id, email: user.email };
+    const profileWithEmail = data ? { ...data, email } : { id: targetUserId, email };
 
     return { data: profileWithEmail, error: null };
 }
