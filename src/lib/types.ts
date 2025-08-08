@@ -20,6 +20,8 @@ export type Cliente = {
   address: string | null;
   created_at: string;
   updated_at: string;
+  billing_status: 'active' | 'inactive';
+  proposal_id: string | null;
 };
 
 export type Proposta = {
@@ -85,3 +87,5 @@ export type SignatureData = {
   user_agent: string;
   email_verified: string;
 };
+
+    

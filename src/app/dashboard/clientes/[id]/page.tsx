@@ -17,11 +17,13 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Loader2, User, Building, Search, CheckCircle, Edit, ArrowLeft } from 'lucide-react'
-import { getClientById, updateClientProfile } from '@/lib/actions/clients'
+import { Loader2, User, Building, Search, CheckCircle, Edit, ArrowLeft, DollarSign, FileText, BarChart, Info } from 'lucide-react'
+import { getClientById, updateClientProfile, updateClientFinancials } from '@/lib/actions/clients'
+import { getProposals } from '@/lib/actions/propostas'
 import { useToast } from '@/hooks/use-toast'
-import type { Cliente } from '@/lib/types'
+import type { Cliente, Proposta } from '@/lib/types'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -52,6 +54,11 @@ const addressSchema = z.object({
   state: z.string().min(2, { message: "O estado é obrigatório."}),
 });
 
+const financialSchema = z.object({
+  billing_status: z.enum(['active', 'inactive']),
+  proposal_id: z.string().nullable(),
+});
+
 
 const combinedSchema = z.object({
   personType: z.enum(['cpf', 'cnpj']),
@@ -72,6 +79,8 @@ const combinedSchema = z.object({
   neighborhood: z.string().min(1, { message: "O bairro é obrigatório."}),
   city: z.string().min(1, { message: "A cidade é obrigatória."}),
   state: z.string().min(2, { message: "O estado é obrigatório."}),
+  billing_status: z.enum(['active', 'inactive']),
+  proposal_id: z.string().nullable(),
 }).refine(data => {
     if (data.personType === 'cnpj') {
         return !!data.companyName && !!data.cnpj && !!data.representativeName && !!data.representativeCpf;
@@ -92,12 +101,13 @@ const combinedSchema = z.object({
 
 
 type ClientFormData = z.infer<typeof combinedSchema>;
-type StepName = 'info' | 'address';
+type StepName = 'info' | 'address' | 'financial';
 
 export default function ClienteEditPage() {
   const params = useParams();
   const clientId = params.id as string;
   const [client, setClient] = useState<Cliente | null>(null);
+  const [proposals, setProposals] = useState<Proposta[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<StepName>('info');
   const [editingStep, setEditingStep] = useState<StepName | null>(null);
@@ -125,6 +135,8 @@ export default function ClienteEditPage() {
         neighborhood: '',
         city: '',
         state: '',
+        billing_status: 'inactive',
+        proposal_id: null,
     },
   });
 
@@ -152,7 +164,12 @@ export default function ClienteEditPage() {
   const fetchClientData = useCallback(async () => {
     if (!clientId) return;
     setIsLoading(true);
-    const { data, error } = await getClientById(clientId);
+
+    const [{ data, error }, { data: proposalsData }] = await Promise.all([
+        getClientById(clientId),
+        getProposals()
+    ]);
+    
     if (error) {
       toast({ variant: 'destructive', title: 'Erro ao Carregar Cliente', description: error.message });
       setIsLoading(false);
@@ -161,6 +178,7 @@ export default function ClienteEditPage() {
     
     if (data) {
       setClient(data);
+      setProposals(proposalsData || []);
       const addressParts = parseAddress(data.address);
       
       const defaultValues: Partial<ClientFormData> = {
@@ -175,6 +193,8 @@ export default function ClienteEditPage() {
         civilStatus: data.civil_status || '',
         profession: data.profession || '',
         cpf: data.cpf || '',
+        billing_status: data.billing_status || 'inactive',
+        proposal_id: data.proposal_id || null,
         ...addressParts,
       };
       
@@ -214,6 +234,10 @@ export default function ClienteEditPage() {
         schema = addressSchema; 
         fieldNames = Object.keys(schema.shape) as (keyof typeof schema.shape)[];
         break;
+      case 'financial':
+        schema = financialSchema;
+        fieldNames = Object.keys(schema.shape) as (keyof typeof schema.shape)[];
+        break;
     }
 
     const isValid = await methods.trigger(fieldNames);
@@ -225,11 +249,19 @@ export default function ClienteEditPage() {
     
     setIsLoading(true);
     const values = methods.getValues();
-    const address = values.cep ? `${values.street}, ${values.number}${values.complement ? `, ${values.complement}` : ''} - ${values.neighborhood}, ${values.city} - ${values.state}, CEP: ${values.cep.replace(/(\d{5})(\d{3})/, '$1-$2')}` : '';
     
-    const submissionData = { ...values, address };
-    
-    const { error } = await updateClientProfile(clientId, submissionData);
+    let error;
+
+    if (step === 'info' || step === 'address') {
+        const address = values.cep ? `${values.street}, ${values.number}${values.complement ? `, ${values.complement}` : ''} - ${values.neighborhood}, ${values.city} - ${values.state}, CEP: ${values.cep.replace(/(\d{5})(\d{3})/, '$1-$2')}` : '';
+        const submissionData = { ...values, address };
+        const result = await updateClientProfile(clientId, submissionData);
+        error = result.error;
+    } else if (step === 'financial') {
+        const result = await updateClientFinancials(clientId, { billing_status: values.billing_status, proposal_id: values.proposal_id });
+        error = result.error;
+    }
+
     setIsLoading(false);
 
     if (error) {
@@ -240,12 +272,13 @@ export default function ClienteEditPage() {
       await fetchClientData(); // Refetch to update client state and form values
       
       if (step === 'info') setActiveTab('address');
-
+      if (step === 'address') setActiveTab('financial');
     }
   };
   
   const isInfoComplete = clientInfoSchema.safeParse(methods.getValues()).success;
   const isAddressComplete = addressSchema.safeParse(methods.getValues()).success;
+  const isFinancialComplete = financialSchema.safeParse(methods.getValues()).success;
 
   if (isLoading && !client) {
     return <div className="flex items-center justify-center p-6"><Loader2 className="h-8 w-8 animate-spin" /></div>;
@@ -279,7 +312,7 @@ export default function ClienteEditPage() {
         </div>
 
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as StepName)} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 bg-gray-100">
+          <TabsList className="grid w-full grid-cols-3 bg-gray-100">
              <TabsTrigger value="info" disabled={editingStep !== null && editingStep !== 'info'}>
                 {isInfoComplete && editingStep !== 'info' && <CheckCircle className="mr-2 h-4 w-4 text-green-500" />}
                 Informações
@@ -288,6 +321,10 @@ export default function ClienteEditPage() {
                  {isAddressComplete && editingStep !== 'address' && <CheckCircle className="mr-2 h-4 w-4 text-green-500" />}
                  Endereço
              </TabsTrigger>
+             <TabsTrigger value="financial" disabled={!isInfoComplete || !isAddressComplete || (editingStep !== null && editingStep !== 'financial')}>
+                 {isFinancialComplete && editingStep !== 'financial' && <CheckCircle className="mr-2 h-4 w-4 text-green-500" />}
+                 Financeiro
+             </TabsTrigger>
           </TabsList>
           
           <TabsContent value="info">
@@ -295,6 +332,9 @@ export default function ClienteEditPage() {
           </TabsContent>
            <TabsContent value="address">
             <AddressStep isEditing={editingStep === 'address'} setEditingStep={setEditingStep} onSave={() => handleSaveStep('address')} isLoading={isLoading} />
+          </TabsContent>
+          <TabsContent value="financial">
+            <FinancialStep isEditing={editingStep === 'financial'} setEditingStep={setEditingStep} onSave={() => handleSaveStep('financial')} isLoading={isLoading} proposals={proposals} />
           </TabsContent>
         </Tabs>
       </div>
@@ -533,7 +573,7 @@ function AddressStep({ isEditing, setEditingStep, onSave, isLoading }: StepProps
             </CardContent>
                 <CardContent className="flex justify-end gap-2">
                 <Button variant="ghost" onClick={() => setEditingStep(null)}>Cancelar</Button>
-                <Button type="button" onClick={onSave} disabled={isLoading}>{isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Salvar e Finalizar'}</Button>
+                <Button type="button" onClick={onSave} disabled={isLoading}>{isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Salvar e Continuar'}</Button>
             </CardContent>
             </Card>
         )
@@ -555,6 +595,111 @@ function AddressStep({ isEditing, setEditingStep, onSave, isLoading }: StepProps
             </CardHeader>
             <CardContent className="pt-6 text-sm">
                  <p>{fullAddress}</p>
+            </CardContent>
+        </Card>
+    )
+}
+
+interface FinancialStepProps extends StepProps {
+    proposals: Proposta[];
+}
+
+function FinancialStep({ isEditing, setEditingStep, onSave, isLoading, proposals }: FinancialStepProps) {
+  const methods = useFormContext<ClientFormData>();
+  const clientData = methods.getValues();
+  const selectedProposalId = methods.watch('proposal_id');
+  const selectedProposal = proposals.find(p => p.id === selectedProposalId);
+
+    if (isEditing) {
+        return (
+            <Card>
+                <CardHeader>
+                    <CardTitle>Configuração Financeira</CardTitle>
+                    <CardDescription>Defina a proposta de serviço e o status da cobrança para este cliente.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                    <FormField
+                        control={methods.control}
+                        name="proposal_id"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Proposta de Cobrança</FormLabel>
+                                <Select onValueChange={field.onChange} value={field.value || ''}>
+                                    <FormControl>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Selecione uma proposta para vincular" />
+                                        </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                        <SelectItem value="">Nenhuma</SelectItem>
+                                        {proposals.map(p => (
+                                            <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                <FormDescription>Esta proposta definirá o valor e a data de vencimento das cobranças.</FormDescription>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={methods.control}
+                        name="billing_status"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Status da Cobrança</FormLabel>
+                                 <Select onValueChange={field.onChange} value={field.value}>
+                                    <FormControl>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Selecione um status" />
+                                        </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                        <SelectItem value="active">Ativa</SelectItem>
+                                        <SelectItem value="inactive">Inativa</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <FormDescription>Cobranças só serão geradas para clientes com status "Ativo".</FormDescription>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                </CardContent>
+                <CardContent className="flex justify-end gap-2">
+                    <Button variant="ghost" onClick={() => setEditingStep(null)}>Cancelar</Button>
+                    <Button type="button" onClick={onSave} disabled={isLoading}>{isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Salvar Configuração'}</Button>
+                </CardContent>
+            </Card>
+        )
+    }
+
+    return (
+        <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+                <div className="space-y-1">
+                    <CardTitle>Configuração Financeira</CardTitle>
+                    <CardDescription>
+                        Status da cobrança: {clientData.billing_status === 'active' ? 'Ativa' : 'Inativa'}
+                    </CardDescription>
+                </div>
+                <Button variant="outline" size="sm" onClick={() => setEditingStep('financial')}><Edit className="mr-2 h-4 w-4" />Editar</Button>
+            </CardHeader>
+            <CardContent className="space-y-4 text-sm pt-6">
+                {selectedProposal ? (
+                    <div className="space-y-2 rounded-md border p-4">
+                        <h4 className="font-semibold text-base">{selectedProposal.name}</h4>
+                        <div className="flex items-center text-muted-foreground">
+                            <DollarSign className="mr-2 h-4 w-4" />
+                            <span>R$ {selectedProposal.value?.toFixed(2)} por {selectedProposal.payment_type === 'fixed' ? 'mês' : 'hora/projeto'}</span>
+                        </div>
+                         <div className="flex items-center text-muted-foreground">
+                            <FileText className="mr-2 h-4 w-4" />
+                            <span>Vencimento todo dia {selectedProposal.payment_day}</span>
+                        </div>
+                    </div>
+                ) : (
+                    <p>Nenhuma proposta de cobrança vinculada a este cliente.</p>
+                )}
             </CardContent>
         </Card>
     )
