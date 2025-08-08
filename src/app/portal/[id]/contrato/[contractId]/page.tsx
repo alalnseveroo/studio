@@ -170,42 +170,37 @@ export default function ContratoPortalPage() {
             )}
           </div>
           
-           {/* Steps Navigator */}
-           <div className="p-4 rounded-lg border bg-card">
+          <div className="rounded-lg border bg-card p-6">
             <nav aria-label="Progress">
-              <ol role="list" className="flex items-center">
+              <ol role="list" className="grid grid-cols-3">
                 {steps.map((step, stepIdx) => (
-                  <li key={step.name} className={cn("relative flex-1", stepIdx !== steps.length - 1 ? 'pr-8 sm:pr-20' : '')}>
-                    {currentStep > step.id ? (
-                      <>
-                        <div className="absolute inset-0 flex items-center" aria-hidden="true">
-                          <div className="h-0.5 w-full bg-primary" />
-                        </div>
-                        <div className="relative flex h-8 w-8 items-center justify-center rounded-full bg-primary">
-                          <CheckCircle className="h-5 w-5 text-white" aria-hidden="true" />
-                        </div>
-                      </>
-                    ) : currentStep === step.id ? (
-                      <>
-                        <div className="absolute inset-0 flex items-center" aria-hidden="true">
-                          <div className="h-0.5 w-full bg-gray-200" />
-                        </div>
-                        <div className="relative flex h-8 w-8 items-center justify-center rounded-full border-2 border-primary bg-card">
-                          <span className="h-2.5 w-2.5 rounded-full bg-primary" aria-hidden="true" />
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <div className="absolute inset-0 flex items-center" aria-hidden="true">
-                          <div className="h-0.5 w-full bg-gray-200" />
-                        </div>
-                        <div className="relative flex h-8 w-8 items-center justify-center rounded-full border-2 border-gray-300 bg-card">
-                           <span className="h-2.5 w-2.5 rounded-full bg-transparent" aria-hidden="true" />
-                        </div>
-                      </>
-                    )}
-                     <div className="absolute -bottom-7 w-max text-center sm:text-left sm:w-auto sm:bottom-auto sm:-bottom-0 sm:left-12 sm:top-1/2 sm:-translate-y-1/2">
-                      <p className={cn("text-xs", currentStep >= step.id ? 'font-semibold text-primary' : 'text-muted-foreground')}>
+                  <li key={step.name} className="relative">
+                    <div className="flex flex-col items-center text-center">
+                      <div className="relative flex items-center">
+                        {stepIdx !== 0 && <div className="absolute right-full top-1/2 h-0.5 w-full -translate-y-1/2 bg-gray-200" />}
+                        {stepIdx !== steps.length - 1 && <div className="absolute left-full top-1/2 h-0.5 w-full -translate-y-1/2 bg-gray-200" />}
+
+                        {currentStep > step.id ? (
+                          <>
+                            {stepIdx !== 0 && <div className="absolute right-full top-1/2 h-0.5 w-full -translate-y-1/2 bg-primary" />}
+                            <div className="relative flex h-8 w-8 items-center justify-center rounded-full bg-primary">
+                              <CheckCircle className="h-5 w-5 text-white" aria-hidden="true" />
+                            </div>
+                          </>
+                        ) : currentStep === step.id ? (
+                          <>
+                             {stepIdx !== 0 && <div className={cn("absolute right-full top-1/2 h-0.5 w-full -translate-y-1/2", currentStep > stepIdx ? 'bg-primary' : 'bg-gray-200' )} />}
+                             <div className="relative flex h-8 w-8 items-center justify-center rounded-full border-2 border-primary bg-card">
+                               <span className="h-2.5 w-2.5 rounded-full bg-primary" aria-hidden="true" />
+                            </div>
+                          </>
+                        ) : (
+                          <div className="relative flex h-8 w-8 items-center justify-center rounded-full border-2 border-gray-300 bg-card">
+                            <span className="h-2.5 w-2.5 rounded-full bg-transparent" aria-hidden="true" />
+                          </div>
+                        )}
+                      </div>
+                      <p className={cn("mt-3 text-xs", currentStep >= step.id ? 'font-semibold text-primary' : 'text-muted-foreground')}>
                         {step.name}
                       </p>
                     </div>
@@ -320,6 +315,7 @@ export default function ContratoPortalPage() {
 
             {/* Step 3: Payment */}
              {currentStep === 3 && (
+                <>
                 <Card>
                     <CardHeader>
                         <CardTitle>Etapa 3: Concretize a Parceria</CardTitle>
@@ -349,11 +345,28 @@ export default function ContratoPortalPage() {
                         </p>
                     </CardFooter>
                 </Card>
+
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Cópia do Contrato</CardTitle>
+                        <CardDescription>
+                            Abaixo está a versão final do contrato assinado por ambas as partes.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                         <div
+                            id="contract-content-for-pdf"
+                            className="prose prose-sm max-w-none rounded-md border bg-gray-50 p-6"
+                            dangerouslySetInnerHTML={{ __html: contract.full_contract_text || '' }}
+                        />
+                    </CardContent>
+                </Card>
+                </>
             )}
           
           {/* Div oculta para geração de PDF */}
           <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
-            <div id="contract-content-for-pdf" className="prose" dangerouslySetInnerHTML={{ __html: contract.full_contract_text || '' }} />
+             <div id="contract-content-for-pdf-hidden" className="prose" dangerouslySetInnerHTML={{ __html: contract.full_contract_text || '' }} />
           </div>
 
         </main>
@@ -361,3 +374,4 @@ export default function ContratoPortalPage() {
     </>
   )
 }
+
