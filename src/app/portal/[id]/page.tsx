@@ -181,86 +181,67 @@ export default function ClientPortalPage() {
                 <TabsTrigger value="pagamentos">Pagamentos e notas</TabsTrigger>
             </TabsList>
             
-            <TabsContent value="dados">
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Dados Gerais</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-6">
-                        <InfoRow icon={Briefcase} label="Assistente Virtual" value={providerName} />
-                        <InfoRow icon={Mail} label="E-mail" value={provider?.email || 'Não informado'} isVerified={!!provider?.email} />
-                        <InfoRow icon={User} label="CNPJ / CPF" value={provider?.cnpj || provider?.cpf || 'Não informado'} />
-                        <Separator />
-                        <InfoRow icon={FileText} label="Status" value={getOverallStatus()} />
-                         <InfoRow 
-                          label="Objetivo" 
-                          icon={Check} 
-                          value={contracts.length > 0 ? (contracts[0].propostas?.name || 'Serviços de Assistência Virtual') : 'Nenhum contrato ativo'} 
-                        />
-                    </CardContent>
-                </Card>
+            <TabsContent value="dados" className="mt-6 space-y-6">
+                <h2 className="text-xl font-bold">Dados Gerais</h2>
+                <div className="space-y-6">
+                    <InfoRow icon={Briefcase} label="Assistente Virtual" value={providerName} />
+                    <InfoRow icon={Mail} label="E-mail" value={provider?.email || 'Não informado'} isVerified={!!provider?.email} />
+                    <InfoRow icon={User} label="CNPJ / CPF" value={provider?.cnpj || provider?.cpf || 'Não informado'} />
+                    <Separator />
+                    <InfoRow icon={FileText} label="Status" value={getOverallStatus()} />
+                    <InfoRow 
+                        icon={Check} 
+                        label="Objetivo" 
+                        value={contracts.length > 0 ? (contracts[0].propostas?.name || 'Serviços de Assistência Virtual') : 'Nenhum contrato ativo'} 
+                    />
+                </div>
             </TabsContent>
             
-            <TabsContent value="proposta">
-                 <Card>
-                    <CardHeader><CardTitle>Proposta</CardTitle></CardHeader>
-                    <CardContent>
-                        <p className="text-sm text-muted-foreground">Detalhes da proposta de serviço serão exibidos aqui.</p>
-                    </CardContent>
-                </Card>
+            <TabsContent value="proposta" className="mt-6 space-y-6">
+                 <h2 className="text-xl font-bold">Proposta</h2>
+                 <p className="text-sm text-muted-foreground">Detalhes da proposta de serviço serão exibidos aqui.</p>
             </TabsContent>
 
-            <TabsContent value="contratos">
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Meus Contratos</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        {contracts.length === 0 ? (
-                            <Alert variant="default">
-                                <FileText className="h-4 w-4" />
-                                <AlertTitle>Nenhum Contrato</AlertTitle>
-                                <AlertDescription>
-                                   Você ainda não possui contratos disponíveis para visualização.
-                                </AlertDescription>
-                            </Alert>
-                        ) : (
-                            <div className="space-y-4">
-                                {contracts.map(contract => (
-                                     <Card key={contract.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4">
-                                        <div className="flex items-center gap-4">
-                                            {getStatusIcon(contract.status)}
-                                            <div>
-                                                <p className="font-semibold">Contrato {contract.contract_code}</p>
-                                                <Badge variant={getStatusVariant(contract.status) as any} className="mt-1">
-                                                  {getStatusText(contract.status)}
-                                                </Badge>
-                                            </div>
-                                        </div>
-                                        <Button asChild variant="outline" size="sm" className="mt-4 sm:mt-0 w-full sm:w-auto">
-                                            <Link href={`/portal/${client.id}/contrato/${contract.id}`}>
-                                                Visualizar
-                                            </Link>
-                                        </Button>
-                                    </Card>
-                                ))}
-                            </div>
-                        )}
-                    </CardContent>
-                </Card>
+            <TabsContent value="contratos" className="mt-6 space-y-6">
+                <h2 className="text-xl font-bold">Meus Contratos</h2>
+                {contracts.length === 0 ? (
+                    <Alert variant="default">
+                        <FileText className="h-4 w-4" />
+                        <AlertTitle>Nenhum Contrato</AlertTitle>
+                        <AlertDescription>
+                           Você ainda não possui contratos disponíveis para visualização.
+                        </AlertDescription>
+                    </Alert>
+                ) : (
+                    <div className="space-y-4">
+                        {contracts.map(contract => (
+                             <Card key={contract.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4">
+                                <div className="flex items-center gap-4">
+                                    {getStatusIcon(contract.status)}
+                                    <div>
+                                        <p className="font-semibold">Contrato {contract.contract_code}</p>
+                                        <Badge variant={getStatusVariant(contract.status) as any} className="mt-1">
+                                          {getStatusText(contract.status)}
+                                        </Badge>
+                                    </div>
+                                </div>
+                                <Button asChild variant="outline" size="sm" className="mt-4 sm:mt-0 w-full sm:w-auto">
+                                    <Link href={`/portal/${client.id}/contrato/${contract.id}`}>
+                                        Visualizar
+                                    </Link>
+                                </Button>
+                            </Card>
+                        ))}
+                    </div>
+                )}
             </TabsContent>
             
-             <TabsContent value="pagamentos">
-                 <Card>
-                    <CardHeader><CardTitle>Pagamentos e Notas</CardTitle></CardHeader>
-                    <CardContent>
-                        <p className="text-sm text-muted-foreground">Informações sobre pagamentos e notas fiscais serão exibidas aqui.</p>
-                    </CardContent>
-                </Card>
+             <TabsContent value="pagamentos" className="mt-6 space-y-6">
+                <h2 className="text-xl font-bold">Pagamentos e Notas</h2>
+                <p className="text-sm text-muted-foreground">Informações sobre pagamentos e notas fiscais serão exibidas aqui.</p>
             </TabsContent>
         </Tabs>
       </main>
     </div>
   )
 }
-
