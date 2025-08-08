@@ -151,7 +151,8 @@ export default function ClientPortalPage() {
 
   return (
     <div className="relative min-h-screen w-full bg-background">
-        <div className="absolute left-[60px] top-[60px]">
+      <div className="absolute left-[60px] top-[60px] flex items-end gap-4">
+        <div className="relative">
             <Avatar className="h-40 w-40 border-4 border-background shadow-md">
                 <AvatarImage src={client.avatar_url || undefined} alt={`Avatar de ${displayName}`} />
                 <AvatarFallback className="text-6xl">
@@ -165,13 +166,13 @@ export default function ClientPortalPage() {
               </Avatar>
             )}
         </div>
-
-      <main className="w-full max-w-2xl space-y-6 px-4 pb-8 pt-48 md:mx-auto md:pt-56">
-        <div className="space-y-1">
-             <h1 className="text-2xl font-bold">{displayName}</h1>
-             <p className="text-muted-foreground">Em parceria com {providerName}</p>
+        <div className="space-y-1 pb-2">
+            <h1 className="text-2xl font-bold">{displayName}</h1>
+            <p className="text-muted-foreground">Em parceria com {providerName}</p>
         </div>
+      </div>
 
+      <main className="w-full max-w-4xl space-y-6 px-4 pb-8 pt-48 md:mx-auto md:pt-56">
         <Tabs defaultValue="dados" className="w-full">
             <TabsList className="grid w-full grid-cols-4 bg-gray-100">
                 <TabsTrigger value="dados">Dados</TabsTrigger>
@@ -262,3 +263,4 @@ export default function ClientPortalPage() {
     </div>
   )
 }
+
