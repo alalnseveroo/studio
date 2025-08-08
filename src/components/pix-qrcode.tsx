@@ -14,51 +14,56 @@ interface PixQRCodeProps {
     beneficiaryCity: string;
 }
 
-const generateBRCode = ({ pixKey, value, beneficiaryName, beneficiaryCity, transactionId }: {
-    pixKey: string;
-    value: number;
-    beneficiaryName: string;
-    beneficiaryCity: string;
-    transactionId: string;
-}) => {
-    const formatValue = (fieldId: string, value: string) => {
-        const length = value.length.toString().padStart(2, '0');
-        return `${fieldId}${length}${value}`;
+const generateBRCode = (
+    pixKey: string,
+    value: number,
+    beneficiaryName: string,
+    beneficiaryCity: string,
+    transactionId: string
+): string => {
+    beneficiaryName = beneficiaryName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").substring(0, 25);
+    beneficiaryCity = beneficiaryCity.normalize("NFD").replace(/[\u0300-\u036f]/g, "").substring(0, 15);
+    transactionId = transactionId.normalize("NFD").replace(/[\u0300-\u036f]/g, "").substring(0, 25);
+
+    const formatField = (id: string, val: string) => {
+        const len = val.length.toString().padStart(2, '0');
+        return `${id}${len}${val}`;
     };
+
+    const merchantAccountInfo = [
+        formatField('00', 'br.gov.bcb.pix'),
+        formatField('01', pixKey)
+    ].join('');
 
     const payload = [
-        formatValue('00', '01'), // Payload Format Indicator
-        formatValue('26', 
-            formatValue('00', 'br.gov.bcb.pix') + // GUI
-            formatValue('01', pixKey) // Chave PIX
-        ),
-        formatValue('52', '0000'), // Merchant Category Code
-        formatValue('53', '986'), // Transaction Currency (BRL)
-        formatValue('54', value.toFixed(2)), // Transaction Amount
-        formatValue('58', 'BR'), // Country Code
-        formatValue('59', beneficiaryName.substring(0, 25)), // Merchant Name
-        formatValue('60', beneficiaryCity.substring(0, 15)), // Merchant City
-        formatValue('62', 
-            formatValue('05', transactionId.substring(0, 25)) // Transaction ID
-        ),
-    ];
+        formatField('00', '01'),
+        formatField('26', merchantAccountInfo),
+        formatField('52', '0000'),
+        formatField('53', '986'),
+        formatField('54', value.toFixed(2)),
+        formatField('58', 'BR'),
+        formatField('59', beneficiaryName),
+        formatField('60', beneficiaryCity),
+        formatField('62', formatField('05', transactionId)),
+    ].join('');
 
-    const payloadString = payload.join('');
-    const crc16 = (data: string) => {
-        let crc = 0xFFFF;
-        for (let i = 0; i < data.length; i++) {
-            crc ^= data.charCodeAt(i) << 8;
-            for (let j = 0; j < 8; j++) {
-                crc = (crc & 0x8000) ? (crc << 1) ^ 0x1021 : crc << 1;
+    const payloadWithCrcPlaceholder = `${payload}6304`;
+
+    // CRC16 Calculation
+    let crc = 0xFFFF;
+    for (let i = 0; i < payloadWithCrcPlaceholder.length; i++) {
+        crc ^= (payloadWithCrcPlaceholder.charCodeAt(i) << 8);
+        for (let j = 0; j < 8; j++) {
+            if ((crc & 0x8000) !== 0) {
+                crc = (crc << 1) ^ 0x1021;
+            } else {
+                crc <<= 1;
             }
         }
-        return (crc & 0xFFFF).toString(16).toUpperCase().padStart(4, '0');
-    };
+    }
+    const crcValue = (crc & 0xFFFF).toString(16).toUpperCase().padStart(4, '0');
 
-    const fullPayload = `${payloadString}6304`;
-    const finalCrc = crc16(fullPayload);
-    
-    return `${fullPayload}${finalCrc}`;
+    return `${payloadWithCrcPlaceholder}${crcValue}`;
 };
 
 
@@ -68,13 +73,13 @@ const PixQRCode: React.FC<PixQRCodeProps> = ({ pixKey, value, beneficiaryName, b
 
     useEffect(() => {
         if (pixKey && value > 0 && beneficiaryName && beneficiaryCity) {
-             const code = generateBRCode({
-                pixKey: pixKey,
-                value: value,
-                beneficiaryName: beneficiaryName,
-                beneficiaryCity: beneficiaryCity,
-                transactionId: '***', // Conforme especificação, pode ser '***'
-            });
+             const code = generateBRCode(
+                pixKey,
+                value,
+                beneficiaryName,
+                beneficiaryCity,
+                '***', // Conforme especificação, pode ser '***'
+            );
             setBrCode(code);
         }
     }, [pixKey, value, beneficiaryName, beneficiaryCity]);
@@ -115,3 +120,4 @@ const PixQRCode: React.FC<PixQRCodeProps> = ({ pixKey, value, beneficiaryName, b
 };
 
 export default PixQRCode;
+
