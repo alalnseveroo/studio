@@ -172,7 +172,7 @@ export default function ClientPortalPage() {
         </div>
       </div>
 
-      <main className="w-full max-w-4xl space-y-6 px-4 pb-8 pt-48 md:mx-auto md:pt-56">
+      <main className="w-full max-w-4xl space-y-6 px-4 pb-8 pt-48 md:pl-[60px] md:pt-56">
         <Tabs defaultValue="dados" className="w-full">
             <TabsList className="grid w-full grid-cols-4 bg-gray-100">
                 <TabsTrigger value="dados">Dados</TabsTrigger>
