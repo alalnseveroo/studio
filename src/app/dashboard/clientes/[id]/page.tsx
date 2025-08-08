@@ -624,14 +624,17 @@ function FinancialStep({ isEditing, setEditingStep, onSave, isLoading, proposals
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Proposta de Cobrança</FormLabel>
-                                <Select onValueChange={field.onChange} value={field.value || ''}>
+                                <Select 
+                                    onValueChange={(value) => field.onChange(value === 'null-value' ? null : value)} 
+                                    value={field.value ?? 'null-value'}
+                                >
                                     <FormControl>
                                         <SelectTrigger>
                                             <SelectValue placeholder="Selecione uma proposta para vincular" />
                                         </SelectTrigger>
                                     </FormControl>
                                     <SelectContent>
-                                        <SelectItem value="">Nenhuma</SelectItem>
+                                        <SelectItem value="null-value">Nenhuma</SelectItem>
                                         {proposals.map(p => (
                                             <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
                                         ))}
@@ -704,5 +707,7 @@ function FinancialStep({ isEditing, setEditingStep, onSave, isLoading, proposals
         </Card>
     )
 }
+
+    
 
     
