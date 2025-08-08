@@ -20,6 +20,7 @@ import SignatureCanvas from 'react-signature-canvas'
 import PixQRCode from '@/components/pix-qrcode'
 import { cn } from '@/lib/utils'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
+import Confetti from 'react-confetti'
 
 
 type Step = 'review' | 'sign' | 'payment';
@@ -35,6 +36,7 @@ export default function ContratoPortalPage() {
   const [provider, setProvider] = useState<(Profile & {email: string}) | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [activeStep, setActiveStep] = useState<Step>('review');
+  const [showConfetti, setShowConfetti] = useState(false);
   
   const [otpStep, setOtpStep] = useState<OtpStep>('initial');
   const [otp, setOtp] = useState('');
@@ -62,6 +64,7 @@ export default function ContratoPortalPage() {
       }
       if (data.client_signature_data) {
         setActiveStep('payment');
+        setShowConfetti(true);
       } else if (data.provider_signature_data) {
         setActiveStep('review');
       }
@@ -116,6 +119,7 @@ export default function ContratoPortalPage() {
       })
       await fetchContract()
       setActiveStep('payment');
+      setShowConfetti(true);
     }
   }
 
@@ -151,6 +155,7 @@ export default function ContratoPortalPage() {
 
   return (
     <>
+      {showConfetti && <Confetti recycle={false} onConfettiComplete={() => setShowConfetti(false)} />}
       <div className="flex min-h-screen w-full justify-center bg-muted/40 px-4 py-8 md:py-16">
         <main className="w-full max-w-4xl space-y-6">
           <div className="flex items-center gap-4">
@@ -177,7 +182,7 @@ export default function ContratoPortalPage() {
               onValueChange={(value) => setActiveStep(value as Step)}
             >
             <AccordionItem value="review" className="rounded-lg border bg-card p-0">
-                <AccordionTrigger className="flex w-full items-center justify-between p-6" disabled={!isReadyToSign}>
+                <AccordionTrigger className={cn("flex w-full items-center justify-between p-6 hover:no-underline", !isReadyToSign && "text-muted-foreground")}>
                      <div className="flex items-center gap-4">
                         {isReviewStepComplete ? <CheckCircle className="h-6 w-6 text-green-500" /> : <FileText className="h-6 w-6 text-primary" />}
                         <div>
@@ -201,7 +206,7 @@ export default function ContratoPortalPage() {
             </AccordionItem>
             
              <AccordionItem value="sign" className="rounded-lg border bg-card p-0">
-                <AccordionTrigger className="flex w-full items-center justify-between p-6" disabled={!isReviewStepComplete}>
+                <AccordionTrigger className={cn("flex w-full items-center justify-between p-6 hover:no-underline", !isReviewStepComplete && "text-muted-foreground") } disabled={!isReviewStepComplete}>
                      <div className="flex items-center gap-4">
                         {isSignStepComplete ? <CheckCircle className="h-6 w-6 text-green-500" /> : <Lock className="h-6 w-6 text-primary" />}
                         <div>
@@ -282,7 +287,7 @@ export default function ContratoPortalPage() {
             </AccordionItem>
             
              <AccordionItem value="payment" className="rounded-lg border bg-card p-0">
-                <AccordionTrigger className="flex w-full items-center justify-between p-6" disabled={!isSignStepComplete}>
+                <AccordionTrigger className={cn("flex w-full items-center justify-between p-6 hover:no-underline", !isSignStepComplete && "text-muted-foreground")} disabled={!isSignStepComplete}>
                      <div className="flex items-center gap-4">
                         <CreditCard className="h-6 w-6 text-primary" />
                         <div>
@@ -337,5 +342,3 @@ export default function ContratoPortalPage() {
     </>
   )
 }
-
-    
