@@ -285,6 +285,7 @@ export default function ContratosPage() {
         onContractAdded={handleContractAdded}
         clients={clients}
         proposals={proposals}
+        onClientListChange={setClients}
       />
     </>
   )

@@ -1,7 +1,7 @@
 
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -32,11 +32,11 @@ import {
 import { Button } from '@/components/ui/button'
 import { useToast } from '@/hooks/use-toast'
 import { createContract } from '@/lib/actions/contratos'
+import { getClients } from '@/lib/actions/clients'
 import { Loader2, PlusCircle } from 'lucide-react'
 import type { Contrato, Cliente, Proposta } from '@/lib/types'
 import { AddClientModal } from './add-client-modal'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { cn } from '@/lib/utils'
 
 const contractSchema = z.object({
   clienteId: z.string({ required_error: 'Selecione um cliente.' }),
@@ -49,18 +49,19 @@ interface CreateContractModalProps {
   onContractAdded: (newContract: Contrato) => void
   clients: Cliente[]
   proposals: Proposta[]
+  onClientListChange: (clients: Cliente[]) => void
 }
 
 export function CreateContractModal({ 
     isOpen, 
     onClose, 
     onContractAdded, 
-    clients: initialClients, 
-    proposals 
+    clients, 
+    proposals,
+    onClientListChange
 }: CreateContractModalProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [isAddClientModalOpen, setIsAddClientModalOpen] = useState(false)
-  const [clients, setClients] = useState<Cliente[]>(initialClients)
   const { toast } = useToast()
   const router = useRouter()
 
@@ -91,10 +92,12 @@ export function CreateContractModal({
     }
   }
   
-  const handleClientAdded = (newClient: Cliente) => {
+  const handleClientAdded = async (newClient: Cliente) => {
     // Adiciona o novo cliente à lista e o seleciona no formulário
-    const updatedClients = [newClient, ...clients];
-    setClients(updatedClients);
+    const { data } = await getClients();
+    if(data) {
+        onClientListChange(data);
+    }
     form.setValue('clienteId', newClient.id, { shouldValidate: true });
     setIsAddClientModalOpen(false); // Fecha o modal de adicionar cliente
   }
