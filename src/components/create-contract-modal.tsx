@@ -35,6 +35,8 @@ import { createContract } from '@/lib/actions/contratos'
 import { Loader2, PlusCircle } from 'lucide-react'
 import type { Contrato, Cliente, Proposta } from '@/lib/types'
 import { AddClientModal } from './add-client-modal'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { cn } from '@/lib/utils'
 
 const contractSchema = z.object({
   clienteId: z.string({ required_error: 'Selecione um cliente.' }),
@@ -124,7 +126,15 @@ export function CreateContractModal({
                       <SelectContent>
                           {clients.map(client => (
                               <SelectItem key={client.id} value={client.id}>
-                                  {client.full_name || client.company_name}
+                                <div className="flex items-center gap-2">
+                                  <Avatar className="h-6 w-6">
+                                    <AvatarImage src={client.avatar_url || ''} />
+                                    <AvatarFallback className="text-xs">
+                                      {(client.full_name || client.company_name || 'C').charAt(0)}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  <span>{client.full_name || client.company_name}</span>
+                                </div>
                               </SelectItem>
                           ))}
                       </SelectContent>

@@ -226,7 +226,7 @@ export default function ContratosPage() {
                          <div className="flex items-center gap-3">
                            <Avatar className="h-6 w-6">
                               <AvatarImage src={contract.clientes?.avatar_url || ''} alt="Avatar do Cliente" />
-                              <AvatarFallback>{contract.clientes?.full_name ? contract.clientes.full_name.charAt(0) : 'C'}</AvatarFallback>
+                              <AvatarFallback>{(contract.clientes?.full_name || contract.clientes?.company_name || 'C').charAt(0)}</AvatarFallback>
                            </Avatar>
                            <span>{contract.clientes?.full_name || contract.clientes?.company_name}</span>
                          </div>
