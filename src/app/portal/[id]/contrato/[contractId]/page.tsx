@@ -1,3 +1,4 @@
+
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
@@ -199,7 +200,17 @@ export default function ContratoPortalPage() {
             </Alert>
           )}
 
-           {isSignedByClient && provider && (
+          {isSignedByProvider && !isSignedByClient && (
+            <Alert>
+              <UserCheck className="h-4 w-4" />
+              <AlertTitle>Pronto para Assinar</AlertTitle>
+              <AlertDescription>
+                Este contrato já foi assinado pela contratada e está aguardando a sua assinatura para ser finalizado.
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {isSignedByClient && provider && (
             <Card>
                 <CardHeader>
                     <CardTitle>Pagamento via PIX</CardTitle>
@@ -214,16 +225,6 @@ export default function ContratoPortalPage() {
                     />
                 </CardContent>
             </Card>
-          )}
-
-          {isSignedByProvider && !isSignedByClient && (
-            <Alert>
-              <UserCheck className="h-4 w-4" />
-              <AlertTitle>Pronto para Assinar</AlertTitle>
-              <AlertDescription>
-                Este contrato já foi assinado pela contratada e está aguardando a sua assinatura para ser finalizado.
-              </AlertDescription>
-            </Alert>
           )}
 
           <Card>
