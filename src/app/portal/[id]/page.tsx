@@ -1,3 +1,4 @@
+
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
@@ -106,22 +107,26 @@ export default function ClientPortalPage() {
   }
 
   return (
-    <div className="flex min-h-screen w-full justify-center bg-muted/40 px-4 py-8 md:py-16">
+    <div className="flex min-h-screen w-full justify-center bg-background px-4 py-8 md:py-16">
       <main className="w-full max-w-2xl space-y-8">
         <Card className="animate-in fade-in-50 duration-500">
-          <CardHeader className="items-center text-center">
-            <Avatar className="h-24 w-24 border-4 border-background shadow-md">
-              <AvatarImage src={client.avatar_url || undefined} alt={`Avatar de ${displayName}`} />
-              <AvatarFallback className="text-4xl">
-                {fallbackLetter}
-              </AvatarFallback>
-            </Avatar>
-            <CardTitle className="pt-4 text-2xl font-bold">
-              Bem-vindo(a), {displayName}!
-            </CardTitle>
-             <CardDescription>
-                Este é seu portal seguro para visualizar e gerenciar seus contratos.
-            </CardDescription>
+          <CardHeader>
+             <div className="flex items-center gap-4">
+                <Avatar className="h-24 w-24 border-4 border-background shadow-md">
+                <AvatarImage src={client.avatar_url || undefined} alt={`Avatar de ${displayName}`} />
+                <AvatarFallback className="text-4xl">
+                    {fallbackLetter}
+                </AvatarFallback>
+                </Avatar>
+                <div>
+                    <CardTitle className="text-2xl font-bold">
+                    Bem-vindo(a), {displayName}!
+                    </CardTitle>
+                    <CardDescription>
+                        Este é seu portal seguro para visualizar e gerenciar seus contratos.
+                    </CardDescription>
+                </div>
+            </div>
           </CardHeader>
         </Card>
 
