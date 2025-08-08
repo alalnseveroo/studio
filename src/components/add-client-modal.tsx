@@ -2,7 +2,6 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
@@ -46,7 +45,6 @@ interface AddClientModalProps {
 export function AddClientModal({ isOpen, onClose, onClientAdded }: AddClientModalProps) {
   const [isLoading, setIsLoading] = useState(false)
   const { toast } = useToast()
-  const router = useRouter()
 
   const form = useForm<z.infer<typeof clientSchema>>({
     resolver: zodResolver(clientSchema),
@@ -70,19 +68,23 @@ export function AddClientModal({ isOpen, onClose, onClientAdded }: AddClientModa
     } else if (data) {
       toast({
         title: 'Cliente Adicionado!',
-        description: `O cliente ${values.name} foi adicionado com sucesso.`,
+        description: `O cliente ${values.name} foi adicionado.`,
       })
       onClientAdded(data);
-      router.push(`/dashboard/clientes/${data.id}`);
-      onClose();
+      onClose(); // Fecha este modal
       form.reset();
     }
   }
   
   const personType = form.watch('personType');
+  
+  const handleClose = () => {
+    form.reset();
+    onClose();
+  }
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Adicionar Novo Cliente</DialogTitle>
@@ -101,13 +103,13 @@ export function AddClientModal({ isOpen, onClose, onClientAdded }: AddClientModa
                     <RadioGroup onValueChange={field.onChange} value={field.value} className="grid grid-cols-2 gap-4">
                     <FormItem>
                         <RadioGroupItem value="cpf" id="cpf" className="peer sr-only" />
-                        <Label htmlFor="cpf" className={cn("flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground cursor-pointer", field.value === 'cpf' && "border-green-500 bg-green-500/10")}>
+                        <Label htmlFor="cpf" className={cn("flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground cursor-pointer", field.value === 'cpf' && "border-primary")}>
                         <User className="mb-3 h-6 w-6" /> Pessoa Física
                         </Label>
                     </FormItem>
                     <FormItem>
                         <RadioGroupItem value="cnpj" id="cnpj" className="peer sr-only" />
-                        <Label htmlFor="cnpj" className={cn("flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground cursor-pointer", field.value === 'cnpj' && "border-green-500 bg-green-500/10")}>
+                        <Label htmlFor="cnpj" className={cn("flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground cursor-pointer", field.value === 'cnpj' && "border-primary")}>
                         <Building className="mb-3 h-6 w-6" /> Pessoa Jurídica
                         </Label>
                     </FormItem>
@@ -133,10 +135,10 @@ export function AddClientModal({ isOpen, onClose, onClientAdded }: AddClientModa
               )}
             />
             <DialogFooter>
-              <Button type="button" variant="ghost" onClick={onClose}>Cancelar</Button>
+              <Button type="button" variant="ghost" onClick={handleClose}>Cancelar</Button>
               <Button type="submit" disabled={isLoading}>
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Criar e Continuar
+                Salvar Cliente
               </Button>
             </DialogFooter>
           </form>
