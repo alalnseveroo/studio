@@ -1,5 +1,4 @@
 
-
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
@@ -8,7 +7,7 @@ import { getClientById } from '@/lib/actions/clients'
 import { getContractsForClientPortal } from '@/lib/actions/contratos'
 import { getProfile } from '@/lib/actions/profile'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card'
+import { Card } from '@/components/ui/card'
 import { AlertCircle, User, FileText, Check, Clock, Verified, Briefcase, Mail } from 'lucide-react'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
@@ -28,7 +27,7 @@ interface InfoRowProps {
 
 const InfoRow: React.FC<InfoRowProps> = ({ icon: Icon, label, value, isVerified }) => (
   <div className="flex items-start gap-4">
-    <Icon className="h-5 w-5 text-muted-foreground mt-1" />
+    <Icon className="h-5 w-5 text-primary mt-1" />
     <div className="flex-1">
       <p className="text-sm font-semibold">{label}</p>
       <div className="text-sm text-muted-foreground flex items-center gap-2">
