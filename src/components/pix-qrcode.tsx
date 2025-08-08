@@ -16,34 +16,36 @@ interface PixQRCodeProps {
 
 const calcularCRC16 = (str: string): string => {
     let crc = 0xFFFF;
-    for (let i = 0; i < str.length; i++) {
-        crc ^= str.charCodeAt(i) << 8;
-        for (let j = 0; j < 8; j++) {
-            crc = (crc & 0x8000) ? (crc << 1) ^ 0x1021 : crc << 1;
-            crc &= 0xFFFF;
+    const polynomial = 0x1021;
+    for (const char of str) {
+        let byte = char.charCodeAt(0);
+        crc ^= (byte << 8);
+        for (let i = 0; i < 8; i++) {
+            const bit = (crc & 0x8000) !== 0;
+            crc <<= 1;
+            if (bit) {
+                crc ^= polynomial;
+            }
         }
     }
-    return crc.toString(16).toUpperCase().padStart(4, '0');
+    return (crc & 0xFFFF).toString(16).toUpperCase().padStart(4, '0');
 };
 
-
 const gerarPixCopiaCola = (chave: string, nome: string, cidade: string, valor: number, txid: string) => {
-    const valorFormatado = valor.toFixed(2);
-    
-    // Normaliza e limita o tamanho dos campos de texto
     const sanitize = (text: string, maxLength: number) => {
         return text
             .normalize("NFD")
             .replace(/[\u0300-\u036f]/g, "") // Remove acentos
             .replace(/[^a-zA-Z0-9 ]/g, '') // Remove caracteres especiais exceto espaço
+            .toUpperCase()
             .substring(0, maxLength)
             .trim();
     };
 
+    const valorFormatado = valor.toFixed(2);
     const nomeSanitizado = sanitize(nome, 25);
     const cidadeSanitizada = sanitize(cidade, 15);
     const txidSanitizado = sanitize(txid, 25).replace(/\s/g, '');
-
 
     const formatField = (id: string, val: string) => {
         const len = val.length.toString().padStart(2, '0');
@@ -52,9 +54,9 @@ const gerarPixCopiaCola = (chave: string, nome: string, cidade: string, valor: n
 
     const merchantAccountInfo = formatField('00', 'br.gov.bcb.pix') + formatField('01', chave);
     const additionalData = formatField('05', txidSanitizado);
-
+    
     const payload = [
-        '000201',
+        formatField('00', '01'),
         formatField('26', merchantAccountInfo),
         formatField('52', '0000'),
         formatField('53', '986'),
@@ -63,8 +65,7 @@ const gerarPixCopiaCola = (chave: string, nome: string, cidade: string, valor: n
         formatField('59', nomeSanitizado),
         formatField('60', cidadeSanitizada),
         formatField('62', additionalData),
-        '6304'
-    ].join('');
+    ].join('') + "6304";
 
     const crc = calcularCRC16(payload);
 
