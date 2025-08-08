@@ -24,7 +24,7 @@ import Confetti from 'react-confetti'
 
 
 type Step = 'review' | 'sign' | 'payment';
-type OtpStep = 'initial' | 'otp_sent' | 'verifying';
+type OtpStep = 'initial' | 'otp_sent' | 'verifying' | 'signed';
 
 
 export default function ContratoPortalPage() {
@@ -64,13 +64,15 @@ export default function ContratoPortalPage() {
       }
       if (data.client_signature_data) {
         setActiveStep('payment');
-        setShowConfetti(true);
+        if (!showConfetti) {
+            setShowConfetti(true);
+        }
       } else if (data.provider_signature_data) {
         setActiveStep('review');
       }
     }
     setIsLoading(false)
-  }, [contractId, clientId])
+  }, [contractId, clientId, showConfetti])
 
   useEffect(() => {
     fetchContract()
@@ -117,9 +119,9 @@ export default function ContratoPortalPage() {
         description: 'Sua assinatura foi registrada com sucesso.',
         className: 'bg-green-100 border-green-200 text-green-800'
       })
+      setOtpStep('signed');
       await fetchContract()
-      setActiveStep('payment');
-      setShowConfetti(true);
+      // Não avança para 'payment' aqui. Fica no 'signed' para o usuário clicar em avançar.
     }
   }
 
@@ -150,8 +152,8 @@ export default function ContratoPortalPage() {
   const isSignedByClient = !!contract.client_signature_data
   const isReadyToSign = isSignedByProvider && !isSignedByClient;
   
-  const isReviewStepComplete = activeStep === 'sign' || activeStep === 'payment';
-  const isSignStepComplete = activeStep === 'payment';
+  const isReviewStepComplete = activeStep !== 'review' || isSignedByClient;
+  const isSignStepComplete = activeStep === 'payment' || isSignedByClient;
 
   return (
     <>
@@ -178,11 +180,14 @@ export default function ContratoPortalPage() {
               type="single" 
               collapsible 
               className="w-full space-y-4"
-              value={activeStep}
-              onValueChange={(value) => setActiveStep(value as Step)}
+              value={isSignedByClient ? 'payment' : activeStep}
+              onValueChange={(value) => !isSignedByClient && setActiveStep(value as Step)}
             >
             <AccordionItem value="review" className="rounded-lg border bg-card p-0">
-                <AccordionTrigger className={cn("flex w-full items-center justify-between p-6 hover:no-underline", !isReadyToSign && "text-muted-foreground")}>
+                <AccordionTrigger 
+                    className={cn("flex w-full items-center justify-between p-6 hover:no-underline", !isReadyToSign && "text-muted-foreground")}
+                    disabled={isReviewStepComplete || !isReadyToSign}
+                >
                      <div className="flex items-center gap-4">
                         {isReviewStepComplete ? <CheckCircle className="h-6 w-6 text-green-500" /> : <FileText className="h-6 w-6 text-primary" />}
                         <div>
@@ -206,7 +211,7 @@ export default function ContratoPortalPage() {
             </AccordionItem>
             
              <AccordionItem value="sign" className="rounded-lg border bg-card p-0">
-                <AccordionTrigger className={cn("flex w-full items-center justify-between p-6 hover:no-underline", !isReviewStepComplete && "text-muted-foreground") } disabled={!isReviewStepComplete}>
+                <AccordionTrigger className={cn("flex w-full items-center justify-between p-6 hover:no-underline", !isReviewStepComplete && "text-muted-foreground")} disabled={!isReviewStepComplete || isSignStepComplete}>
                      <div className="flex items-center gap-4">
                         {isSignStepComplete ? <CheckCircle className="h-6 w-6 text-green-500" /> : <Lock className="h-6 w-6 text-primary" />}
                         <div>
@@ -216,73 +221,95 @@ export default function ContratoPortalPage() {
                     </div>
                 </AccordionTrigger>
                 <AccordionContent className="px-6 pb-6 space-y-6">
-                    <p className="text-sm text-muted-foreground">Para sua segurança, desenhe sua assinatura e confirme com o código de 6 dígitos que será enviado para o seu e-mail.</p>
-                     {otpStep === 'initial' && (
-                            <div className="grid gap-4 py-4">
-                                <div className="space-y-2">
-                                    <label className="text-sm font-medium">1. Desenhe sua assinatura</label>
-                                    <div className="w-full h-48 rounded-md border border-input bg-background">
-                                        <SignatureCanvas
-                                            ref={sigCanvas}
-                                            penColor='black'
-                                            canvasProps={{className: 'w-full h-full'}}
-                                        />
+                   {otpStep === 'signed' ? (
+                       <>
+                        <Alert variant="default" className="bg-green-50 border-green-200">
+                            <CheckCircle className="h-4 w-4 text-green-600" />
+                            <AlertTitle className="text-green-800">Assinatura Verificada!</AlertTitle>
+                            <AlertDescription className="text-green-700">
+                            Sua assinatura foi validada. Veja abaixo como ela ficará no contrato e avance para finalizar.
+                            </AlertDescription>
+                        </Alert>
+                         <div
+                            className="prose prose-sm max-w-none rounded-md border bg-gray-50 p-6"
+                            dangerouslySetInnerHTML={{ __html: contract.full_contract_text || '' }}
+                         />
+                         <div className="flex justify-end">
+                             <Button onClick={() => { setActiveStep('payment'); setShowConfetti(true); }}>
+                                Avançar para Pagamento
+                             </Button>
+                         </div>
+                       </>
+                   ) : (
+                    <>
+                        <p className="text-sm text-muted-foreground">Para sua segurança, desenhe sua assinatura e confirme com o código de 6 dígitos que será enviado para o seu e-mail.</p>
+                        {otpStep === 'initial' && (
+                                <div className="grid gap-4 py-4">
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-medium">1. Desenhe sua assinatura</label>
+                                        <div className="w-full h-48 rounded-md border border-input bg-background">
+                                            <SignatureCanvas
+                                                ref={sigCanvas}
+                                                penColor='black'
+                                                canvasProps={{className: 'w-full h-full'}}
+                                            />
+                                        </div>
+                                        <Button type="button" variant="outline" size="sm" onClick={() => sigCanvas.current?.clear()} className="mt-2">
+                                            Limpar
+                                        </Button>
                                     </div>
-                                    <Button type="button" variant="outline" size="sm" onClick={() => sigCanvas.current?.clear()} className="mt-2">
-                                        Limpar
-                                    </Button>
                                 </div>
+                        )}
+                        {otpStep === 'otp_sent' && (
+                                <div className="grid gap-6 py-4">
+                                    <Alert variant="default" className="bg-blue-50 border-blue-200">
+                                    <MailCheck className="h-4 w-4 text-blue-600" />
+                                    <AlertTitle className="text-blue-800">Verifique seu E-mail</AlertTitle>
+                                    <AlertDescription className="text-blue-700">
+                                        Um e-mail com um código de 6 dígitos foi enviado para você. Insira-o abaixo para validar sua assinatura.
+                                    </AlertDescription>
+                                </Alert>
+                                <div className="flex flex-col items-center justify-center gap-2">
+                                    <label className="text-sm font-medium">2. Insira o código de verificação</label>
+                                    <InputOTP maxLength={6} value={otp} onChange={(value) => setOtp(value)}>
+                                        <InputOTPGroup>
+                                            <InputOTPSlot index={0} />
+                                            <InputOTPSlot index={1} />
+                                            <InputOTPSlot index={2} />
+                                        </InputOTPGroup>
+                                        <InputOTPGroup>
+                                            <InputOTPSlot index={3} />
+                                            <InputOTPSlot index={4} />
+                                            <InputOTPSlot index={5} />
+                                        </InputOTPGroup>
+                                    </InputOTP>
+                                </div>
+                                </div>
+                        )}
+                        {otpStep === 'verifying' && (
+                            <div className="flex justify-center items-center py-12">
+                                <Loader2 className="mr-2 h-8 w-8 animate-spin" />
+                                <p>Processando...</p>
                             </div>
-                    )}
-                    {otpStep === 'otp_sent' && (
-                            <div className="grid gap-6 py-4">
-                                <Alert variant="default" className="bg-blue-50 border-blue-200">
-                                <MailCheck className="h-4 w-4 text-blue-600" />
-                                <AlertTitle className="text-blue-800">Verifique seu E-mail</AlertTitle>
-                                <AlertDescription className="text-blue-700">
-                                    Um e-mail com um código de 6 dígitos foi enviado para você. Insira-o abaixo para validar sua assinatura.
-                                </AlertDescription>
-                            </Alert>
-                            <div className="flex flex-col items-center justify-center gap-2">
-                                <label className="text-sm font-medium">2. Insira o código de verificação</label>
-                                <InputOTP maxLength={6} value={otp} onChange={(value) => setOtp(value)}>
-                                    <InputOTPGroup>
-                                        <InputOTPSlot index={0} />
-                                        <InputOTPSlot index={1} />
-                                        <InputOTPSlot index={2} />
-                                    </InputOTPGroup>
-                                    <InputOTPGroup>
-                                        <InputOTPSlot index={3} />
-                                        <InputOTPSlot index={4} />
-                                        <InputOTPSlot index={5} />
-                                    </InputOTPGroup>
-                                </InputOTP>
-                            </div>
-                            </div>
-                    )}
-                    {otpStep === 'verifying' && (
-                        <div className="flex justify-center items-center py-12">
-                            <Loader2 className="mr-2 h-8 w-8 animate-spin" />
-                            <p>Processando...</p>
+                        )}
+
+                        <div className="flex justify-end gap-2">
+                            <Button variant="outline" onClick={() => setActiveStep('review')}>Voltar</Button>
+                            {otpStep === 'initial' && (
+                                <Button onClick={handleSendCode}>
+                                    <Send className="mr-2 h-4 w-4" />
+                                    Confirmar Assinatura e Enviar Código
+                                </Button>
+                            )}
+                            {otpStep === 'otp_sent' && (
+                                <Button onClick={handleVerifyAndSign}>
+                                    <ShieldCheck className="mr-2 h-4 w-4" />
+                                    Verificar e Assinar Contrato
+                                </Button>
+                            )}
                         </div>
-                    )}
-
-                     <div className="flex justify-end gap-2">
-                         <Button variant="outline" onClick={() => setActiveStep('review')}>Voltar</Button>
-                         {otpStep === 'initial' && (
-                             <Button onClick={handleSendCode}>
-                                <Send className="mr-2 h-4 w-4" />
-                                Confirmar Assinatura e Enviar Código
-                            </Button>
-                         )}
-                         {otpStep === 'otp_sent' && (
-                             <Button onClick={handleVerifyAndSign}>
-                                <ShieldCheck className="mr-2 h-4 w-4" />
-                                Verificar e Assinar Contrato
-                            </Button>
-                         )}
-                      </div>
-
+                    </>
+                   )}
                 </AccordionContent>
             </AccordionItem>
             
@@ -342,3 +369,5 @@ export default function ContratoPortalPage() {
     </>
   )
 }
+
+    
