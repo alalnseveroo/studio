@@ -8,7 +8,7 @@ import { getProfile } from '@/lib/actions/profile'
 import { sendClientVerificationCode } from '@/lib/actions/auth'
 import { useToast } from '@/hooks/use-toast'
 import type { Contrato, Profile } from '@/lib/types'
-import { Loader2, ArrowLeft, UserCheck, ShieldCheck, Download, Edit, Send, Info, MailCheck, FileText, Lock, CreditCard } from 'lucide-react'
+import { Loader2, ArrowLeft, UserCheck, ShieldCheck, Download, Edit, Send, Info, MailCheck, FileText, Lock, CreditCard, CheckCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
@@ -172,33 +172,48 @@ export default function ContratoPortalPage() {
           
            {/* Steps Navigator */}
            <div className="p-4 rounded-lg border bg-card">
-              <nav aria-label="Progress">
-                <ol role="list" className="space-y-4 md:flex md:space-x-8 md:space-y-0">
-                  {steps.map((step, index) => (
-                    <li key={step.name} className="md:flex-1">
-                      <div
-                        className={cn(
-                          "group flex flex-col border-l-4 py-2 pl-4 md:border-l-0 md:border-t-4 md:pb-0 md:pl-0 md:pt-4",
-                          currentStep > step.id ? "border-primary" : "border-gray-200",
-                           currentStep === step.id ? "border-primary" : "group-hover:border-gray-300",
-                        )}
-                      >
-                        <span
-                           className={cn(
-                            "text-sm font-semibold uppercase tracking-wider",
-                            currentStep > step.id ? "text-primary" : "text-muted-foreground",
-                            currentStep === step.id ? "text-primary" : ""
-                          )}
-                        >
-                          ETAPA {step.id}
-                        </span>
-                        <span className="text-sm font-medium">{step.name}</span>
-                      </div>
-                    </li>
-                  ))}
-                </ol>
-              </nav>
-            </div>
+            <nav aria-label="Progress">
+              <ol role="list" className="flex items-center">
+                {steps.map((step, stepIdx) => (
+                  <li key={step.name} className={cn("relative flex-1", stepIdx !== steps.length - 1 ? 'pr-8 sm:pr-20' : '')}>
+                    {currentStep > step.id ? (
+                      <>
+                        <div className="absolute inset-0 flex items-center" aria-hidden="true">
+                          <div className="h-0.5 w-full bg-primary" />
+                        </div>
+                        <div className="relative flex h-8 w-8 items-center justify-center rounded-full bg-primary">
+                          <CheckCircle className="h-5 w-5 text-white" aria-hidden="true" />
+                        </div>
+                      </>
+                    ) : currentStep === step.id ? (
+                      <>
+                        <div className="absolute inset-0 flex items-center" aria-hidden="true">
+                          <div className="h-0.5 w-full bg-gray-200" />
+                        </div>
+                        <div className="relative flex h-8 w-8 items-center justify-center rounded-full border-2 border-primary bg-card">
+                          <span className="h-2.5 w-2.5 rounded-full bg-primary" aria-hidden="true" />
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="absolute inset-0 flex items-center" aria-hidden="true">
+                          <div className="h-0.5 w-full bg-gray-200" />
+                        </div>
+                        <div className="relative flex h-8 w-8 items-center justify-center rounded-full border-2 border-gray-300 bg-card">
+                           <span className="h-2.5 w-2.5 rounded-full bg-transparent" aria-hidden="true" />
+                        </div>
+                      </>
+                    )}
+                     <div className="absolute -bottom-7 w-max text-center sm:text-left sm:w-auto sm:bottom-auto sm:-bottom-0 sm:left-12 sm:top-1/2 sm:-translate-y-1/2">
+                      <p className={cn("text-xs", currentStep >= step.id ? 'font-semibold text-primary' : 'text-muted-foreground')}>
+                        {step.name}
+                      </p>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            </nav>
+          </div>
           
             {/* Step 1: Review Contract */}
             {currentStep === 1 && (
@@ -346,5 +361,3 @@ export default function ContratoPortalPage() {
     </>
   )
 }
-
-    
