@@ -21,37 +21,49 @@ const generateBRCode = (
     beneficiaryCity: string,
     transactionId: string
 ): string => {
-    beneficiaryName = beneficiaryName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").substring(0, 25);
-    beneficiaryCity = beneficiaryCity.normalize("NFD").replace(/[\u0300-\u036f]/g, "").substring(0, 15);
-    transactionId = transactionId.normalize("NFD").replace(/[\u0300-\u036f]/g, "").substring(0, 25);
+    // Normaliza e limita o tamanho dos campos de texto
+    const sanitize = (text: string, maxLength: number) => {
+        return text
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "") // Remove acentos
+            .replace(/[^a-zA-Z0-9 ]/g, '') // Remove caracteres especiais exceto espaço
+            .substring(0, maxLength)
+            .trim();
+    };
+
+    beneficiaryName = sanitize(beneficiaryName, 25);
+    beneficiaryCity = sanitize(beneficiaryCity, 15);
+    transactionId = sanitize(transactionId, 25).replace(/\s/g, ''); // TxID não pode ter espaços
 
     const formatField = (id: string, val: string) => {
         const len = val.length.toString().padStart(2, '0');
         return `${id}${len}${val}`;
     };
-
-    const merchantAccountInfo = [
-        formatField('00', 'br.gov.bcb.pix'),
-        formatField('01', pixKey)
-    ].join('');
-
+    
+    // Montagem dos campos do BRCode
     const payload = [
-        formatField('00', '01'),
-        formatField('26', merchantAccountInfo),
-        formatField('52', '0000'),
-        formatField('53', '986'),
-        formatField('54', value.toFixed(2)),
-        formatField('58', 'BR'),
-        formatField('59', beneficiaryName),
-        formatField('60', beneficiaryCity),
-        formatField('62', formatField('05', transactionId)),
+        formatField('00', '01'), // Payload Format Indicator
+        formatField('26', // Merchant Account Information
+            formatField('00', 'br.gov.bcb.pix') + // GUI
+            formatField('01', pixKey) // Chave PIX
+        ),
+        formatField('52', '0000'), // Merchant Category Code
+        formatField('53', '986'), // Transaction Currency (BRL)
+        formatField('54', value.toFixed(2)), // Transaction Amount
+        formatField('58', 'BR'), // Country Code
+        formatField('59', beneficiaryName), // Merchant Name
+        formatField('60', beneficiaryCity), // Merchant City
+        formatField('62', // Additional Data Field Template
+            formatField('05', transactionId) // Reference Label (txid)
+        ),
     ].join('');
 
     const payloadWithCrcPlaceholder = `${payload}6304`;
-
+    
+    // Cálculo do CRC16-CCITT
     let crc = 0xFFFF;
     for (let i = 0; i < payloadWithCrcPlaceholder.length; i++) {
-        crc ^= (payloadWithCrcPlaceholder.charCodeAt(i) << 8);
+        crc ^= payloadWithCrcPlaceholder.charCodeAt(i) << 8;
         for (let j = 0; j < 8; j++) {
             if ((crc & 0x8000) !== 0) {
                 crc = (crc << 1) ^ 0x1021;
@@ -73,7 +85,6 @@ const PixQRCode: React.FC<PixQRCodeProps> = ({ pixKey, value, beneficiaryName, b
 
     const generateNewCode = useCallback(() => {
         if (pixKey && value > 0 && beneficiaryName && beneficiaryCity) {
-            // Gera um ID de transação mais único, pode ser melhorado se necessário
             const newTxId = `TX${Date.now()}`.substring(0, 25);
             setTransactionId(newTxId);
             const code = generateBRCode(
@@ -88,7 +99,6 @@ const PixQRCode: React.FC<PixQRCodeProps> = ({ pixKey, value, beneficiaryName, b
     }, [pixKey, value, beneficiaryName, beneficiaryCity]);
 
     useEffect(() => {
-        // Gera o código inicial na primeira renderização
         generateNewCode();
     }, [generateNewCode]);
     
@@ -113,8 +123,8 @@ const PixQRCode: React.FC<PixQRCodeProps> = ({ pixKey, value, beneficiaryName, b
                 size={200}
                 bgColor={"#ffffff"}
                 fgColor={"#000000"}
-                level={"L"}
-                includeMargin={false}
+                level={"M"}
+                includeMargin={true}
             />
             <div className="flex w-full gap-2 mt-2">
                  <Button onClick={handleCopy} variant="outline" className="w-full">
