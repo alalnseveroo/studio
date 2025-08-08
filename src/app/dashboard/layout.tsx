@@ -14,6 +14,7 @@ import {
   Package2,
   LogOut,
   ChevronsUpDown,
+  DollarSign,
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 
@@ -64,6 +65,7 @@ const navItems = [
     { href: '/dashboard/clientes', label: 'Clientes', icon: Users },
     { href: '/dashboard/propostas', label: 'Propostas', icon: FileText },
     { href: '/dashboard/contratos', label: 'Contratos', icon: FileSignature },
+    { href: '/dashboard/cobrancas', label: 'Cobranças', icon: DollarSign },
 ]
 
 function MainNav() {
