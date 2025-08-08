@@ -1,11 +1,11 @@
 
 'use client'
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { QRCodeCanvas } from 'qrcode.react';
 import { Button } from './ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Copy } from 'lucide-react';
+import { Copy, RefreshCw } from 'lucide-react';
 
 interface PixQRCodeProps {
     pixKey: string;
@@ -49,7 +49,6 @@ const generateBRCode = (
 
     const payloadWithCrcPlaceholder = `${payload}6304`;
 
-    // CRC16 Calculation
     let crc = 0xFFFF;
     for (let i = 0; i < payloadWithCrcPlaceholder.length; i++) {
         crc ^= (payloadWithCrcPlaceholder.charCodeAt(i) << 8);
@@ -70,19 +69,28 @@ const generateBRCode = (
 const PixQRCode: React.FC<PixQRCodeProps> = ({ pixKey, value, beneficiaryName, beneficiaryCity }) => {
     const { toast } = useToast();
     const [brCode, setBrCode] = useState('');
+    const [transactionId, setTransactionId] = useState('***');
 
-    useEffect(() => {
+    const generateNewCode = useCallback(() => {
         if (pixKey && value > 0 && beneficiaryName && beneficiaryCity) {
-             const code = generateBRCode(
+            // Gera um ID de transação mais único, pode ser melhorado se necessário
+            const newTxId = `TX${Date.now()}`.substring(0, 25);
+            setTransactionId(newTxId);
+            const code = generateBRCode(
                 pixKey,
                 value,
                 beneficiaryName,
                 beneficiaryCity,
-                '***', // Conforme especificação, pode ser '***'
+                newTxId,
             );
             setBrCode(code);
         }
     }, [pixKey, value, beneficiaryName, beneficiaryCity]);
+
+    useEffect(() => {
+        // Gera o código inicial na primeira renderização
+        generateNewCode();
+    }, [generateNewCode]);
     
 
     if (!brCode) {
@@ -108,10 +116,16 @@ const PixQRCode: React.FC<PixQRCodeProps> = ({ pixKey, value, beneficiaryName, b
                 level={"L"}
                 includeMargin={false}
             />
-            <Button onClick={handleCopy} variant="outline" className="w-full mt-2">
-                <Copy className="mr-2 h-4 w-4" />
-                Copiar Código (Copia e Cola)
-            </Button>
+            <div className="flex w-full gap-2 mt-2">
+                 <Button onClick={handleCopy} variant="outline" className="w-full">
+                    <Copy className="mr-2 h-4 w-4" />
+                    Copiar Código
+                </Button>
+                <Button onClick={generateNewCode} variant="secondary" className="w-full">
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                    Gerar Novo Código
+                </Button>
+            </div>
             <p className="text-center text-sm text-muted-foreground mt-2">
                 Abra o aplicativo do seu banco, escolha a opção PIX, selecione "Ler QR Code" ou "Copia e Cola".
             </p>
@@ -120,4 +134,3 @@ const PixQRCode: React.FC<PixQRCodeProps> = ({ pixKey, value, beneficiaryName, b
 };
 
 export default PixQRCode;
-
