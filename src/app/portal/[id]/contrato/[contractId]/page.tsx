@@ -19,9 +19,10 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp
 import SignatureCanvas from 'react-signature-canvas'
 import PixQRCode from '@/components/pix-qrcode'
 import { cn } from '@/lib/utils'
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 
 
-type Step = 1 | 2 | 3;
+type Step = 'review' | 'sign' | 'payment';
 type OtpStep = 'initial' | 'otp_sent' | 'verifying';
 
 
@@ -33,7 +34,7 @@ export default function ContratoPortalPage() {
   const [contract, setContract] = useState<Contrato | null>(null)
   const [provider, setProvider] = useState<(Profile & {email: string}) | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const [currentStep, setCurrentStep] = useState<Step>(1);
+  const [activeStep, setActiveStep] = useState<Step>('review');
   
   const [otpStep, setOtpStep] = useState<OtpStep>('initial');
   const [otp, setOtp] = useState('');
@@ -59,9 +60,10 @@ export default function ContratoPortalPage() {
           setProvider(providerData as Profile & { email: string });
         }
       }
-      // Se já assinado, vai direto para a etapa final
       if (data.client_signature_data) {
-        setCurrentStep(3);
+        setActiveStep('payment');
+      } else if (data.provider_signature_data) {
+        setActiveStep('review');
       }
     }
     setIsLoading(false)
@@ -113,7 +115,7 @@ export default function ContratoPortalPage() {
         className: 'bg-green-100 border-green-200 text-green-800'
       })
       await fetchContract()
-      setCurrentStep(3);
+      setActiveStep('payment');
     }
   }
 
@@ -143,12 +145,9 @@ export default function ContratoPortalPage() {
   const isSignedByProvider = !!contract.provider_signature_data
   const isSignedByClient = !!contract.client_signature_data
   const isReadyToSign = isSignedByProvider && !isSignedByClient;
-
-  const steps = [
-    { id: 1, name: 'Revisar o contrato', icon: FileText },
-    { id: 2, name: 'Solicitar verificação e assinar', icon: Lock },
-    { id: 3, name: 'Concretizar parceria', icon: CreditCard },
-  ];
+  
+  const isReviewStepComplete = activeStep === 'sign' || activeStep === 'payment';
+  const isSignStepComplete = activeStep === 'payment';
 
   return (
     <>
@@ -170,82 +169,51 @@ export default function ContratoPortalPage() {
             )}
           </div>
           
-          <div className="rounded-lg border bg-card p-6">
-            <nav aria-label="Progress">
-              <ol role="list" className="grid grid-cols-3">
-                {steps.map((step, stepIdx) => (
-                  <li key={step.name} className="relative">
-                    <div className="flex flex-col items-center text-center">
-                      <div className="relative flex items-center">
-                        {stepIdx !== 0 && <div className="absolute right-full top-1/2 h-0.5 w-full -translate-y-1/2 bg-gray-200" />}
-                        {stepIdx !== steps.length - 1 && <div className="absolute left-full top-1/2 h-0.5 w-full -translate-y-1/2 bg-gray-200" />}
-
-                        {currentStep > step.id ? (
-                          <>
-                            {stepIdx !== 0 && <div className="absolute right-full top-1/2 h-0.5 w-full -translate-y-1/2 bg-primary" />}
-                            <div className="relative flex h-8 w-8 items-center justify-center rounded-full bg-primary">
-                              <CheckCircle className="h-5 w-5 text-white" aria-hidden="true" />
-                            </div>
-                          </>
-                        ) : currentStep === step.id ? (
-                          <>
-                             {stepIdx !== 0 && <div className={cn("absolute right-full top-1/2 h-0.5 w-full -translate-y-1/2", currentStep > stepIdx ? 'bg-primary' : 'bg-gray-200' )} />}
-                             <div className="relative flex h-8 w-8 items-center justify-center rounded-full border-2 border-primary bg-card">
-                               <span className="h-2.5 w-2.5 rounded-full bg-primary" aria-hidden="true" />
-                            </div>
-                          </>
-                        ) : (
-                          <div className="relative flex h-8 w-8 items-center justify-center rounded-full border-2 border-gray-300 bg-card">
-                            <span className="h-2.5 w-2.5 rounded-full bg-transparent" aria-hidden="true" />
-                          </div>
-                        )}
-                      </div>
-                      <p className={cn("mt-3 text-xs", currentStep >= step.id ? 'font-semibold text-primary' : 'text-muted-foreground')}>
-                        {step.name}
-                      </p>
+          <Accordion 
+              type="single" 
+              collapsible 
+              className="w-full space-y-4"
+              value={activeStep}
+              onValueChange={(value) => setActiveStep(value as Step)}
+            >
+            <AccordionItem value="review" className="rounded-lg border bg-card p-0">
+                <AccordionTrigger className="flex w-full items-center justify-between p-6" disabled={!isReadyToSign}>
+                     <div className="flex items-center gap-4">
+                        {isReviewStepComplete ? <CheckCircle className="h-6 w-6 text-green-500" /> : <FileText className="h-6 w-6 text-primary" />}
+                        <div>
+                            <h3 className="font-semibold text-lg">Etapa 1: Revise o contrato</h3>
+                            {isReviewStepComplete && <p className="text-sm text-muted-foreground text-left">Contrato revisado e aceito.</p>}
+                        </div>
                     </div>
-                  </li>
-                ))}
-              </ol>
-            </nav>
-          </div>
-          
-            {/* Step 1: Review Contract */}
-            {currentStep === 1 && (
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Etapa 1: Revise os Termos do Contrato</CardTitle>
-                        <CardDescription>
-                            Leia atentamente todo o contrato abaixo. Se estiver de acordo, prossiga para a próxima etapa.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <div
-                            id="contract-content"
-                            className="prose prose-sm max-w-none rounded-md border bg-gray-50 p-6"
-                            dangerouslySetInnerHTML={{ __html: contract.full_contract_text || '' }}
-                        />
-                    </CardContent>
-                    <CardFooter>
-                         <Button onClick={() => setCurrentStep(2)} disabled={!isReadyToSign} className="ml-auto">
+                </AccordionTrigger>
+                <AccordionContent className="px-6 pb-6">
+                     <div
+                        id="contract-content"
+                        className="prose prose-sm max-w-none rounded-md border bg-gray-50 p-6 mb-6"
+                        dangerouslySetInnerHTML={{ __html: contract.full_contract_text || '' }}
+                    />
+                     <div className="flex justify-end">
+                        <Button onClick={() => setActiveStep('sign')} disabled={!isReadyToSign}>
                             {isReadyToSign ? 'Li e concordo, avançar para assinatura' : 'Aguardando assinatura da contratada'}
                         </Button>
-                    </CardFooter>
-                </Card>
-            )}
+                     </div>
+                </AccordionContent>
+            </AccordionItem>
             
-            {/* Step 2: Sign */}
-            {currentStep === 2 && (
-                <Card>
-                     <CardHeader>
-                        <CardTitle>Etapa 2: Assinatura Digital</CardTitle>
-                        <CardDescription>
-                          Para sua segurança, desenhe sua assinatura e confirme com o código de 6 dígitos que será enviado para o seu e-mail.
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent className="space-y-6">
-                        {otpStep === 'initial' && (
-                             <div className="grid gap-4 py-4">
+             <AccordionItem value="sign" className="rounded-lg border bg-card p-0">
+                <AccordionTrigger className="flex w-full items-center justify-between p-6" disabled={!isReviewStepComplete}>
+                     <div className="flex items-center gap-4">
+                        {isSignStepComplete ? <CheckCircle className="h-6 w-6 text-green-500" /> : <Lock className="h-6 w-6 text-primary" />}
+                        <div>
+                            <h3 className="font-semibold text-lg">Etapa 2: Solicitar verificação e assinar</h3>
+                             {isSignStepComplete && <p className="text-sm text-muted-foreground text-left">Assinatura digital confirmada.</p>}
+                        </div>
+                    </div>
+                </AccordionTrigger>
+                <AccordionContent className="px-6 pb-6 space-y-6">
+                    <p className="text-sm text-muted-foreground">Para sua segurança, desenhe sua assinatura e confirme com o código de 6 dígitos que será enviado para o seu e-mail.</p>
+                     {otpStep === 'initial' && (
+                            <div className="grid gap-4 py-4">
                                 <div className="space-y-2">
                                     <label className="text-sm font-medium">1. Desenhe sua assinatura</label>
                                     <div className="w-full h-48 rounded-md border border-input bg-background">
@@ -259,44 +227,43 @@ export default function ContratoPortalPage() {
                                         Limpar
                                     </Button>
                                 </div>
-                             </div>
-                        )}
-                        {otpStep === 'otp_sent' && (
-                             <div className="grid gap-6 py-4">
-                                 <Alert variant="default" className="bg-blue-50 border-blue-200">
-                                    <MailCheck className="h-4 w-4 text-blue-600" />
-                                    <AlertTitle className="text-blue-800">Verifique seu E-mail</AlertTitle>
-                                    <AlertDescription className="text-blue-700">
-                                        Um e-mail com um código de 6 dígitos foi enviado para você. Insira-o abaixo para validar sua assinatura.
-                                    </AlertDescription>
-                                </Alert>
-                                <div className="flex flex-col items-center justify-center gap-2">
-                                    <label className="text-sm font-medium">2. Insira o código de verificação</label>
-                                    <InputOTP maxLength={6} value={otp} onChange={(value) => setOtp(value)}>
-                                        <InputOTPGroup>
-                                            <InputOTPSlot index={0} />
-                                            <InputOTPSlot index={1} />
-                                            <InputOTPSlot index={2} />
-                                        </InputOTPGroup>
-                                        <InputOTPGroup>
-                                            <InputOTPSlot index={3} />
-                                            <InputOTPSlot index={4} />
-                                            <InputOTPSlot index={5} />
-                                        </InputOTPGroup>
-                                    </InputOTP>
-                                </div>
-                             </div>
-                        )}
-                         {otpStep === 'verifying' && (
-                            <div className="flex justify-center items-center py-12">
-                                <Loader2 className="mr-2 h-8 w-8 animate-spin" />
-                                <p>Processando...</p>
                             </div>
-                         )}
-                      </CardContent>
-                      <CardFooter className="gap-2">
-                         <Button variant="outline" onClick={() => setCurrentStep(1)}>Voltar</Button>
-                         <div className="flex-grow" />
+                    )}
+                    {otpStep === 'otp_sent' && (
+                            <div className="grid gap-6 py-4">
+                                <Alert variant="default" className="bg-blue-50 border-blue-200">
+                                <MailCheck className="h-4 w-4 text-blue-600" />
+                                <AlertTitle className="text-blue-800">Verifique seu E-mail</AlertTitle>
+                                <AlertDescription className="text-blue-700">
+                                    Um e-mail com um código de 6 dígitos foi enviado para você. Insira-o abaixo para validar sua assinatura.
+                                </AlertDescription>
+                            </Alert>
+                            <div className="flex flex-col items-center justify-center gap-2">
+                                <label className="text-sm font-medium">2. Insira o código de verificação</label>
+                                <InputOTP maxLength={6} value={otp} onChange={(value) => setOtp(value)}>
+                                    <InputOTPGroup>
+                                        <InputOTPSlot index={0} />
+                                        <InputOTPSlot index={1} />
+                                        <InputOTPSlot index={2} />
+                                    </InputOTPGroup>
+                                    <InputOTPGroup>
+                                        <InputOTPSlot index={3} />
+                                        <InputOTPSlot index={4} />
+                                        <InputOTPSlot index={5} />
+                                    </InputOTPGroup>
+                                </InputOTP>
+                            </div>
+                            </div>
+                    )}
+                    {otpStep === 'verifying' && (
+                        <div className="flex justify-center items-center py-12">
+                            <Loader2 className="mr-2 h-8 w-8 animate-spin" />
+                            <p>Processando...</p>
+                        </div>
+                    )}
+
+                     <div className="flex justify-end gap-2">
+                         <Button variant="outline" onClick={() => setActiveStep('review')}>Voltar</Button>
                          {otpStep === 'initial' && (
                              <Button onClick={handleSendCode}>
                                 <Send className="mr-2 h-4 w-4" />
@@ -309,27 +276,31 @@ export default function ContratoPortalPage() {
                                 Verificar e Assinar Contrato
                             </Button>
                          )}
-                      </CardFooter>
-                </Card>
-            )}
+                      </div>
 
-            {/* Step 3: Payment */}
-             {currentStep === 3 && (
-                <>
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Etapa 3: Concretize a Parceria</CardTitle>
-                        <Alert variant="default" className="bg-green-50 border-green-200 mt-4">
-                          <ShieldCheck className="h-4 w-4 text-green-600" />
-                          <AlertTitle className="text-green-800">Contrato Assinado com Sucesso!</AlertTitle>
-                          <AlertDescription className="text-green-700">
-                            Obrigado! Sua assinatura foi registrada. Para iniciar os serviços, realize o pagamento da primeira parcela.
-                          </AlertDescription>
-                        </Alert>
-                    </CardHeader>
-                    <CardContent className="flex justify-center">
+                </AccordionContent>
+            </AccordionItem>
+            
+             <AccordionItem value="payment" className="rounded-lg border bg-card p-0">
+                <AccordionTrigger className="flex w-full items-center justify-between p-6" disabled={!isSignStepComplete}>
+                     <div className="flex items-center gap-4">
+                        <CreditCard className="h-6 w-6 text-primary" />
+                        <div>
+                            <h3 className="font-semibold text-lg">Etapa 3: Concretizar parceria</h3>
+                        </div>
+                    </div>
+                </AccordionTrigger>
+                <AccordionContent className="px-6 pb-6 space-y-6">
+                     <Alert variant="default" className="bg-green-50 border-green-200 mt-4">
+                        <ShieldCheck className="h-4 w-4 text-green-600" />
+                        <AlertTitle className="text-green-800">Contrato Assinado com Sucesso!</AlertTitle>
+                        <AlertDescription className="text-green-700">
+                        Obrigado! Sua assinatura foi registrada. Para iniciar os serviços, realize o pagamento da primeira parcela.
+                        </AlertDescription>
+                    </Alert>
+                     <div className="flex justify-center">
                         {provider ? (
-                             <PixQRCode
+                                <PixQRCode
                                 pixKey={provider.cpf || provider.cnpj || ''}
                                 value={contract.propostas?.value || 0}
                                 beneficiaryName={provider.full_name || provider.company_name || 'Beneficiário'}
@@ -338,31 +309,23 @@ export default function ContratoPortalPage() {
                         ) : (
                             <p>Carregando informações de pagamento...</p>
                         )}
-                    </CardContent>
-                    <CardFooter>
-                        <p className="text-xs text-muted-foreground text-center w-full">
-                            Após o pagamento, a contratada será notificada para dar início aos trabalhos.
-                        </p>
-                    </CardFooter>
-                </Card>
-
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Cópia do Contrato</CardTitle>
-                        <CardDescription>
-                            Abaixo está a versão final do contrato assinado por ambas as partes.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                         <div
+                    </div>
+                    <p className="text-xs text-muted-foreground text-center w-full">
+                        Após o pagamento, a contratada será notificada para dar início aos trabalhos.
+                    </p>
+                    
+                     <div className="pt-6">
+                        <h3 className="text-lg font-semibold mb-4">Cópia do Contrato Assinado</h3>
+                        <div
                             id="contract-content-for-pdf"
                             className="prose prose-sm max-w-none rounded-md border bg-gray-50 p-6"
                             dangerouslySetInnerHTML={{ __html: contract.full_contract_text || '' }}
                         />
-                    </CardContent>
-                </Card>
-                </>
-            )}
+                    </div>
+
+                </AccordionContent>
+            </AccordionItem>
+          </Accordion>
           
           {/* Div oculta para geração de PDF */}
           <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
@@ -375,3 +338,4 @@ export default function ContratoPortalPage() {
   )
 }
 
+    
