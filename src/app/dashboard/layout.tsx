@@ -27,20 +27,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import {
-    Popover,
-    PopoverContent,
-    PopoverTrigger,
-} from "@/components/ui/popover"
-import {
-    Command,
-    CommandEmpty,
-    CommandGroup,
-    CommandInput,
-    CommandItem,
-    CommandList,
-    CommandSeparator,
-} from "@/components/ui/command"
 
 import {
   Sidebar,
@@ -94,69 +80,58 @@ function MainNav() {
     )
 }
 
-function UserNav({ user, className }: { user: (Profile & { email: string }), className?: string }) {
-    const [open, setOpen] = useState(false)
-    
+function UserNav({ user }: { user: (Profile & { email: string })}) {
     const displayName = user.full_name || user.company_name || 'Usuário';
     const fallback = displayName.charAt(0).toUpperCase();
 
     return (
-        <Popover open={open} onOpenChange={setOpen}>
-            <PopoverTrigger asChild>
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
                 <Button
                     variant="ghost"
-                    size="sm"
-                    role="combobox"
-                    aria-expanded={open}
-                    aria-label="Selecionar um membro da equipe"
-                    className={cn("w-full justify-start gap-2", className)}
+                    className="relative size-10 rounded-full p-0"
                 >
-                    <Avatar className="h-8 w-8">
-                        <AvatarImage src={undefined} alt="Avatar" />
-                        <AvatarFallback>{fallback}</AvatarFallback>
-                    </Avatar>
-                    <div className="flex flex-col items-start text-left">
-                        <span className="font-medium truncate">{displayName}</span>
-                        <span className="text-xs text-muted-foreground truncate">{user.email}</span>
+                    <div className="rounded-full border-2 border-primary p-0.5">
+                        <Avatar className="size-8">
+                           <AvatarImage src={undefined} alt="Avatar" />
+                           <AvatarFallback>{fallback}</AvatarFallback>
+                        </Avatar>
                     </div>
-                    <ChevronsUpDown className="ml-auto h-4 w-4 shrink-0 opacity-50" />
                 </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-56 p-0" side="right" align="start">
-                <Command>
-                    <CommandList>
-                        <CommandGroup>
-                             <Link href="/dashboard/settings/profile">
-                                <CommandItem onSelect={() => setOpen(false)} className="cursor-pointer">
-                                    <Settings className="mr-2 h-4 w-4" />
-                                    Configurações
-                                </CommandItem>
-                            </Link>
-                        </CommandGroup>
-                        <CommandSeparator />
-                        <CommandGroup>
-                            <form action={signOut} className="w-full">
-                                <button type="submit" className="w-full">
-                                    <CommandItem onSelect={() => setOpen(false)} className="cursor-pointer">
-                                        <LogOut className="mr-2 h-4 w-4" />
-                                        Sair
-                                    </CommandItem>
-                                </button>
-                            </form>
-                        </CommandGroup>
-                    </CommandList>
-                </Command>
-            </PopoverContent>
-        </Popover>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>
+                     <div className="flex flex-col space-y-1">
+                        <p className="text-sm font-medium leading-none">{displayName}</p>
+                        <p className="text-xs leading-none text-muted-foreground">
+                        {user.email}
+                        </p>
+                    </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                 <DropdownMenuItem asChild>
+                     <Link href="/dashboard/settings/profile">
+                        <Settings className="mr-2 h-4 w-4" />
+                        <span>Configurações</span>
+                    </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <form action={signOut} className="w-full">
+                    <button type="submit" className="w-full">
+                        <DropdownMenuItem>
+                            <LogOut className="mr-2 h-4 w-4" />
+                            <span>Sair</span>
+                        </DropdownMenuItem>
+                    </button>
+                </form>
+            </DropdownMenuContent>
+        </DropdownMenu>
     )
 }
 
-
-function SettingsNav() {
-     const [userProfile, setUserProfile] = useState<(Profile & { email: string }) | null>(null)
-     const pathname = usePathname()
-     
-     useEffect(() => {
+function DashboardHeader() {
+    const [userProfile, setUserProfile] = useState<(Profile & { email: string }) | null>(null)
+    useEffect(() => {
         async function loadProfile() {
             const { data } = await getProfile();
             if (data) {
@@ -166,28 +141,15 @@ function SettingsNav() {
         loadProfile();
      }, [])
 
-     if (!userProfile) {
-        return (
-             <div className="flex items-center gap-2 p-2">
-                <Avatar className="h-8 w-8">
-                    <AvatarFallback>?</AvatarFallback>
-                </Avatar>
-                 <div className="flex flex-col gap-1">
-                    <div className="h-4 w-20 rounded-md bg-muted animate-pulse" />
-                    <div className="h-3 w-28 rounded-md bg-muted animate-pulse" />
-                </div>
-            </div>
-        )
-     }
-
      return (
-        <SidebarMenu>
-             <SidebarMenuItem>
-                <UserNav user={userProfile} />
-            </SidebarMenuItem>
-        </SidebarMenu>
+        <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
+            <div className="ml-auto flex items-center gap-2">
+                {userProfile ? <UserNav user={userProfile} /> : <div className="size-10 rounded-full bg-muted animate-pulse" />}
+            </div>
+        </header>
      )
 }
+
 
 export default function DashboardLayout({
   children,
@@ -200,11 +162,9 @@ export default function DashboardLayout({
              <SidebarContent className="p-4">
                 <MainNav />
             </SidebarContent>
-            <SidebarFooter className="p-4">
-                 <SettingsNav />
-            </SidebarFooter>
         </Sidebar>
         <SidebarInset>
+            <DashboardHeader />
             <main className="flex flex-1 flex-col">{children}</main>
         </SidebarInset>
     </SidebarProvider>
