@@ -1,10 +1,11 @@
+
 'use client'
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
-import { PlusCircle, FileText, CheckCircle } from 'lucide-react'
+import { PlusCircle, FileText, CheckCircle, Loader2 } from 'lucide-react'
 import { getProposals } from '@/lib/actions/propostas'
 import type { Proposta } from '@/lib/types'
 import { Badge } from '@/components/ui/badge'
@@ -41,7 +42,7 @@ export default function PropostasPage() {
 
       {isLoading ? (
         <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm">
-          <p>Carregando propostas...</p>
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
       ) : proposals.length === 0 ? (
         <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm">
@@ -51,8 +52,11 @@ export default function PropostasPage() {
               Você ainda não tem propostas
             </h3>
             <p className="text-sm text-muted-foreground">
-              Crie propostas de serviço para usar em seus contratos.
+              Crie propostas de serviço para usar em seus contratos e cobranças.
             </p>
+             <Button className="mt-4" asChild>
+                <Link href="/dashboard/propostas/nova">Criar Proposta</Link>
+             </Button>
           </div>
         </div>
       ) : (
@@ -60,7 +64,7 @@ export default function PropostasPage() {
           {proposals.map((proposal) => (
             <Card key={proposal.id}>
               <CardHeader>
-                <CardTitle>{proposal.name}</CardTitle>
+                <CardTitle className="truncate">{proposal.name}</CardTitle>
                 <CardDescription>
                   {proposal.services.length} serviço(s) incluído(s)
                 </CardDescription>
@@ -68,8 +72,8 @@ export default function PropostasPage() {
               <CardContent>
                 <div className="space-y-2">
                   {proposal.services.slice(0, 3).map((service, index) => (
-                    <div key={index} className="flex items-center gap-2 text-sm">
-                      <CheckCircle className="h-4 w-4 text-green-500" />
+                    <div key={index} className="flex items-center gap-2 text-sm truncate">
+                      <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
                       <span>{service}</span>
                     </div>
                   ))}

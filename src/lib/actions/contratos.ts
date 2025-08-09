@@ -93,8 +93,8 @@ export async function getContracts() {
         .from('contratos')
         .select(`
             *,
-            clientes (id, full_name, company_name, avatar_url),
-            propostas (id, name, value)
+            clientes (id, full_name, company_name, avatar_url, email),
+            propostas (id, name, value, payment_day)
         `)
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
@@ -156,7 +156,7 @@ export async function getContractsForClientPortal(clientId: string) {
     const supabase = createClient()
     const { data, error } = await supabase
         .from('contratos')
-        .select('*')
+        .select('*, propostas(*)')
         .eq('cliente_id', clientId)
         .order('created_at', { ascending: false });
 

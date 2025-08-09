@@ -1,4 +1,5 @@
 
+
 export type Cliente = {
   id: string;
   user_id: string;
@@ -22,6 +23,7 @@ export type Cliente = {
   updated_at: string;
   billing_status: 'active' | 'inactive';
   proposal_id: string | null;
+  propostas?: Proposta; // Adicionado para suportar o join
 };
 
 export type Proposta = {

@@ -96,7 +96,11 @@ export async function getClients() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { data: [], error: { message: 'Usuário não autenticado.' } };
 
-    const { data, error } = await supabase.from('clientes').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
+    const { data, error } = await supabase
+        .from('clientes')
+        .select('*, propostas(*)') // Inclui a proposta vinculada
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
 
     if (error) {
         console.error('Supabase error:', error);
