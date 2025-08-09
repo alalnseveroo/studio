@@ -1,5 +1,4 @@
 
-
 export type Cliente = {
   id: string;
   user_id: string;
@@ -18,12 +17,19 @@ export type Cliente = {
   profession: string | null;
   rg: string | null;
   cpf: string | null;
+  phone?: string | null;
   address: string | null;
   created_at: string;
   updated_at: string;
-  billing_status: 'active' | 'inactive';
+  
+  // Billing info directly on client for simplicity of the wizard
+  billing_status: 'active' | 'inactive' | 'pending_approval';
   proposal_id: string | null;
-  propostas?: Proposta; // Adicionado para suportar o join
+  value?: number | null;
+  payment_day?: number | null;
+  first_charge_date?: string | null;
+
+  propostas?: Proposta; // Can still be used for joins
 };
 
 export type Proposta = {
@@ -89,5 +95,7 @@ export type SignatureData = {
   user_agent: string;
   email_verified: string;
 };
+
+    
 
     

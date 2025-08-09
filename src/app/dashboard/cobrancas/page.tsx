@@ -15,17 +15,19 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Loader2, Send, FileWarning, ArrowRight, UserPlus, FilePlus, Link2 } from 'lucide-react'
 import { getClients } from '@/lib/actions/clients'
 import type { Cliente, Profile } from '@/lib/types'
-import { format, isAfter, startOfMonth, addMonths } from 'date-fns'
+import { format, isAfter, startOfMonth, addMonths, parseISO } from 'date-fns'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { useToast } from '@/hooks/use-toast'
 import { getProfile } from '@/lib/actions/profile'
 import { sendTransactionalEmail } from '@/lib/brevo'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import Link from 'next/link'
+import { Badge } from '@/components/ui/badge'
+import { cn } from '@/lib/utils'
 
 interface PendingCharge extends Cliente {
     nextDueDate: Date;
-    proposta: any; // Simplificado para evitar erros de tipo complexos
+    proposta: any; 
 }
 
 export default function CobrancasPage() {
@@ -35,10 +37,20 @@ export default function CobrancasPage() {
   const [providerProfile, setProviderProfile] = useState<(Profile & {email: string}) | null>(null);
   const { toast } = useToast()
 
+  const getStatusInfo = (charge: Cliente) => {
+    if (charge.billing_status === 'pending_approval') {
+        return { text: 'Aguardando Aprovação', className: 'border-orange-500 bg-orange-500/10 text-orange-700' };
+    }
+    if (charge.billing_status === 'active') {
+        return { text: 'Ativa', className: 'border-green-500 bg-green-500/10 text-green-700' };
+    }
+    return { text: 'Inativa', className: 'border-gray-500 bg-gray-500/10 text-gray-700' };
+  }
+
+
   useEffect(() => {
     async function fetchData() {
       setIsLoading(true)
-      // Buscamos clientes que têm uma proposta vinculada e cobrança ativa
       const [{ data: clients, error }, { data: profileData }] = await Promise.all([
         getClients(),
         getProfile()
@@ -60,43 +72,34 @@ export default function CobrancasPage() {
       const charges: PendingCharge[] = [];
 
       clients
-        .filter(c => c.billing_status === 'active' && c.proposta_id) // Filtra apenas clientes com cobrança ativa e proposta
         .forEach(client => {
-            // @ts-ignore
-            if (client.propostas && client.propostas.payment_day) {
-                // @ts-ignore
-                const paymentDay = client.propostas.payment_day;
+            const firstChargeDate = client.first_charge_date ? parseISO(client.first_charge_date) : null;
+            
+            if (client.billing_status === 'pending_approval' && firstChargeDate) {
+                charges.push({ ...client, nextDueDate: firstChargeDate, proposta: {} });
+            } else if (client.billing_status === 'active' && client.payment_day && firstChargeDate) {
                 let nextDueDate = startOfMonth(today);
-                nextDueDate.setDate(paymentDay);
-
+                nextDueDate.setDate(client.payment_day);
+                
                 if (isAfter(today, nextDueDate)) {
                     nextDueDate = addMonths(nextDueDate, 1);
                 }
+
+                // Se a proxima data de vencimento for antes da data da primeira cobrança, use a data da primeira cobrança
+                if (isAfter(firstChargeDate, nextDueDate)) {
+                    nextDueDate = firstChargeDate;
+                }
                 
-                charges.push({
-                    ...client,
-                    nextDueDate,
-                    // @ts-ignore
-                    proposta: client.propostas,
-                });
+                charges.push({ ...client, nextDueDate, proposta: { value: client.value } });
             }
         });
       
-      setPendingCharges(charges)
+      setPendingCharges(charges.sort((a,b) => a.nextDueDate.getTime() - b.nextDueDate.getTime()));
       setIsLoading(false)
     }
 
     fetchData()
   }, [toast])
-  
-  // Re-fetch dos clientes quando a action for executada
-  useEffect(() => {
-     async function fetchClientsWithProposals() {
-        const {data, error} = await getClients()
-        // ... Lógica para atualizar a lista
-     }
-     // ...
-  },[])
 
 
   const handleSendCharge = async (charge: PendingCharge) => {
@@ -129,7 +132,7 @@ export default function CobrancasPage() {
             {
                 nome_cliente: clientName,
                 nome_contratada: senderName,
-                valor_cobranca: charge.proposta?.value?.toFixed(2),
+                valor_cobranca: charge.proposta?.value?.toFixed(2) || charge.value?.toFixed(2),
                 data_vencimento: format(charge.nextDueDate, 'dd/MM/yyyy'),
                 link_portal: portalUrl,
             },
@@ -153,6 +156,27 @@ export default function CobrancasPage() {
       }
   }
 
+  const renderActionButton = (charge: PendingCharge) => {
+      if (charge.billing_status === 'pending_approval') {
+          return (
+              <Button size="sm" onClick={() => handleSendCharge(charge)} disabled={isSending === charge.id}>
+                  {isSending === charge.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+                  Revisar e Enviar
+              </Button>
+          )
+      }
+      return (
+           <Button size="sm" onClick={() => handleSendCharge(charge)} disabled={isSending === charge.id}>
+                {isSending === charge.id ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                    <Send className="mr-2 h-4 w-4" />
+                )}
+                Enviar Lembrete
+            </Button>
+      )
+  }
+
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 sm:gap-6 sm:p-6">
         <div className="flex items-center">
@@ -162,28 +186,28 @@ export default function CobrancasPage() {
         <Card>
             <CardHeader>
                 <CardTitle>Como Funciona a Cobrança?</CardTitle>
-                <CardDescription>Siga estes passos para configurar a cobrança para um cliente.</CardDescription>
+                <CardDescription>Siga os passos no botão "Adicionar Cliente" para criar uma nova cobrança.</CardDescription>
             </CardHeader>
             <CardContent className="grid gap-6 sm:grid-cols-3">
                 <div className="flex items-start gap-4">
                     <UserPlus className="h-8 w-8 text-primary flex-shrink-0" />
                     <div>
                         <h4 className="font-semibold">1. Cadastre o Cliente</h4>
-                        <p className="text-sm text-muted-foreground">Adicione um novo cliente na página de <Link href="/dashboard/clientes" className="underline">Clientes</Link>.</p>
+                        <p className="text-sm text-muted-foreground">Adicione um novo cliente e preencha seus dados básicos.</p>
                     </div>
                 </div>
                  <div className="flex items-start gap-4">
                     <FilePlus className="h-8 w-8 text-primary flex-shrink-0" />
                     <div>
-                        <h4 className="font-semibold">2. Crie uma Proposta</h4>
-                        <p className="text-sm text-muted-foreground">Defina os valores e datas em <Link href="/dashboard/propostas/nova" className="underline">Propostas</Link>.</p>
+                        <h4 className="font-semibold">2. Defina a Cobrança</h4>
+                        <p className="text-sm text-muted-foreground">Use uma proposta ou defina um valor e data de início.</p>
                     </div>
                 </div>
                  <div className="flex items-start gap-4">
                     <Link2 className="h-8 w-8 text-primary flex-shrink-0" />
                     <div>
-                        <h4 className="font-semibold">3. Vincule e Ative</h4>
-                        <p className="text-sm text-muted-foreground">Na página do cliente, vá na aba "Financeiro", vincule a proposta e ative a cobrança.</p>
+                        <h4 className="font-semibold">3. Revise e Ative</h4>
+                        <p className="text-sm text-muted-foreground">Confirme os dados e ative a automação, que aparecerá aqui.</p>
                     </div>
                 </div>
             </CardContent>
@@ -207,7 +231,7 @@ export default function CobrancasPage() {
                         Nenhuma cobrança recorrente ativa
                     </h3>
                     <p className="text-sm text-muted-foreground max-w-md">
-                        Para ver cobranças aqui, certifique-se de que seus clientes têm uma proposta financeira vinculada e o status de cobrança "Ativo".
+                        Clique em "Adicionar Cliente" na página de Clientes para configurar uma nova cobrança.
                     </p>
                     </div>
                 </div>
@@ -224,14 +248,16 @@ export default function CobrancasPage() {
                         <TableHeader>
                         <TableRow>
                             <TableHead>Cliente</TableHead>
-                            <TableHead className="hidden md:table-cell">Proposta Vinculada</TableHead>
+                            <TableHead className="hidden md:table-cell">Status</TableHead>
+                            <TableHead>Próxima Cobrança</TableHead>
                             <TableHead>Valor (R$)</TableHead>
-                            <TableHead>Próximo Vencimento</TableHead>
                             <TableHead className="text-center">Ações</TableHead>
                         </TableRow>
                         </TableHeader>
                         <TableBody>
-                        {pendingCharges.map((charge) => (
+                        {pendingCharges.map((charge) => {
+                          const status = getStatusInfo(charge);
+                          return (
                             <TableRow key={charge.id}>
                             <TableCell className="font-medium">
                                 <div className="flex items-center gap-3">
@@ -242,25 +268,21 @@ export default function CobrancasPage() {
                                 <span>{charge?.full_name || charge?.company_name}</span>
                                 </div>
                             </TableCell>
-                            <TableCell className="hidden md:table-cell">{charge.proposta?.name || 'N/A'}</TableCell>
-                            <TableCell>
-                                {charge.proposta?.value ? `${Number(charge.proposta.value).toFixed(2)}` : 'N/A'}
+                            <TableCell className="hidden md:table-cell">
+                                <Badge variant="outline" className={cn("font-normal", status.className)}>{status.text}</Badge>
                             </TableCell>
                             <TableCell>
                                 {format(charge.nextDueDate, 'dd/MM/yyyy')}
                             </TableCell>
+                            <TableCell>
+                                {charge.value ? `${Number(charge.value).toFixed(2)}` : 'N/A'}
+                            </TableCell>
                             <TableCell className="text-center">
-                                <Button size="sm" onClick={() => handleSendCharge(charge)} disabled={isSending === charge.id}>
-                                    {isSending === charge.id ? (
-                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    ) : (
-                                        <Send className="mr-2 h-4 w-4" />
-                                    )}
-                                    Enviar Lembrete
-                                </Button>
+                                {renderActionButton(charge)}
                             </TableCell>
                             </TableRow>
-                        ))}
+                         )
+                        })}
                         </TableBody>
                     </Table>
                     </CardContent>
@@ -283,3 +305,5 @@ export default function CobrancasPage() {
     </div>
   )
 }
+
+    
