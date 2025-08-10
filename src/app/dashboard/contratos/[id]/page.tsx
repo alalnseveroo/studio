@@ -95,12 +95,15 @@ export default function ContratoDetailPage() {
   }
   
   const resetSheet = () => {
+    // Only set open state, other resets are handled when opening
     setIsSheetOpen(false)
-    setTimeout(() => {
-        setSheetStep('initial')
-        setOtp('')
-        setUserEmail('')
-    }, 300);
+  }
+
+  const openSheet = () => {
+    setSheetStep('initial');
+    setOtp('');
+    setUserEmail('');
+    setIsSheetOpen(true);
   }
 
   if (isLoading) {
@@ -151,7 +154,7 @@ export default function ContratoDetailPage() {
           </Badge>
           <div className="hidden items-center gap-2 md:ml-auto md:flex">
              {!isSignedByProvider && (
-              <Button onClick={() => setIsSheetOpen(true)}>Assinar Contrato</Button>
+              <Button onClick={openSheet}>Assinar Contrato</Button>
             )}
              {isSignedByProvider && (
               <Button variant="secondary" disabled>Assinado por Você</Button>
@@ -187,13 +190,14 @@ export default function ContratoDetailPage() {
         </Card>
       </div>
 
-      <Sheet open={isSheetOpen} onOpenChange={resetSheet}>
+      <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
         <SheetContent className="sm:max-w-lg">
           <SheetHeader>
             <SheetTitle>Confirmar Assinatura Digital</SheetTitle>
             <SheetDescription>
               Para sua segurança, precisamos validar sua identidade antes de assinar.
             </SheetDescription>
+            <Separator className="!my-4" />
           </SheetHeader>
 
           {sheetStep === 'initial' && (
@@ -241,7 +245,15 @@ export default function ContratoDetailPage() {
              </div>
           )}
 
-          <SheetFooter>
+           {sheetStep === 'verifying' && (
+                <div className="flex justify-center items-center py-12">
+                    <Loader2 className="mr-2 h-8 w-8 animate-spin" />
+                    <p>Processando...</p>
+                </div>
+            )}
+
+
+          <SheetFooter className="mt-auto">
             <Button variant="outline" onClick={resetSheet}>Cancelar</Button>
             {sheetStep === 'initial' && (
                  <Button onClick={handleSendOtp}>
@@ -265,5 +277,3 @@ export default function ContratoDetailPage() {
     </>
   )
 }
-
-    
