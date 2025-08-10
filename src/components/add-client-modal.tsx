@@ -80,6 +80,12 @@ export function AddClientModal({ isOpen, onClose, onClientAdded }: AddClientModa
     defaultValues: {
       fullName: '',
       email: '',
+      phone: '',
+      document: '',
+      proposalId: '',
+      value: '',
+      paymentDay: '',
+      description: '',
       firstChargeAction: 'manual',
     },
   })
@@ -329,7 +335,7 @@ function ReviewStep({ form, proposals }: { form: any, proposals: Proposta[] }) {
                  <InfoRow label="Plano Base" value={selectedProposal?.name || 'Cobrança Avulsa'} />
                  <InfoRow label="Valor Final" value={`R$ ${Number(values.value).toFixed(2)}`} />
                  <InfoRow label="Ciclo de Cobrança" value={`Todo dia ${values.paymentDay}, mensalmente.`} />
-                 <InfoRow label="Primeira Cobrança pelo Sistema" value={format(values.firstChargeDate, 'dd/MM/yyyy')} />
+                 <InfoRow label="Primeira Cobrança pelo Sistema" value={values.firstChargeDate ? format(values.firstChargeDate, 'dd/MM/yyyy') : 'Data não definida'} />
                  <InfoRow label="Ação da Primeira Cobrança" value={values.firstChargeAction === 'manual' ? 'Aguardando sua aprovação para envio' : 'Envio automático'} />
                  <InfoRow label="Cliente" value={`${values.fullName} (${values.email})`} />
             </div>

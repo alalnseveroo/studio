@@ -272,7 +272,7 @@ export default function CobrancasPage() {
                                 <Badge variant="outline" className={cn("font-normal", status.className)}>{status.text}</Badge>
                             </TableCell>
                             <TableCell>
-                                {format(charge.nextDueDate, 'dd/MM/yyyy')}
+                                {charge.nextDueDate ? format(charge.nextDueDate, 'dd/MM/yyyy') : 'N/A'}
                             </TableCell>
                             <TableCell>
                                 {charge.value ? `${Number(charge.value).toFixed(2)}` : 'N/A'}
@@ -305,5 +305,3 @@ export default function CobrancasPage() {
     </div>
   )
 }
-
-    
