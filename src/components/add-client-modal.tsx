@@ -5,7 +5,7 @@ import * as React from "react"
 import { useRouter } from "next/navigation"
 import { useForm, FormProvider } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import * * as z from 'zod'
+import * as z from 'zod'
 import { AnimatePresence, motion } from "framer-motion"
 import { Check, CreditCard, FileText, ArrowRight, Loader2, Search } from "lucide-react"
 
@@ -405,5 +405,3 @@ function AnimatedCheckbox({ checked, ariaLabel }: { checked: boolean; ariaLabel?
     </div>
   )
 }
-
-    
