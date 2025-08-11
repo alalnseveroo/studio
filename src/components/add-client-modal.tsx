@@ -95,7 +95,7 @@ export function AddClientModal({ isOpen, onClose, onClientAdded }: AddClientModa
               <Label htmlFor="docType" className="text-xs text-muted-foreground">
                 Tipo de Documento
               </Label>
-              <Select value={docType} onValueChange={setDocType}>
+              <Select value={docType} onValueChange={setDocType} disabled={selected !== 'card1'}>
                 <SelectTrigger id="docType" className="w-full">
                   <SelectValue placeholder="Selecione o tipo de documento" />
                 </SelectTrigger>
@@ -123,7 +123,7 @@ export function AddClientModal({ isOpen, onClose, onClientAdded }: AddClientModa
               <Label htmlFor="plano" className="text-xs text-muted-foreground">
                 Plano do Cliente
               </Label>
-              <Select value={plano} onValueChange={setPlano}>
+              <Select value={plano} onValueChange={setPlano} disabled={selected !== 'card2'}>
                 <SelectTrigger id="plano" className="w-full">
                   <SelectValue placeholder="Selecione uma Proposta Pré-Definida" />
                 </SelectTrigger>
