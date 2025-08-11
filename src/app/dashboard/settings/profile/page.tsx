@@ -181,7 +181,7 @@ export default function ProfilePage() {
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-          <Card>
+          <Card className="bg-white">
             <CardHeader>
               <CardTitle>Tipo de Contratação</CardTitle>
             </CardHeader>
@@ -216,7 +216,7 @@ export default function ProfilePage() {
           </Card>
           
           {personType === 'cnpj' && (
-             <Card>
+             <Card className="bg-white">
                 <CardHeader>
                     <CardTitle>Dados da Pessoa Jurídica</CardTitle>
                 </CardHeader>
@@ -247,7 +247,7 @@ export default function ProfilePage() {
           )}
 
           {personType === 'cpf' && (
-            <Card>
+            <Card className="bg-white">
                 <CardHeader>
                     <CardTitle>Dados da Pessoa Física</CardTitle>
                 </CardHeader>
@@ -309,7 +309,7 @@ export default function ProfilePage() {
             </Card>
           )}
 
-          <Card>
+          <Card className="bg-white">
             <CardHeader>
                 <CardTitle>Assinatura</CardTitle>
                 <CardDescription>Desenhe sua assinatura no campo abaixo. Ela será usada para assinar os contratos digitalmente.</CardDescription>
@@ -357,5 +357,3 @@ export default function ProfilePage() {
     </div>
   )
 }
-
-    
