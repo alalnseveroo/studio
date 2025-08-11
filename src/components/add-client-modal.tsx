@@ -88,7 +88,7 @@ export function AddClientModal({ isOpen, onClose, onClientAdded }: AddClientModa
             onClick={() => setSelected("card1")}
           >
             <div
-              className="mt-3 space-y-2 min-h-[92px]"
+              className="mt-3 space-y-2 min-h-[76px]"
               onClick={(e) => e.stopPropagation()}
               onPointerDownCapture={(e) => e.stopPropagation()}
             >
@@ -116,7 +116,7 @@ export function AddClientModal({ isOpen, onClose, onClientAdded }: AddClientModa
             onClick={() => setSelected("card2")}
           >
             <div
-              className="mt-3 space-y-2 min-h-[92px]"
+              className="mt-3 space-y-2 min-h-[76px]"
               onClick={(e) => e.stopPropagation()}
               onPointerDownCapture={(e) => e.stopPropagation()}
             >
