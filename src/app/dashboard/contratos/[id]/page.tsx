@@ -90,21 +90,20 @@ export default function ContratoDetailPage() {
         className: 'bg-green-100 border-green-200 text-green-800'
       })
       fetchContract() // Re-fetch contract to update status
-      setIsSheetOpen(false)
+      setSheetStep('signed');
     }
   }
   
-  const resetSheet = () => {
-    // Only set open state, other resets are handled when opening
-    setIsSheetOpen(false)
+  const resetAndCloseSheet = () => {
+    setIsSheetOpen(false);
+    // Use a timeout to avoid seeing the state change before the sheet closes
+    setTimeout(() => {
+        setSheetStep('initial');
+        setOtp('');
+        setUserEmail('');
+    }, 300); // Should match the sheet's closing animation duration
   }
 
-  const openSheet = () => {
-    setSheetStep('initial');
-    setOtp('');
-    setUserEmail('');
-    setIsSheetOpen(true);
-  }
 
   if (isLoading) {
     return <div className="flex items-center justify-center p-6"><Loader2 className="h-8 w-8 animate-spin" /></div>
@@ -154,7 +153,7 @@ export default function ContratoDetailPage() {
           </Badge>
           <div className="hidden items-center gap-2 md:ml-auto md:flex">
              {!isSignedByProvider && (
-              <Button onClick={openSheet}>Assinar Contrato</Button>
+              <Button onClick={() => setIsSheetOpen(true)}>Assinar Contrato</Button>
             )}
              {isSignedByProvider && (
               <Button variant="secondary" disabled>Assinado por Você</Button>
@@ -251,10 +250,22 @@ export default function ContratoDetailPage() {
                     <p>Processando...</p>
                 </div>
             )}
+            
+            {sheetStep === 'signed' && (
+                 <div className="flex justify-center items-center flex-col gap-4 py-12">
+                    <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center">
+                        <UserCheck className="w-8 h-8"/>
+                    </div>
+                    <h3 className="text-lg font-semibold">Assinatura Registrada!</h3>
+                    <p className="text-sm text-muted-foreground text-center">O contrato foi assinado e atualizado com sucesso. Você já pode fechar esta janela.</p>
+                </div>
+            )}
 
 
           <SheetFooter className="mt-auto">
-            <Button variant="outline" onClick={resetSheet}>Cancelar</Button>
+            <Button variant="outline" onClick={resetAndCloseSheet}>
+                {sheetStep === 'signed' ? 'Fechar' : 'Cancelar'}
+            </Button>
             {sheetStep === 'initial' && (
                  <Button onClick={handleSendOtp}>
                     Enviar Código de Verificação
