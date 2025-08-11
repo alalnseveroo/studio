@@ -22,7 +22,7 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination"
 import { Checkbox } from "@/components/ui/checkbox"
-import { AddClientModal } from '@/components/add-client-modal'
+import { AddClientSheet } from '@/components/add-client-sheet'
 import { getClients } from '@/lib/actions/clients'
 import type { Cliente } from '@/lib/types'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -33,7 +33,7 @@ import { cn } from '@/lib/utils'
 const ITEMS_PER_PAGE = 10;
 
 export default function ClientesPage() {
-  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isSheetOpen, setIsSheetOpen] = useState(false)
   const [clients, setClients] = useState<Cliente[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [currentPage, setCurrentPage] = useState(1)
@@ -100,7 +100,7 @@ export default function ClientesPage() {
         <div className="flex items-center">
           <h1 className="text-lg font-semibold md:text-2xl">Clientes</h1>
           <div className="ml-auto flex items-center gap-2">
-            <Button size="sm" className="h-8 gap-1" onClick={() => setIsModalOpen(true)}>
+            <Button size="sm" className="h-8 gap-1" onClick={() => setIsSheetOpen(true)}>
               <PlusCircle className="h-3.5 w-3.5" />
               <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
                 Adicionar Cliente
@@ -122,7 +122,7 @@ export default function ClientesPage() {
               <p className="text-sm text-muted-foreground">
                 Comece a adicionar clientes para vê-los aqui.
               </p>
-               <Button className="mt-4" onClick={() => setIsModalOpen(true)}>Adicionar Cliente</Button>
+               <Button className="mt-4" onClick={() => setIsSheetOpen(true)}>Adicionar Cliente</Button>
             </div>
           </div>
         ) : (
@@ -255,11 +255,12 @@ export default function ClientesPage() {
         )}
       </div>
 
-      <AddClientModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onClientAdded={handleClientAdded}
+      <AddClientSheet
+        isOpen={isSheetOpen}
+        onClose={() => setIsSheetOpen(false)}
       />
     </>
   )
 }
+
+    

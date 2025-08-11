@@ -35,7 +35,7 @@ import { createContract } from '@/lib/actions/contratos'
 import { getClients } from '@/lib/actions/clients'
 import { Loader2, PlusCircle } from 'lucide-react'
 import type { Contrato, Cliente, Proposta } from '@/lib/types'
-import { AddClientModal } from './add-client-modal'
+import { AddClientSheet } from './add-client-sheet'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 
 const contractSchema = z.object({
@@ -61,7 +61,7 @@ export function CreateContractModal({
     onClientListChange
 }: CreateContractModalProps) {
   const [isLoading, setIsLoading] = useState(false)
-  const [isAddClientModalOpen, setIsAddClientModalOpen] = useState(false)
+  const [isAddClientSheetOpen, setIsAddClientSheetOpen] = useState(false)
   const { toast } = useToast()
   const router = useRouter()
 
@@ -99,7 +99,7 @@ export function CreateContractModal({
         onClientListChange(data);
     }
     form.setValue('clienteId', newClient.id, { shouldValidate: true });
-    setIsAddClientModalOpen(false); // Fecha o modal de adicionar cliente
+    setIsAddClientSheetOpen(false); // Fecha o modal de adicionar cliente
   }
 
   return (
@@ -146,7 +146,7 @@ export function CreateContractModal({
                       type="button" 
                       variant="link" 
                       className="p-0 h-auto text-sm"
-                      onClick={() => setIsAddClientModalOpen(true)}
+                      onClick={() => setIsAddClientSheetOpen(true)}
                     >
                       <PlusCircle className="mr-2 h-4 w-4" />
                       Adicionar novo cliente
@@ -191,13 +191,14 @@ export function CreateContractModal({
         </DialogContent>
       </Dialog>
       
-      {isAddClientModalOpen && (
-        <AddClientModal
-          isOpen={isAddClientModalOpen}
-          onClose={() => setIsAddClientModalOpen(false)}
-          onClientAdded={handleClientAdded}
+      {isAddClientSheetOpen && (
+        <AddClientSheet
+          isOpen={isAddClientSheetOpen}
+          onClose={() => setIsAddClientSheetOpen(false)}
         />
       )}
     </>
   )
 }
+
+    
