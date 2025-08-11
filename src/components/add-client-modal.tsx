@@ -70,7 +70,7 @@ export function AddClientModal({ isOpen, onClose, onClientAdded }: AddClientModa
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-lg p-0">
+      <DialogContent className="max-w-4xl p-0">
         <DialogHeader className="border-b px-6 pb-4 pt-6">
           <DialogTitle className="text-xl">Escolha o fluxo</DialogTitle>
           <DialogDescription className="mt-1">
@@ -78,7 +78,7 @@ export function AddClientModal({ isOpen, onClose, onClientAdded }: AddClientModa
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 bg-white px-6 pb-6 pt-4">
+        <div className="grid md:grid-cols-2 gap-4 bg-white p-6">
           <CardOption
             icon={<IconBadge variant="contract" />}
             title="Criar ou Renovar Contrato"
@@ -184,7 +184,7 @@ function CardOption({
       }}
       aria-pressed={checked}
       className={cn(
-        "group relative w-full rounded-2xl border bg-white p-5 md:p-6 text-left shadow-sm transition-all",
+        "group relative w-full rounded-2xl border bg-white p-5 md:p-6 text-left shadow-sm transition-all h-full",
         checked ? "border-emerald-500" : "border-gray-200",
         dimmed ? "opacity-75" : "hover:-translate-y-0.5 hover:shadow-md",
         "outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-emerald-500",
