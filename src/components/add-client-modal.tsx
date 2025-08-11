@@ -89,6 +89,9 @@ export function AddClientModal({ isOpen, onClose }: { isOpen: boolean, onClose: 
       cpf: '',
       phone: '',
       addCompanyData: false,
+      cnpj: '',
+      companyName: '',
+      tradeName: '',
     },
     mode: 'onBlur'
   });
@@ -405,3 +408,5 @@ function AnimatedCheckbox({ checked, ariaLabel }: { checked: boolean; ariaLabel?
     </div>
   )
 }
+
+    
