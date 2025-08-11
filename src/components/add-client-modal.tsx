@@ -78,7 +78,7 @@ export function AddClientModal({ isOpen, onClose, onClientAdded }: AddClientModa
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 px-6 pb-6 pt-4">
+        <div className="space-y-4 bg-white px-6 pb-6 pt-4">
           <CardOption
             icon={<IconBadge variant="contract" />}
             title="Criar ou Renovar Contrato"
