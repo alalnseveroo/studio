@@ -70,15 +70,15 @@ export function AddClientModal({ isOpen, onClose, onClientAdded }: AddClientModa
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl p-0">
+      <DialogContent className="max-w-4xl p-0 bg-white">
         <DialogHeader className="border-b px-6 pb-4 pt-6">
-          <DialogTitle className="text-xl">Escolha o fluxo</DialogTitle>
-          <DialogDescription className="mt-1">
+          <DialogTitle className="text-lg">Escolha o fluxo</DialogTitle>
+          <DialogDescription className="mt-1 text-sm">
             Selecione uma das opções abaixo para continuar seu processo.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid md:grid-cols-2 gap-4 bg-white p-6">
+        <div className="grid md:grid-cols-2 gap-4 p-6">
           <CardOption
             icon={<IconBadge variant="contract" />}
             title="Criar ou Renovar Contrato"
