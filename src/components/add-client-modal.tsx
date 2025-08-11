@@ -2,9 +2,9 @@
 "use client"
 
 import * as React from "react"
+import { useRouter } from "next/navigation"
 import { AnimatePresence, motion } from "framer-motion"
 import { Check, CreditCard, FileText } from "lucide-react"
-
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -18,7 +18,7 @@ import {
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
-import type { Proposta, Cliente } from "@/lib/types"
+import type { Proposta } from "@/lib/types"
 import { getProposals } from "@/lib/actions/propostas"
 
 type OptionKey = "card1" | "card2" | null
@@ -26,12 +26,12 @@ type OptionKey = "card1" | "card2" | null
 interface AddClientModalProps {
   isOpen: boolean
   onClose: () => void
-  onClientAdded: (newClient: Cliente) => void
 }
 
-export function AddClientModal({ isOpen, onClose, onClientAdded }: AddClientModalProps) {
+export function AddClientModal({ isOpen, onClose }: AddClientModalProps) {
   const [selected, setSelected] = React.useState<OptionKey>(null)
   const [proposals, setProposals] = React.useState<Proposta[]>([])
+  const router = useRouter()
 
   // Card 1: tipo de documento
   const [docType, setDocType] = React.useState<string | undefined>(undefined)
@@ -57,14 +57,13 @@ export function AddClientModal({ isOpen, onClose, onClientAdded }: AddClientModa
   }, [isOpen]);
 
   const handleContinue = () => {
-    // Aqui você adicionará a lógica para onde cada caminho leva.
-    // Por exemplo:
-    // if (selected === 'card1') {
-    //   router.push('/dashboard/contratos/novo');
-    // } else if (selected === 'card2') {
-    //   router.push('/dashboard/cobrancas/nova');
-    // }
-    console.log("Continuar com:", { selected, docType, plano });
+    if (selected === 'card1') {
+      // Logic for creating contract
+      router.push('/dashboard/contratos/nova'); // Example route
+    } else if (selected === 'card2') {
+      // Logic for automating billing
+      router.push(`/dashboard/cobrancas/nova/identificacao?proposalId=${plano}`);
+    }
     onClose();
   }
 
