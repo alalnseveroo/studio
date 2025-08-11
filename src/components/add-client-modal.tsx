@@ -70,7 +70,7 @@ export function AddClientModal({ isOpen, onClose, onClientAdded }: AddClientModa
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl p-0">
+      <DialogContent className="max-w-lg p-0">
         <DialogHeader className="border-b px-6 pb-4 pt-6">
           <DialogTitle className="text-xl">Escolha o fluxo</DialogTitle>
           <DialogDescription className="mt-1">
