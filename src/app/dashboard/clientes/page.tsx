@@ -10,6 +10,17 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
@@ -23,12 +34,13 @@ import {
 } from "@/components/ui/pagination"
 import { Checkbox } from "@/components/ui/checkbox"
 import { AddClientSheet } from '@/components/add-client-sheet'
-import { getClients } from '@/lib/actions/clients'
+import { getClients, deleteClient } from '@/lib/actions/clients'
 import type { Cliente } from '@/lib/types'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import Link from 'next/link'
-import { PlusCircle, Loader2, FilePen } from 'lucide-react'
+import { PlusCircle, Loader2, FilePen, Trash2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useToast } from '@/hooks/use-toast'
 
 const ITEMS_PER_PAGE = 10;
 
@@ -38,16 +50,42 @@ export default function ClientesPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [currentPage, setCurrentPage] = useState(1)
   const [selectedClients, setSelectedClients] = useState<string[]>([])
+  const [clientToDelete, setClientToDelete] = useState<Cliente | null>(null)
+  const { toast } = useToast()
+
+  const fetchClients = async () => {
+    setIsLoading(true)
+    const { data } = await getClients()
+    setClients(data || [])
+    setIsLoading(false)
+  }
 
   useEffect(() => {
-    async function fetchClients() {
-      setIsLoading(true)
-      const { data } = await getClients()
-      setClients(data || [])
-      setIsLoading(false)
-    }
     fetchClients()
   }, [])
+  
+  const handleDeleteClient = async () => {
+    if (!clientToDelete) return
+
+    const { error } = await deleteClient(clientToDelete.id)
+
+    if (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao Excluir',
+        description: error.message,
+      })
+    } else {
+      toast({
+        title: 'Cliente Excluído!',
+        description: 'O cliente foi removido com sucesso.',
+      })
+      // Refetch clients after deletion
+      await fetchClients()
+    }
+    setClientToDelete(null)
+  }
+
 
   const handleClientAdded = (newClient: Cliente) => {
     setClients((prevClients) => [newClient, ...prevClients])
@@ -141,12 +179,18 @@ export default function ClientesPage() {
                           <p className="font-semibold text-sm truncate">{client.full_name || client.company_name}</p>
                           <p className="text-xs text-muted-foreground">{client.client_id}</p>
                        </div>
-                       <Button asChild variant="outline" size="sm">
-                          <Link href={`/dashboard/clientes/${client.id}`}>
-                              <FilePen className="h-4 w-4" />
-                              <span className="sr-only">Ver / Editar</span>
-                          </Link>
-                      </Button>
+                       <div className="flex gap-2">
+                        <Button asChild variant="outline" size="icon" className="h-8 w-8">
+                            <Link href={`/dashboard/clientes/${client.id}`}>
+                                <FilePen className="h-4 w-4" />
+                                <span className="sr-only">Ver / Editar</span>
+                            </Link>
+                        </Button>
+                        <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setClientToDelete(client)}>
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                            <span className="sr-only">Excluir</span>
+                        </Button>
+                      </div>
                     </div>
                      <div className="text-xs space-y-1 text-muted-foreground">
                         <p><span className="font-medium text-foreground">E-mail:</span> {client.email || 'Não informado'}</p>
@@ -173,7 +217,7 @@ export default function ClientesPage() {
                     <TableHead className="hidden xl:table-cell border-r">Profissão</TableHead>
                     <TableHead className="hidden lg:table-cell border-r">E-mail</TableHead>
                     <TableHead className="w-[100px] border-r">Status</TableHead>
-                    <TableHead className="w-[80px] text-center">Ações</TableHead>
+                    <TableHead className="w-[120px] text-center">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -202,12 +246,18 @@ export default function ClientesPage() {
                          <Badge variant="outline" className={cn("font-normal", getStatusClass('Ativo'))}>Ativo</Badge>
                       </TableCell>
                       <TableCell className="py-1 text-center">
-                         <Button asChild variant="outline" size="icon" className="h-8 w-8">
-                            <Link href={`/dashboard/clientes/${client.id}`}>
-                                <FilePen className="h-4 w-4" />
-                                <span className="sr-only">Editar</span>
-                            </Link>
-                        </Button>
+                         <div className="flex items-center justify-center gap-2">
+                             <Button asChild variant="outline" size="icon" className="h-8 w-8">
+                                <Link href={`/dashboard/clientes/${client.id}`}>
+                                    <FilePen className="h-4 w-4" />
+                                    <span className="sr-only">Editar</span>
+                                </Link>
+                            </Button>
+                            <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setClientToDelete(client)}>
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                                <span className="sr-only">Excluir</span>
+                            </Button>
+                         </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -259,8 +309,26 @@ export default function ClientesPage() {
         isOpen={isSheetOpen}
         onClose={() => setIsSheetOpen(false)}
       />
+
+      <AlertDialog open={!!clientToDelete} onOpenChange={() => setClientToDelete(null)}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+            <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+            <AlertDialogDescription>
+                Esta ação não pode ser desfeita. Isso excluirá permanentemente o cliente e todos os seus dados associados, como contratos e cobranças.
+            </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+                onClick={handleDeleteClient}
+                className={cn(buttonVariants({ variant: "destructive" }))}
+            >
+                Sim, excluir cliente
+            </AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   )
 }
-
-    

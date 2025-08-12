@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import type { Cliente } from '@/lib/types';
 import { addOrUpdateContact } from '../brevo';
+import { buttonVariants } from '@/components/ui/button';
 
 const AVATAR_URLS = [
     'https://ktgckactmaqioszffuyx.supabase.co/storage/v1/object/public/icons/Ellipse%201.png',
@@ -168,5 +169,31 @@ export async function updateClientFinancials(id: string, financials: { billing_s
 
   revalidatePath(`/dashboard/clientes/${id}`);
   revalidatePath('/dashboard/cobrancas');
+  return { error: null };
+}
+
+export async function deleteClient(id: string) {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: { message: 'Usuário não autenticado.' } };
+  }
+
+  const { error } = await supabase
+    .from('clientes')
+    .delete()
+    .eq('id', id)
+    .eq('user_id', user.id);
+
+  if (error) {
+    console.error('Supabase delete error:', error);
+    if (error.code === '23503') { // Foreign key violation
+        return { error: { message: 'Não é possível excluir este cliente pois ele está associado a contratos ou cobranças existentes.' } };
+    }
+    return { error: { message: `Não foi possível excluir o cliente: ${error.message}` } };
+  }
+
+  revalidatePath('/dashboard/clientes');
   return { error: null };
 }
