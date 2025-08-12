@@ -112,6 +112,8 @@ export function UploadInvoiceModal({ isOpen, onClose, charge, onUploadSuccess }:
       onClose()
     }
   }
+  
+  const clientName = charge.clientes?.full_name || charge.clientes?.company_name || 'Cliente';
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -120,7 +122,7 @@ export function UploadInvoiceModal({ isOpen, onClose, charge, onUploadSuccess }:
           <DialogTitle>Anexar Nota Fiscal (NF-e)</DialogTitle>
           <DialogDescription>
             Envie o arquivo PDF da nota fiscal para a cobrança de{' '}
-            {charge.clientes.full_name || charge.clientes.company_name}.
+            {clientName}.
           </DialogDescription>
         </DialogHeader>
 

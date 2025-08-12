@@ -200,16 +200,19 @@ export default function CobrancasPage() {
                         </TableHeader>
                         <TableBody>
                         {charges.map((charge) => {
+                          if (!charge.clientes) return null; // Safety check
                           const status = getStatusInfo(charge.status, charge.due_date);
+                          const clientName = charge.clientes.full_name || charge.clientes.company_name;
+
                           return (
                             <TableRow key={charge.id}>
                             <TableCell className="font-medium">
                                 <div className="flex items-center gap-3">
                                 <Avatar className="h-6 w-6">
-                                    <AvatarImage src={charge.clientes?.avatar_url || ''} alt="Avatar do Cliente" />
-                                    <AvatarFallback>{(charge.clientes?.full_name || charge.clientes?.company_name || 'C').charAt(0)}</AvatarFallback>
+                                    <AvatarImage src={charge.clientes.avatar_url || ''} alt={`Avatar de ${clientName}`} />
+                                    <AvatarFallback>{(clientName || 'C').charAt(0)}</AvatarFallback>
                                 </Avatar>
-                                <span>{charge.clientes?.full_name || charge.clientes?.company_name}</span>
+                                <span>{clientName}</span>
                                 </div>
                             </TableCell>
                             <TableCell>

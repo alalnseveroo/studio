@@ -21,14 +21,7 @@ export async function getCharges() {
         .from('cobrancas')
         .select(`
             *,
-            clientes (
-                id,
-                full_name,
-                company_name,
-                avatar_url,
-                email,
-                propostas (id, name)
-            )
+            clientes (*)
         `)
         .eq('user_id', user.id)
         .order('due_date', { ascending: true });
