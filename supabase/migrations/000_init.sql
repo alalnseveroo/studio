@@ -1,139 +1,154 @@
 
--- ### PROFILES TABLE ###
--- Stores public user data. Users can access their own data and read data of other users.
-CREATE TABLE
-    public.profiles (
-        id UUID NOT NULL,
-        updated_at TIMESTAMP WITH TIME ZONE NULL,
-        person_type TEXT NULL,
-        company_name TEXT NULL,
-        cnpj TEXT NULL,
-        full_name TEXT NULL,
-        nationality TEXT NULL,
-        civil_status TEXT NULL,
-        profession TEXT NULL,
-        rg TEXT NULL,
-        cpf TEXT NULL,
-        address TEXT NULL,
-        signature TEXT NULL,
-        is_completed BOOLEAN NULL DEFAULT FALSE,
-        CONSTRAINT profiles_pkey PRIMARY KEY (id),
-        CONSTRAINT profiles_id_fkey FOREIGN KEY (id) REFERENCES auth.users (id) ON DELETE CASCADE
-    );
+-- Habilitar a extensão pgcrypto se ainda não estiver habilitada
+create extension if not exists pgcrypto with schema extensions;
 
-ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+/******************/
+/*      AUTH      */
+/******************/
 
-CREATE POLICY "Allow public read access" ON public.profiles FOR
-SELECT
-    USING (TRUE);
+-- Esta tabela irá espelhar os usuários do serviço de Autenticação da Supabase.
+create table public.profiles (
+  id uuid not null primary key references auth.users (id) on delete cascade,
+  person_type text check (person_type in ('cpf', 'cnpj')),
+  company_name text,
+  cnpj text,
+  full_name text,
+  nationality text,
+  civil_status text,
+  profession text,
+  rg text,
+  cpf text,
+  address text,
+  signature text,
+  is_completed boolean default false,
+  updated_at timestamp with time zone,
+  created_at timestamp with time zone default now()
+);
 
-CREATE POLICY "Allow individual update access" ON public.profiles FOR
-UPDATE
-    USING (auth.uid () = id);
+-- RLS para PROFILES
+alter table public.profiles enable row level security;
 
--- ### PROPOSTAS TABLE ###
--- Stores service proposal templates created by users.
-CREATE TABLE
-    public.propostas (
-        id UUID NOT NULL DEFAULT gen_random_uuid (),
-        user_id UUID NOT NULL,
-        created_at TIMESTAMP WITH TIME ZONE NULL DEFAULT NOW(),
-        updated_at TIMESTAMP WITH TIME ZONE NULL,
-        name TEXT NOT NULL,
-        services TEXT[] NULL,
-        payment_type TEXT NULL,
-        value NUMERIC NULL,
-        value_in_words TEXT NULL,
-        payment_day INTEGER NULL,
-        payment_method TEXT NULL,
-        contract_duration_type TEXT NULL,
-        contract_duration_months INTEGER NULL,
-        start_date DATE NULL,
-        end_date DATE NULL,
-        jurisdiction_city TEXT NULL,
-        jurisdiction_state TEXT NULL,
-        CONSTRAINT propostas_pkey PRIMARY KEY (id),
-        CONSTRAINT propostas_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users (id) ON DELETE CASCADE
-    );
+create policy "Users can view their own profile."
+  on public.profiles for select
+  using ( auth.uid() = id );
 
-ALTER TABLE public.propostas ENABLE ROW LEVEL SECURITY;
+create policy "Users can insert or update their own profile."
+  on public.profiles for insert
+  with check ( auth.uid() = id );
 
-CREATE POLICY "Allow individual access" ON public.propostas FOR ALL USING (auth.uid () = user_id);
+create policy "Users can update their own profile."
+  on public.profiles for update
+  using ( auth.uid() = id );
 
--- ### CLIENTES TABLE ###
--- Stores client information, linked to a user.
-CREATE TABLE
-    public.clientes (
-        id UUID NOT NULL DEFAULT gen_random_uuid (),
-        user_id UUID NOT NULL,
-        created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-        client_id TEXT NULL,
-        avatar_url TEXT NULL,
-        email TEXT NULL,
-        person_type TEXT NULL,
-        company_name TEXT NULL,
-        cnpj TEXT NULL,
-        representative_name TEXT NULL,
-        representative_rg TEXT NULL,
-        representative_cpf TEXT NULL,
-        full_name TEXT NULL,
-        nationality TEXT NULL,
-        civil_status TEXT NULL,
-        profession TEXT NULL,
-        rg TEXT NULL,
-        cpf TEXT NULL,
-        phone TEXT NULL,
-        address TEXT NULL,
-        updated_at TIMESTAMP WITH TIME ZONE NULL,
-        billing_status TEXT NOT NULL DEFAULT 'inactive'::TEXT,
-        proposal_id UUID NULL,
-        value NUMERIC NULL,
-        payment_day INTEGER NULL,
-        first_charge_date DATE NULL,
-        CONSTRAINT clientes_pkey PRIMARY KEY (id),
-        CONSTRAINT clientes_proposal_id_fkey FOREIGN KEY (proposal_id) REFERENCES public.propostas (id) ON DELETE SET NULL,
-        CONSTRAINT clientes_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users (id) ON DELETE CASCADE,
-        CONSTRAINT clientes_client_id_key UNIQUE (client_id)
-    );
 
-ALTER TABLE public.clientes ENABLE ROW LEVEL SECURITY;
+/******************/
+/*    PROPOSTAS   */
+/******************/
 
-CREATE POLICY "Allow individual access" ON public.clientes FOR ALL USING (auth.uid () = user_id);
+create table public.propostas (
+  id uuid not null primary key default gen_random_uuid(),
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  name text not null,
+  services text[] not null,
+  payment_type text check (payment_type in ('fixed', 'hourly', 'project')),
+  value numeric(10, 2),
+  value_in_words text,
+  payment_day integer,
+  payment_method text,
+  contract_duration_type text check (contract_duration_type in ('indefinite', 'definite')),
+  contract_duration_months integer,
+  start_date date,
+  end_date date,
+  jurisdiction_city text,
+  jurisdiction_state text,
+  updated_at timestamp with time zone,
+  created_at timestamp with time zone default now()
+);
 
-CREATE POLICY "Allow public read access for client portal" ON public.clientes FOR
-SELECT
-    USING (TRUE);
+-- RLS para PROPOSTAS
+alter table public.propostas enable row level security;
 
--- ### CONTRATOS TABLE ###
--- Stores contracts between users and clients.
-CREATE TABLE
-    public.contratos (
-        id UUID NOT NULL DEFAULT gen_random_uuid (),
-        user_id UUID NOT NULL,
-        cliente_id UUID NOT NULL,
-        proposta_id UUID NOT NULL,
-        created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-        updated_at TIMESTAMP WITH TIME ZONE NULL,
-        contract_code TEXT NOT NULL,
-        status TEXT NOT NULL DEFAULT 'draft'::TEXT,
-        provider_signature_data JSONB NULL,
-        client_signature_data JSONB NULL,
-        provider_signature_image_url TEXT NULL,
-        client_signature_image_url TEXT NULL,
-        full_contract_text TEXT NULL,
-        client_signature_otp TEXT NULL,
-        client_signature_otp_expires_at TIMESTAMP WITH TIME ZONE NULL,
-        CONSTRAINT contratos_pkey PRIMARY KEY (id),
-        CONSTRAINT contratos_cliente_id_fkey FOREIGN KEY (cliente_id) REFERENCES public.clientes (id) ON DELETE CASCADE,
-        CONSTRAINT contratos_proposta_id_fkey FOREIGN KEY (proposta_id) REFERENCES public.propostas (id) ON DELETE CASCADE,
-        CONSTRAINT contratos_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users (id) ON DELETE CASCADE,
-        CONSTRAINT contratos_contract_code_key UNIQUE (contract_code)
-    );
+create policy "Users can manage their own proposals."
+  on public.propostas for all
+  using ( auth.uid() = user_id );
 
-ALTER TABLE public.contratos ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Allow individual access" ON public.contratos FOR ALL USING (auth.uid () = user_id);
+/******************/
+/*     CLIENTES    */
+/******************/
 
-CREATE POLICY "Allow public read access for client portal" ON public.contratos FOR
-SELECT
-    USING (TRUE);
+create table public.clientes (
+  id uuid not null primary key default gen_random_uuid(),
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  client_id text not null unique,
+  avatar_url text,
+  email text,
+  person_type text check (person_type in ('cpf', 'cnpj')),
+  company_name text,
+  cnpj text,
+  representative_name text,
+  representative_rg text,
+  representative_cpf text,
+  full_name text,
+  nationality text,
+  civil_status text,
+  profession text,
+  rg text,
+  cpf text,
+  phone text,
+  address text,
+  billing_status text check (billing_status in ('active', 'inactive', 'pending_approval')) default 'inactive',
+  proposal_id uuid references public.propostas(id) on delete set null,
+  value numeric(10, 2),
+  payment_day integer,
+  first_charge_date date,
+  updated_at timestamp with time zone,
+  created_at timestamp with time zone default now()
+);
+
+-- RLS para CLIENTES
+alter table public.clientes enable row level security;
+
+create policy "Users can manage their own clients."
+  on public.clientes for all
+  using ( auth.uid() = user_id );
+
+create policy "Clients can view their own data via portal link."
+  on public.clientes for select
+  using (true); -- Acesso controlado pela lógica de backend que verifica o ID do cliente.
+
+
+/******************/
+/*    CONTRATOS   */
+/******************/
+
+create type contract_status as enum ('draft', 'signed_by_provider', 'signed_by_client');
+
+create table public.contratos (
+    id uuid not null primary key default gen_random_uuid(),
+    user_id uuid not null references public.profiles(id) on delete cascade,
+    cliente_id uuid not null references public.clientes(id) on delete cascade,
+    proposta_id uuid not null references public.propostas(id) on delete cascade,
+    contract_code text not null unique,
+    status contract_status default 'draft',
+    provider_signature_data jsonb,
+    client_signature_data jsonb,
+    provider_signature_image_url text,
+    client_signature_image_url text,
+    full_contract_text text,
+    client_signature_otp text,
+    client_signature_otp_expires_at timestamp with time zone,
+    updated_at timestamp with time zone,
+    created_at timestamp with time zone default now()
+);
+
+-- RLS para CONTRATOS
+alter table public.contratos enable row level security;
+
+create policy "Users can manage their own contracts."
+  on public.contratos for all
+  using ( auth.uid() = user_id );
+  
+create policy "Clients can view their own contracts via portal link."
+  on public.contratos for select
+  using (true); -- Acesso controlado pela lógica de backend.
