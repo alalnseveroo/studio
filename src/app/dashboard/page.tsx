@@ -1,13 +1,13 @@
+
+import Link from 'next/link'
 import {
-  Activity,
   ArrowUpRight,
-  CircleUser,
-  CreditCard,
-  DollarSign,
-  Menu,
-  Package2,
-  Search,
   Users,
+  FileSignature,
+  DollarSign,
+  BadgeCent,
+  AlertTriangle,
+  ClipboardList
 } from 'lucide-react'
 
 import {
@@ -32,288 +32,235 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import Link from 'next/link'
+import { getClients } from '@/lib/actions/clients'
+import { getContracts } from '@/lib/actions/contratos'
+import { getCharges } from '@/lib/actions/cobrancas'
+import { format, isPast } from 'date-fns'
+import { cn } from '@/lib/utils'
+
+const getStatusClass = (status: string) => {
+    switch (status) {
+      case 'signed_by_client':
+        return 'border-green-500 bg-green-500/10 text-green-700'
+      case 'signed_by_provider':
+        return 'border-orange-500 bg-orange-500/10 text-orange-700'
+      case 'draft':
+        return 'border-gray-500 bg-gray-500/10 text-gray-700'
+      default:
+        return 'border-gray-500 bg-gray-500/10 text-gray-700'
+    }
+}
+
+const getStatusText = (status: string) => {
+    switch (status) {
+      case 'draft': return 'Rascunho'
+      case 'signed_by_provider': return 'Aguardando Cliente'
+      case 'signed_by_client': return 'Finalizado'
+      default: return 'Desconhecido'
+    }
+}
+  
+const getChargeStatusInfo = (status: string, dueDate: string) => {
+    if (status === 'pago') {
+      return { text: 'Pago', className: 'border-green-500 bg-green-500/10 text-green-700' };
+    }
+    if (isPast(new Date(dueDate))) {
+      return { text: 'Atrasado', className: 'border-red-500 bg-red-500/10 text-red-700' };
+    }
+    return { text: 'Pendente', className: 'border-yellow-500 bg-yellow-500/10 text-yellow-700' };
+}
+
 
 export default async function DashboardPage() {
+    const [{ data: clients }, { data: contracts }, { data: charges }] = await Promise.all([
+        getClients(),
+        getContracts(),
+        getCharges()
+    ]);
+
+    const totalRevenue = charges?.filter(c => c.status === 'pago').reduce((sum, c) => sum + c.value, 0) || 0;
+    const pendingAmount = charges?.filter(c => c.status === 'pendente' && !isPast(new Date(c.due_date))).reduce((sum, c) => sum + c.value, 0) || 0;
+    const overdueAmount = charges?.filter(c => c.status === 'pendente' && isPast(new Date(c.due_date))).reduce((sum, c) => sum + c.value, 0) || 0;
+    const activeClients = clients?.filter(c => c.billing_status === 'active').length || 0;
+
+    const recentContracts = contracts?.slice(0, 5) || [];
+    const recentCharges = charges?.slice(0, 5) || [];
+
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 sm:gap-6 sm:p-6">
       <div className="flex items-center">
         <h1 className="text-lg font-semibold md:text-2xl">Dashboard</h1>
       </div>
       <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
-        <Card x-chunk="dashboard-01-chunk-0">
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              Total Revenue
+              Faturamento Total (Pago)
             </CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">$45,231.89</div>
+            <div className="text-2xl font-bold">R$ {totalRevenue.toFixed(2)}</div>
             <p className="text-xs text-muted-foreground">
-              +20.1% from last month
+              Total de valores recebidos
             </p>
           </CardContent>
         </Card>
-        <Card x-chunk="dashboard-01-chunk-1">
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              Subscriptions
+              Cobranças Pendentes
             </CardTitle>
+            <BadgeCent className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">R$ {pendingAmount.toFixed(2)}</div>
+            <p className="text-xs text-muted-foreground">
+              Total de valores a receber
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Contas Atrasadas</CardTitle>
+            <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">R$ {overdueAmount.toFixed(2)}</div>
+            <p className="text-xs text-muted-foreground">
+              Total de valores vencidos
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Clientes Ativos</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">+2350</div>
+            <div className="text-2xl font-bold">{activeClients}</div>
             <p className="text-xs text-muted-foreground">
-              +180.1% from last month
-            </p>
-          </CardContent>
-        </Card>
-        <Card x-chunk="dashboard-01-chunk-2">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Sales</CardTitle>
-            <CreditCard className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">+12,234</div>
-            <p className="text-xs text-muted-foreground">
-              +19% from last month
-            </p>
-          </CardContent>
-        </Card>
-        <Card x-chunk="dashboard-01-chunk-3">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Now</CardTitle>
-            <Activity className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">+573</div>
-            <p className="text-xs text-muted-foreground">
-              +201 since last hour
+              Clientes com cobrança recorrente
             </p>
           </CardContent>
         </Card>
       </div>
       <div className="grid gap-4 md:gap-8 lg:grid-cols-2 xl:grid-cols-3">
         <Card
-          className="xl:col-span-2" x-chunk="dashboard-01-chunk-4"
+          className="xl:col-span-2"
         >
           <CardHeader className="flex flex-row items-center">
             <div className="grid gap-2">
-              <CardTitle>Transactions</CardTitle>
+              <CardTitle>Contratos Recentes</CardTitle>
               <CardDescription>
-                Recent transactions from your store.
+                Os últimos contratos gerados no sistema.
               </CardDescription>
             </div>
             <Button asChild size="sm" className="ml-auto gap-1">
-              <Link href="#">
-                View All
+              <Link href="/dashboard/contratos">
+                Ver Todos
                 <ArrowUpRight className="h-4 w-4" />
               </Link>
             </Button>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Customer</TableHead>
-                  <TableHead className="hidden xl:table-column">
-                    Type
-                  </TableHead>
-                  <TableHead className="hidden xl:table-column">
-                    Status
-                  </TableHead>
-                  <TableHead className="hidden xl:table-column">
-                    Date
-                  </TableHead>
-                  <TableHead className="text-right">Amount</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                <TableRow>
-                  <TableCell>
-                    <div className="font-medium">Liam Johnson</div>
-                    <div className="hidden text-sm text-muted-foreground md:inline">
-                      liam@example.com
-                    </div>
-                  </TableCell>
-                  <TableCell className="hidden xl:table-column">
-                    Sale
-                  </TableCell>
-                  <TableCell className="hidden xl:table-column">
-                    <Badge className="text-xs" variant="outline">
-                      Approved
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell lg:hidden xl:table-column">
-                    2023-06-23
-                  </TableCell>
-                  <TableCell className="text-right">$250.00</TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell>
-                    <div className="font-medium">Olivia Smith</div>
-                    <div className="hidden text-sm text-muted-foreground md:inline">
-                      olivia@example.com
-                    </div>
-                  </TableCell>
-                  <TableCell className="hidden xl:table-column">
-                    Refund
-                  </TableCell>
-                  <TableCell className="hidden xl:table-column">
-                    <Badge className="text-xs" variant="outline">
-                      Declined
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell lg:hidden xl:table-column">
-                    2023-06-24
-                  </TableCell>
-                  <TableCell className="text-right">$150.00</TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell>
-                    <div className="font-medium">Noah Williams</div>
-                    <div className="hidden text-sm text-muted-foreground md:inline">
-                      noah@example.com
-                    </div>
-                  </TableCell>
-                  <TableCell className="hidden xl:table-column">
-                    Subscription
-                  </TableCell>
-                  <TableCell className="hidden xl:table-column">
-                    <Badge className="text-xs" variant="outline">
-                      Approved
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell lg:hidden xl:table-column">
-                    2023-06-25
-                  </TableCell>
-                  <TableCell className="text-right">$350.00</TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell>
-                    <div className="font-medium">Emma Brown</div>
-                    <div className="hidden text-sm text-muted-foreground md:inline">
-                      emma@example.com
-                    </div>
-                  </TableCell>
-                  <TableCell className="hidden xl:table-column">
-                    Sale
-                  </TableCell>
-                  <TableCell className="hidden xl:table-column">
-                    <Badge className="text-xs" variant="outline">
-                      Approved
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell lg:hidden xl:table-column">
-                    2023-06-26
-                  </TableCell>
-                  <TableCell className="text-right">$450.00</TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell>
-                    <div className="font-medium">Liam Johnson</div>
-                    <div className="hidden text-sm text-muted-foreground md:inline">
-                      liam@example.com
-                    </div>
-                  </TableCell>
-                  <TableCell className="hidden xl:table-column">
-                    Sale
-                  </TableCell>
-                  <TableCell className="hidden xl:table-column">
-                    <Badge className="text-xs" variant="outline">
-                      Approved
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell lg:hidden xl:table-column">
-                    2023-06-27
-                  </TableCell>
-                  <TableCell className="text-right">$550.00</TableCell>
-                </TableRow>
-              </TableBody>
-            </Table>
+             {recentContracts.length > 0 ? (
+                 <Table>
+                    <TableHeader>
+                        <TableRow>
+                        <TableHead>Cliente</TableHead>
+                        <TableHead className="hidden xl:table-cell">
+                            Código
+                        </TableHead>
+                        <TableHead className="hidden xl:table-cell">
+                            Status
+                        </TableHead>
+                        <TableHead className="hidden xl:table-cell">
+                            Data
+                        </TableHead>
+                        <TableHead className="text-right">Valor</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {recentContracts.map(contract => (
+                            <TableRow key={contract.id}>
+                                <TableCell>
+                                    <div className="font-medium">{contract.clientes?.full_name || contract.clientes?.company_name}</div>
+                                    <div className="hidden text-sm text-muted-foreground md:inline">
+                                    {contract.clientes?.email}
+                                    </div>
+                                </TableCell>
+                                <TableCell className="hidden xl:table-cell">
+                                    {contract.contract_code}
+                                </TableCell>
+                                <TableCell className="hidden xl:table-cell">
+                                    <Badge className={cn("text-xs font-normal", getStatusClass(contract.status))} variant="outline">
+                                        {getStatusText(contract.status)}
+                                    </Badge>
+                                </TableCell>
+                                <TableCell className="hidden md:table-cell lg:hidden xl:table-cell">
+                                    {format(new Date(contract.created_at), 'dd/MM/yyyy')}
+                                </TableCell>
+                                <TableCell className="text-right">R$ {contract.propostas?.value?.toFixed(2) || '0.00'}</TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+             ) : (
+                <div className="flex flex-col items-center justify-center gap-2 text-center py-12">
+                    <FileSignature className="h-8 w-8 text-muted-foreground" />
+                    <p className="text-sm text-muted-foreground">Nenhum contrato gerado ainda.</p>
+                     <Button asChild size="sm" className="mt-2">
+                        <Link href="/dashboard/contratos">
+                            Gerar Contrato
+                        </Link>
+                    </Button>
+                </div>
+             )}
           </CardContent>
         </Card>
-        <Card x-chunk="dashboard-01-chunk-5">
+        <Card>
           <CardHeader>
-            <CardTitle>Recent Sales</CardTitle>
+            <CardTitle>Cobranças Recentes</CardTitle>
+             <CardDescription>
+                As últimas cobranças geradas ou pagas.
+              </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-8">
-            <div className="flex items-center gap-4">
-              <Avatar className="hidden h-9 w-9 sm:flex">
-                <AvatarImage src="/avatars/01.png" alt="Avatar" />
-                <AvatarFallback>OM</AvatarFallback>
-              </Avatar>
-              <div className="grid gap-1">
-                <p className="text-sm font-medium leading-none">
-                  Olivia Martin
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  olivia.martin@email.com
-                </p>
-              </div>
-              <div className="ml-auto font-medium">+$1,999.00</div>
-            </div>
-            <div className="flex items-center gap-4">
-              <Avatar className="hidden h-9 w-9 sm:flex">
-                <AvatarImage src="/avatars/02.png" alt="Avatar" />
-                <AvatarFallback>JL</AvatarFallback>
-              </Avatar>
-              <div className="grid gap-1">
-                <p className="text-sm font-medium leading-none">
-                  Jackson Lee
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  jackson.lee@email.com
-                </p>
-              </div>
-              <div className="ml-auto font-medium">+$39.00</div>
-            </div>
-            <div className="flex items-center gap-4">
-              <Avatar className="hidden h-9 w-9 sm:flex">
-                <AvatarImage src="/avatars/03.png" alt="Avatar" />
-                <AvatarFallback>IN</AvatarFallback>
-              </Avatar>
-              <div className="grid gap-1">
-                <p className="text-sm font-medium leading-none">
-                  Isabella Nguyen
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  isabella.nguyen@email.com
-                </p>
-              </div>
-              <div className="ml-auto font-medium">+$299.00</div>
-            </div>
-            <div className="flex items-center gap-4">
-              <Avatar className="hidden h-9 w-9 sm:flex">
-                <AvatarImage src="/avatars/04.png" alt="Avatar" />
-                <AvatarFallback>WK</AvatarFallback>
-              </Avatar>
-              <div className="grid gap-1">
-                <p className="text-sm font-medium leading-none">
-                  William Kim
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  will@email.com
-                </p>
-              </div>
-              <div className="ml-auto font-medium">+$99.00</div>
-            </div>
-            <div className="flex items-center gap-4">
-              <Avatar className="hidden h-9 w-9 sm:flex">
-                <AvatarImage src="/avatars/05.png" alt="Avatar" />
-                <AvatarFallback>SD</AvatarFallback>
-              </Avatar>
-              <div className="grid gap-1">
-                <p className="text-sm font-medium leading-none">
-                  Sofia Davis
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  sofia.davis@email.com
-                </p>
-              </div>
-              <div className="ml-auto font-medium">+$39.00</div>
-            </div>
+            {recentCharges.length > 0 ? (
+                recentCharges.map(charge => {
+                    const status = getChargeStatusInfo(charge.status, charge.due_date);
+                    return (
+                     <div key={charge.id} className="flex items-center gap-4">
+                        <Avatar className="hidden h-9 w-9 sm:flex">
+                            <AvatarImage src={charge.clientes?.avatar_url || ''} alt="Avatar" />
+                            <AvatarFallback>{(charge.clientes?.full_name || charge.clientes?.company_name || 'C').charAt(0)}</AvatarFallback>
+                        </Avatar>
+                        <div className="grid gap-1">
+                            <p className="text-sm font-medium leading-none">
+                            {charge.clientes?.full_name || charge.clientes?.company_name}
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                            Vence em: {format(new Date(charge.due_date), 'dd/MM/yyyy')}
+                            </p>
+                        </div>
+                        <div className="ml-auto flex flex-col items-end">
+                            <div className="font-medium">R$ {charge.value.toFixed(2)}</div>
+                             <Badge variant="outline" className={cn("text-xs font-normal mt-1", status.className)}>{status.text}</Badge>
+                        </div>
+                    </div>
+                )})
+            ) : (
+                 <div className="flex flex-col items-center justify-center gap-2 text-center py-12">
+                    <ClipboardList className="h-8 w-8 text-muted-foreground" />
+                    <p className="text-sm text-muted-foreground">Nenhuma cobrança encontrada.</p>
+                     <Button asChild size="sm" className="mt-2">
+                        <Link href="/dashboard/clientes">
+                            Adicionar Cliente
+                        </Link>
+                    </Button>
+                </div>
+            )}
           </CardContent>
         </Card>
       </div>
