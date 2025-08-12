@@ -117,7 +117,7 @@ export default function ClienteEditPage() {
     resolver: zodResolver(combinedSchema),
     mode: 'onBlur',
     defaultValues: {
-        personType: 'cpf', // Default value, will be overridden
+        personType: 'cpf',
         email: '',
         companyName: '',
         cnpj: '',
@@ -182,7 +182,7 @@ export default function ClienteEditPage() {
       const addressParts = parseAddress(data.address);
       
       const defaultValues: Partial<ClientFormData> = {
-        personType: data.person_type as 'cpf' | 'cnpj',
+        personType: data.person_type as 'cpf' | 'cnpj' || 'cpf',
         email: data.email || '',
         companyName: data.company_name || '',
         cnpj: data.cnpj || '',
@@ -196,6 +196,13 @@ export default function ClienteEditPage() {
         billing_status: data.billing_status || 'inactive',
         proposal_id: data.proposal_id || null,
         ...addressParts,
+        cep: addressParts.cep || '',
+        street: addressParts.street || '',
+        number: addressParts.number || '',
+        complement: addressParts.complement || '',
+        neighborhood: addressParts.neighborhood || '',
+        city: addressParts.city || '',
+        state: addressParts.state || '',
       };
       
       methods.reset(defaultValues);
@@ -707,6 +714,8 @@ function FinancialStep({ isEditing, setEditingStep, onSave, isLoading, proposals
         </Card>
     )
 }
+
+    
 
     
 
