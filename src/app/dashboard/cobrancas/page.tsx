@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Loader2, Send, FileWarning, ArrowRight, UserPlus, FilePlus, Link2, MoreVertical, BadgeCheck } from 'lucide-react'
+import { Loader2, Send, FileWarning, UserPlus, FilePlus, Link2, MoreVertical, BadgeCheck } from 'lucide-react'
 import { getCharges, markChargeAsPaid } from '@/lib/actions/cobrancas'
 import type { Cobranca } from '@/lib/types'
 import { format, isPast } from 'date-fns'
@@ -60,7 +60,7 @@ export default function CobrancasPage() {
 
   useEffect(() => {
     fetchData()
-  }, [toast])
+  }, [])
 
   const handleSendReminder = async (charge: Cobranca) => {
       setIsSending(charge.id);
@@ -74,7 +74,7 @@ export default function CobrancasPage() {
       }
       
       const portalUrl = new URL(`/portal/${charge.cliente_id}`, process.env.NEXT_PUBLIC_SITE_URL).toString();
-      const BREVO_TEMPLATE_ID = 61;
+      const BREVO_TEMPLATE_ID = 61; // ID Fixo para cobrança
 
       try {
         await sendTransactionalEmail(
@@ -264,5 +264,3 @@ export default function CobrancasPage() {
     </div>
   )
 }
-
-    

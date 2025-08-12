@@ -17,6 +17,36 @@ if (BREVO_API_KEY) {
     console.warn("Chave da API da Brevo não encontrada. O envio de e-mails não funcionará.");
 }
 
+
+export async function addOrUpdateContact(email: string, attributes: { [key: string]: any }) {
+    if (!BREVO_API_KEY) throw new Error("A chave da API da Brevo não está configurada.");
+
+    try {
+        // Tenta encontrar o contato primeiro
+        await contactsApi.getContactInfo(email);
+        
+        // Se encontrou, atualiza
+        let updateContact = new Brevo.UpdateContact();
+        updateContact.attributes = attributes;
+        await contactsApi.updateContact(email, updateContact);
+
+    } catch (error: any) {
+        // Se não encontrou (erro 404), cria o contato
+        if (error.response?.statusCode === 404) {
+            let createContact = new Brevo.CreateContact();
+            createContact.email = email;
+            createContact.attributes = attributes;
+            createContact.updateEnabled = false; // Garante que é uma criação
+            await contactsApi.createContact(createContact);
+        } else {
+            // Se for outro erro, lança a exceção
+            console.error("Erro na API da Brevo (addOrUpdateContact):", error.body || error);
+            throw new Error(error.body?.message || 'Erro ao sincronizar contato com a Brevo.');
+        }
+    }
+}
+
+
 /**
  * Envia um e-mail transacional usando um template da Brevo.
  * @param toEmail - O e-mail do destinatário.
@@ -46,10 +76,14 @@ export async function sendTransactionalEmail(
     
     const providerName = providerProfile?.full_name || providerProfile?.company_name || 'Sua Assistente Virtual';
     
+    // Adiciona o NOME_CONTRATADA aos parâmetros antes de atualizar o contato e enviar o e-mail
     const allParams = {
         ...params,
         NOME_CONTRATADA: providerName
     };
+
+    // Garante que o contato e seus atributos estão atualizados antes de enviar o e-mail
+    await addOrUpdateContact(toEmail, allParams);
 
     let sendSmtpEmail = new Brevo.SendSmtpEmail();
     

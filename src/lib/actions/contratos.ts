@@ -6,7 +6,7 @@ import { revalidatePath } from 'next/cache'
 import { headers } from 'next/headers'
 import { getContractTemplate } from '@/lib/contract-template'
 import type { Profile, Contrato, SignatureData } from '@/lib/types'
-import { sendTransactionalEmail, addOrUpdateContact } from '../brevo'
+import { sendTransactionalEmail } from '../brevo'
 
 // Helper para buscar o perfil da contratada (usuário logado)
 async function getProviderProfile(supabase: any, userId: string): Promise<{ data: Profile | null, error: any }> {
@@ -246,14 +246,16 @@ export async function signContractAsProvider(contractId: string, otp: string) {
     if (contract.clientes?.email) {
         try {
             const portalUrl = new URL(`/portal/${contract.cliente_id}/contrato/${contract.id}`, process.env.NEXT_PUBLIC_SITE_URL).toString();
-            
+            const clientName = contract.clientes.full_name || contract.clientes.company_name;
+
+            // Template de notificação para o cliente assinar
             const BREVO_TEMPLATE_ID_CLIENT_NOTIFICATION = 58; 
 
             await sendTransactionalEmail(
                 contract.clientes.email,
                 BREVO_TEMPLATE_ID_CLIENT_NOTIFICATION,
                 {
-                    NOME_CLIENTE: contract.clientes.full_name || contract.clientes.company_name,
+                    NOME_CLIENTE: clientName,
                     LINK_CONTRATO: portalUrl
                 },
                 user.id

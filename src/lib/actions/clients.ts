@@ -6,6 +6,7 @@ import { revalidatePath } from 'next/cache'
 import type { Cliente } from '@/lib/types';
 import { format } from 'date-fns';
 import { sendClientWebhook } from './webhook';
+import { addOrUpdateContact } from '../brevo';
 
 const AVATAR_URLS = [
     'https://ktgckactmaqioszffuyx.supabase.co/storage/v1/object/public/icons/Ellipse%201.png',
@@ -51,12 +52,20 @@ export async function createFullClient(formData: any) {
   
   try {
     if (data) {
+        // Lógica de adicionar na Brevo via Webhook
+        const clientName = data.full_name || data.company_name;
         const portalUrl = new URL(`/portal/${data.id}`, process.env.NEXT_PUBLIC_SITE_URL).toString();
-        const dataWithPortalUrl = { ...data, portal_url: portalUrl };
-        await sendClientWebhook('create', dataWithPortalUrl);
+
+        await addOrUpdateContact(data.email, {
+            NOME_CLIENTE: clientName,
+            VALOR_COBRANCA: "0", // Valor padrão inicial
+            DATA_VENCIMENTO: format(new Date(), 'dd/MM/yyyy'), // Data padrão inicial
+            LINK_PORTAL: portalUrl,
+        });
     }
-  } catch (webhookError: any) {
-    console.warn(`Falha ao enviar webhook de criação de cliente: ${webhookError.message}`);
+  } catch (brevoError: any) {
+    console.warn(`Falha ao sincronizar contato com a Brevo: ${brevoError.message}`);
+    // Não bloqueia a criação do cliente se a API da Brevo falhar
   }
 
   revalidatePath('/dashboard/clientes')
