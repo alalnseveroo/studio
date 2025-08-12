@@ -158,15 +158,15 @@ export function AddClientSheet({ isOpen, onClose }: { isOpen: boolean, onClose: 
 function IdentificationStep({ form, onSubmit, toast }: { form: any, onSubmit: (values: IdentificationFormData) => void, toast: any }) {
     const [isFetching, setIsFetching] = React.useState(false);
     
-    const formatDocument = (value: string) => {
-        const digits = value.replace(/\D/g, '');
+    const formatDocument = (value: string | null | undefined) => {
+        const digits = (value || '').replace(/\D/g, '');
         if (digits.length <= 11) { // CPF
             return digits.replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d{1,2})/, '$1-$2').substring(0, 14);
         } else { // CNPJ
             return digits.replace(/(\d{2})(\d)/, "$1.$2").replace(/(\d{3})(\d)/, "$1.$2").replace(/(\d{3})(\d)/, "$1/$2").replace(/(\d{4})(\d)/, "$1-$2").substring(0, 18);
         }
     };
-    const formatPhone = (value: string) => value.replace(/\D/g, '').replace(/(\d{2})(\d)/, '($1) $2').replace(/(\d{5})(\d)/, '$1-$2').substring(0, 15);
+    const formatPhone = (value: string | null | undefined) => (value || '').replace(/\D/g, '').replace(/(\d{2})(\d)/, '($1) $2').replace(/(\d{5})(\d)/, '$1-$2').substring(0, 15);
 
     const handleDocumentSearch = async () => {
         const doc = form.getValues('document')?.replace(/\D/g, '');
@@ -215,14 +215,14 @@ function IdentificationStep({ form, onSubmit, toast }: { form: any, onSubmit: (v
                                 <FormItem>
                                     <FormLabel>CPF / CNPJ</FormLabel>
                                     <div className="flex items-center gap-2">
-                                        <FormControl><Input placeholder="000.000.000-00" {...field} onChange={e => field.onChange(formatDocument(e.target.value))} /></FormControl>
+                                        <FormControl><Input placeholder="000.000.000-00" {...field} onChange={e => field.onChange(formatDocument(e.target.value))} value={field.value || ''} /></FormControl>
                                         <Button type="button" size="icon" variant="outline" onClick={handleDocumentSearch} disabled={isFetching}>{isFetching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}</Button>
                                     </div>
                                     <FormMessage />
                                 </FormItem>
                             )}/>
                             <FormField control={form.control} name="phone" render={({ field }) => (
-                                <FormItem><FormLabel>Contato (Telefone/WhatsApp)</FormLabel><FormControl><Input placeholder="(00) 00000-0000" {...field} onChange={e => field.onChange(formatPhone(e.target.value))} /></FormControl><FormMessage /></FormItem>
+                                <FormItem><FormLabel>Contato (Telefone/WhatsApp)</FormLabel><FormControl><Input placeholder="(00) 00000-0000" {...field} onChange={e => field.onChange(formatPhone(e.target.value))} value={field.value || ''} /></FormControl><FormMessage /></FormItem>
                             )}/>
                         </div>
                     </div>
