@@ -123,7 +123,8 @@ export default function CobrancasPage() {
       const senderEmail = providerProfile.email; 
 
       try {
-        const BREVO_TEMPLATE_ID = 58; 
+        // Usa o template 58 para aprovação inicial e 61 para lembretes de cobrança recorrente.
+        const BREVO_TEMPLATE_ID = charge.billing_status === 'pending_approval' ? 58 : 61;
         const portalUrl = new URL(`/portal/${charge.id}`, process.env.NEXT_PUBLIC_SITE_URL).toString();
 
         await sendTransactionalEmail(
@@ -305,3 +306,5 @@ export default function CobrancasPage() {
     </div>
   )
 }
+
+    
