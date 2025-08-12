@@ -25,7 +25,7 @@ export async function createFullClient(formData: any) {
   const clientId = `CL#${Math.floor(100000 + Math.random() * 900000)}`;
   const avatarUrl = AVATAR_URLS[Math.floor(Math.random() * AVATAR_URLS.length)];
   
-  const billingStatus = formData.firstChargeAction === 'manual' ? 'pending_approval' : 'active';
+  const billingStatus = formData.firstChargeAction === 'manual' ? 'inactive' : 'active';
 
   const clientData = {
     user_id: user.id,
@@ -43,7 +43,6 @@ export async function createFullClient(formData: any) {
     first_charge_date: formData.firstChargeDate.toISOString(),
     billing_status: billingStatus,
     
-    // Default person_type para simplificar, já que o wizard foca em PF por enquanto
     person_type: 'cpf' as const, 
   };
 
@@ -55,7 +54,6 @@ export async function createFullClient(formData: any) {
     return { data: null, error: { message: `Não foi possível adicionar o cliente: ${error.message}` } }
   }
   
-  // Após criar o cliente no Supabase, cria/atualiza na Brevo com todos os atributos
   try {
     if (data.email) {
       const portalUrl = new URL(`/portal/${data.id}`, process.env.NEXT_PUBLIC_SITE_URL).toString();
@@ -68,7 +66,6 @@ export async function createFullClient(formData: any) {
       await addOrUpdateContact(data.email, brevoAttributes);
     }
   } catch (brevoError: any) {
-    // Não impede o fluxo principal, mas loga o erro
     console.warn(`Falha ao sincronizar cliente com Brevo: ${brevoError.message}`);
   }
 
@@ -100,7 +97,6 @@ export async function getClients() {
 export async function getClientById(id: string) {
     const supabase = createClient()
     
-    // A política de RLS foi ajustada para permitir leitura pública se o id do cliente for correspondente.
     const { data, error } = await supabase
         .from('clientes')
         .select('*')
@@ -153,11 +149,16 @@ export async function updateClientProfile(id: string, formData: any) {
 }
 
 
-export async function updateClientFinancials(id: string, financials: { billing_status: 'active' | 'inactive'; proposal_id: string | null }) {
+export async function updateClientFinancials(id: string, financials: { billing_status: 'active' | 'inactive'; proposal_id: string | null; value: string | null }) {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     return { error: { message: 'Usuário não autenticado.' } };
+  }
+  
+  const parsedValue = financials.value ? parseFloat(financials.value) : null;
+  if (financials.value && isNaN(parsedValue)) {
+      return { error: { message: 'O valor fornecido não é um número válido.' } };
   }
 
   const { error } = await supabase
@@ -165,6 +166,7 @@ export async function updateClientFinancials(id: string, financials: { billing_s
     .update({
       billing_status: financials.billing_status,
       proposal_id: financials.proposal_id,
+      value: parsedValue,
       updated_at: new Date().toISOString(),
     })
     .eq('id', id)
@@ -205,3 +207,5 @@ export async function deleteClient(id: string) {
   revalidatePath('/dashboard/clientes');
   return { error: null };
 }
+
+    

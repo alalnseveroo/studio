@@ -22,14 +22,13 @@ export type Cliente = {
   created_at: string;
   updated_at: string;
   
-  // Billing info directly on client for simplicity of the wizard
-  billing_status: 'active' | 'inactive' | 'pending_approval';
+  billing_status: 'active' | 'inactive';
   proposal_id: string | null;
   value?: number | null;
   payment_day?: number | null;
   first_charge_date?: string | null;
 
-  propostas?: Proposta; // Can still be used for joins
+  propostas?: Proposta; 
 };
 
 export type Proposta = {
@@ -95,6 +94,19 @@ export type SignatureData = {
   user_agent: string;
   email_verified: string;
 };
+
+export type Cobranca = {
+    id: string;
+    created_at: string;
+    user_id: string;
+    cliente_id: string;
+    due_date: string;
+    value: number;
+    status: 'pendente' | 'pago' | 'atrasado';
+    paid_at: string | null;
+    clientes: Cliente; // Join com clientes
+}
+    
 
     
 

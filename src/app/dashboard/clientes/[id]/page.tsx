@@ -19,15 +19,20 @@ import {
 } from '@/components/ui/form'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Loader2, User, Building, Search, CheckCircle, Edit, ArrowLeft, DollarSign, FileText, BarChart, Info } from 'lucide-react'
+import { Loader2, User, Building, Search, CheckCircle, Edit, ArrowLeft, DollarSign, FileText, BarChart, Info, Calendar, BadgeCheck, XCircle, MoreVertical } from 'lucide-react'
 import { getClientById, updateClientProfile, updateClientFinancials } from '@/lib/actions/clients'
 import { getProposals } from '@/lib/actions/propostas'
+import { getChargesByClientId, markChargeAsPaid } from '@/lib/actions/cobrancas'
 import { useToast } from '@/hooks/use-toast'
-import type { Cliente, Proposta } from '@/lib/types'
+import type { Cliente, Proposta, Cobranca } from '@/lib/types'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import Link from 'next/link'
+import { format, isPast } from 'date-fns'
+import { cn } from '@/lib/utils'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 
 
 const clientInfoSchema = z.object({
@@ -57,6 +62,7 @@ const addressSchema = z.object({
 const financialSchema = z.object({
   billing_status: z.enum(['active', 'inactive']),
   proposal_id: z.string().nullable(),
+  value: z.string().nullable(),
 });
 
 
@@ -81,6 +87,7 @@ const combinedSchema = z.object({
   state: z.string().min(2, { message: "O estado é obrigatório."}),
   billing_status: z.enum(['active', 'inactive']),
   proposal_id: z.string().nullable(),
+  value: z.string().nullable(),
 }).refine(data => {
     if (data.personType === 'cnpj') {
         return !!data.companyName && !!data.cnpj && !!data.representativeName && !!data.representativeCpf;
@@ -108,6 +115,7 @@ export default function ClienteEditPage() {
   const clientId = params.id as string;
   const [client, setClient] = useState<Cliente | null>(null);
   const [proposals, setProposals] = useState<Proposta[]>([]);
+  const [charges, setCharges] = useState<Cobranca[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<StepName>('info');
   const [editingStep, setEditingStep] = useState<StepName | null>(null);
@@ -137,6 +145,7 @@ export default function ClienteEditPage() {
         state: '',
         billing_status: 'inactive',
         proposal_id: null,
+        value: null,
     },
   });
 
@@ -165,9 +174,10 @@ export default function ClienteEditPage() {
     if (!clientId) return;
     setIsLoading(true);
 
-    const [{ data, error }, { data: proposalsData }] = await Promise.all([
+    const [{ data, error }, { data: proposalsData }, {data: chargesData}] = await Promise.all([
         getClientById(clientId),
-        getProposals()
+        getProposals(),
+        getChargesByClientId(clientId),
     ]);
     
     if (error) {
@@ -179,6 +189,7 @@ export default function ClienteEditPage() {
     if (data) {
       setClient(data);
       setProposals(proposalsData || []);
+      setCharges(chargesData || []);
       const addressParts = parseAddress(data.address);
       
       const defaultValues: Partial<ClientFormData> = {
@@ -195,6 +206,7 @@ export default function ClienteEditPage() {
         cpf: data.cpf || '',
         billing_status: data.billing_status || 'inactive',
         proposal_id: data.proposal_id || null,
+        value: data.value ? String(data.value) : null,
         ...addressParts,
         cep: addressParts.cep || '',
         street: addressParts.street || '',
@@ -265,7 +277,7 @@ export default function ClienteEditPage() {
         const result = await updateClientProfile(clientId, submissionData);
         error = result.error;
     } else if (step === 'financial') {
-        const result = await updateClientFinancials(clientId, { billing_status: values.billing_status, proposal_id: values.proposal_id });
+        const result = await updateClientFinancials(clientId, { billing_status: values.billing_status, proposal_id: values.proposal_id, value: values.value });
         error = result.error;
     }
 
@@ -282,6 +294,18 @@ export default function ClienteEditPage() {
       if (step === 'address') setActiveTab('financial');
     }
   };
+
+  const handleMarkAsPaid = async (chargeId: string) => {
+    setIsLoading(true);
+    const { error } = await markChargeAsPaid(chargeId);
+     if (error) {
+      toast({ variant: 'destructive', title: 'Erro', description: error.message });
+    } else {
+      toast({ title: 'Sucesso!', description: 'Cobrança marcada como paga.' });
+      await fetchClientData();
+    }
+    setIsLoading(false);
+  }
   
   const isInfoComplete = clientInfoSchema.safeParse(methods.getValues()).success;
   const isAddressComplete = addressSchema.safeParse(methods.getValues()).success;
@@ -341,7 +365,15 @@ export default function ClienteEditPage() {
             <AddressStep isEditing={editingStep === 'address'} setEditingStep={setEditingStep} onSave={() => handleSaveStep('address')} isLoading={isLoading} />
           </TabsContent>
           <TabsContent value="financial">
-            <FinancialStep isEditing={editingStep === 'financial'} setEditingStep={setEditingStep} onSave={() => handleSaveStep('financial')} isLoading={isLoading} proposals={proposals} />
+            <FinancialStep 
+                isEditing={editingStep === 'financial'} 
+                setEditingStep={setEditingStep} 
+                onSave={() => handleSaveStep('financial')} 
+                isLoading={isLoading} 
+                proposals={proposals} 
+                charges={charges}
+                onMarkAsPaid={handleMarkAsPaid}
+            />
           </TabsContent>
         </Tabs>
       </div>
@@ -609,20 +641,40 @@ function AddressStep({ isEditing, setEditingStep, onSave, isLoading }: StepProps
 
 interface FinancialStepProps extends StepProps {
     proposals: Proposta[];
+    charges: Cobranca[];
+    onMarkAsPaid: (chargeId: string) => Promise<void>;
 }
 
-function FinancialStep({ isEditing, setEditingStep, onSave, isLoading, proposals }: FinancialStepProps) {
+const getStatusInfo = (status: string, dueDate: string) => {
+    if (status === 'pago') {
+      return { text: 'Pago', className: 'border-green-500 bg-green-500/10 text-green-700' };
+    }
+    if (isPast(new Date(dueDate))) {
+      return { text: 'Atrasado', className: 'border-red-500 bg-red-500/10 text-red-700' };
+    }
+    return { text: 'Pendente', className: 'border-yellow-500 bg-yellow-500/10 text-yellow-700' };
+}
+
+function FinancialStep({ isEditing, setEditingStep, onSave, isLoading, proposals, charges, onMarkAsPaid }: FinancialStepProps) {
   const methods = useFormContext<ClientFormData>();
   const clientData = methods.getValues();
   const selectedProposalId = methods.watch('proposal_id');
   const selectedProposal = proposals.find(p => p.id === selectedProposalId);
 
+   React.useEffect(() => {
+    const proposal = proposals.find(p => p.id === selectedProposalId);
+    if (proposal) {
+        methods.setValue('value', proposal.value ? String(proposal.value) : '', { shouldValidate: true });
+    }
+   }, [selectedProposalId, proposals, methods]);
+
     if (isEditing) {
         return (
+            <div className="grid lg:grid-cols-2 gap-6">
             <Card>
                 <CardHeader>
-                    <CardTitle>Configuração Financeira</CardTitle>
-                    <CardDescription>Defina a proposta de serviço e o status da cobrança para este cliente.</CardDescription>
+                    <CardTitle>Configuração da Cobrança</CardTitle>
+                    <CardDescription>Defina a proposta, valor e o status da automação de cobrança.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                     <FormField
@@ -630,7 +682,7 @@ function FinancialStep({ isEditing, setEditingStep, onSave, isLoading, proposals
                         name="proposal_id"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Proposta de Cobrança</FormLabel>
+                                <FormLabel>Proposta de Serviço</FormLabel>
                                 <Select 
                                     onValueChange={(value) => field.onChange(value === 'null-value' ? null : value)} 
                                     value={field.value ?? 'null-value'}
@@ -647,7 +699,19 @@ function FinancialStep({ isEditing, setEditingStep, onSave, isLoading, proposals
                                         ))}
                                     </SelectContent>
                                 </Select>
-                                <FormDescription>Esta proposta definirá o valor e a data de vencimento das cobranças.</FormDescription>
+                                <FormDescription>Esta proposta servirá como base para valor e termos.</FormDescription>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                     <FormField
+                        control={methods.control}
+                        name="value"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Valor da Mensalidade (R$)</FormLabel>
+                                <FormControl><Input type="number" placeholder="1500.00" {...field} value={field.value || ''} /></FormControl>
+                                <FormDescription>Se uma proposta for selecionada, este valor será preenchido automaticamente, mas pode ser editado.</FormDescription>
                                 <FormMessage />
                             </FormItem>
                         )}
@@ -657,7 +721,7 @@ function FinancialStep({ isEditing, setEditingStep, onSave, isLoading, proposals
                         name="billing_status"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Status da Cobrança</FormLabel>
+                                <FormLabel>Automação de Cobrança</FormLabel>
                                  <Select onValueChange={field.onChange} value={field.value}>
                                     <FormControl>
                                         <SelectTrigger>
@@ -669,7 +733,7 @@ function FinancialStep({ isEditing, setEditingStep, onSave, isLoading, proposals
                                         <SelectItem value="inactive">Inativa</SelectItem>
                                     </SelectContent>
                                 </Select>
-                                <FormDescription>Cobranças só serão geradas para clientes com status "Ativo".</FormDescription>
+                                <FormDescription>Cobranças futuras só serão geradas para clientes com status "Ativo".</FormDescription>
                                 <FormMessage />
                             </FormItem>
                         )}
@@ -680,40 +744,106 @@ function FinancialStep({ isEditing, setEditingStep, onSave, isLoading, proposals
                     <Button type="button" onClick={onSave} disabled={isLoading}>{isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Salvar Configuração'}</Button>
                 </CardContent>
             </Card>
+             <ChargeHistory charges={charges} onMarkAsPaid={onMarkAsPaid} />
+            </div>
         )
     }
 
     return (
+        <div className="grid lg:grid-cols-2 gap-6">
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between">
+                    <div className="space-y-1">
+                        <CardTitle>Configuração Financeira</CardTitle>
+                        <CardDescription>
+                            Automação de cobrança: {clientData.billing_status === 'active' ? 'Ativa' : 'Inativa'}
+                        </CardDescription>
+                    </div>
+                    <Button variant="outline" size="sm" onClick={() => setEditingStep('financial')}><Edit className="mr-2 h-4 w-4" />Editar</Button>
+                </CardHeader>
+                <CardContent className="space-y-4 text-sm pt-6">
+                     <p className="flex items-center">
+                        <DollarSign className="mr-2 h-4 w-4 text-muted-foreground" />
+                        <strong>Valor Mensal:</strong>&nbsp;R$ {Number(clientData.value || 0).toFixed(2)}
+                    </p>
+                    {selectedProposal ? (
+                        <div className="space-y-2 rounded-md border p-4 bg-muted/50">
+                            <h4 className="font-semibold text-base">{selectedProposal.name}</h4>
+                            <div className="flex items-center text-muted-foreground">
+                                <FileText className="mr-2 h-4 w-4" />
+                                <span>Vencimento todo dia {selectedProposal.payment_day}</span>
+                            </div>
+                        </div>
+                    ) : (
+                        <p>Nenhuma proposta de serviço vinculada a este cliente.</p>
+                    )}
+                </CardContent>
+            </Card>
+             <ChargeHistory charges={charges} onMarkAsPaid={onMarkAsPaid} />
+        </div>
+    )
+}
+
+function ChargeHistory({ charges, onMarkAsPaid }: { charges: Cobranca[], onMarkAsPaid: (id: string) => Promise<void> }) {
+    return (
         <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-                <div className="space-y-1">
-                    <CardTitle>Configuração Financeira</CardTitle>
-                    <CardDescription>
-                        Status da cobrança: {clientData.billing_status === 'active' ? 'Ativa' : 'Inativa'}
-                    </CardDescription>
-                </div>
-                <Button variant="outline" size="sm" onClick={() => setEditingStep('financial')}><Edit className="mr-2 h-4 w-4" />Editar</Button>
+            <CardHeader>
+                <CardTitle>Histórico de Cobranças</CardTitle>
+                <CardDescription>Lista de cobranças geradas para este cliente.</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4 text-sm pt-6">
-                {selectedProposal ? (
-                    <div className="space-y-2 rounded-md border p-4">
-                        <h4 className="font-semibold text-base">{selectedProposal.name}</h4>
-                        <div className="flex items-center text-muted-foreground">
-                            <DollarSign className="mr-2 h-4 w-4" />
-                            <span>R$ {selectedProposal.value?.toFixed(2)} por {selectedProposal.payment_type === 'fixed' ? 'mês' : 'hora/projeto'}</span>
-                        </div>
-                         <div className="flex items-center text-muted-foreground">
-                            <FileText className="mr-2 h-4 w-4" />
-                            <span>Vencimento todo dia {selectedProposal.payment_day}</span>
-                        </div>
+            <CardContent>
+                {charges.length === 0 ? (
+                    <div className="text-center text-sm text-muted-foreground py-8">
+                        <Calendar className="mx-auto h-8 w-8 mb-2" />
+                        <p>Nenhuma cobrança gerada ainda.</p>
                     </div>
                 ) : (
-                    <p>Nenhuma proposta de cobrança vinculada a este cliente.</p>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Vencimento</TableHead>
+                                <TableHead>Valor</TableHead>
+                                <TableHead>Status</TableHead>
+                                <TableHead className="text-right">Ação</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {charges.map(charge => {
+                                const status = getStatusInfo(charge.status, charge.due_date);
+                                return (
+                                <TableRow key={charge.id}>
+                                    <TableCell>{format(new Date(charge.due_date), 'dd/MM/yyyy')}</TableCell>
+                                    <TableCell>R$ {Number(charge.value).toFixed(2)}</TableCell>
+                                    <TableCell>
+                                        <Badge variant="outline" className={cn("font-normal", status.className)}>{status.text}</Badge>
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                        {charge.status === 'pendente' && (
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                                                        <MoreVertical className="h-4 w-4" />
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end">
+                                                    <DropdownMenuItem onClick={() => onMarkAsPaid(charge.id)}>
+                                                        <BadgeCheck className="mr-2 h-4 w-4" />
+                                                        Marcar como Pago
+                                                    </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
+                                        )}
+                                    </TableCell>
+                                </TableRow>
+                            )})}
+                        </TableBody>
+                    </Table>
                 )}
             </CardContent>
         </Card>
     )
 }
+    
 
     
 

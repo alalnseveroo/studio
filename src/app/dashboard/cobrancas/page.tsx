@@ -12,94 +12,60 @@ import {
 } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Loader2, Send, FileWarning, ArrowRight, UserPlus, FilePlus, Link2 } from 'lucide-react'
-import { getClients } from '@/lib/actions/clients'
-import type { Cliente, Profile } from '@/lib/types'
-import { format, isAfter, startOfMonth, addMonths, parseISO } from 'date-fns'
+import { Loader2, Send, FileWarning, ArrowRight, UserPlus, FilePlus, Link2, MoreVertical, BadgeCheck } from 'lucide-react'
+import { getCharges, markChargeAsPaid } from '@/lib/actions/cobrancas'
+import type { Cobranca } from '@/lib/types'
+import { format, isPast } from 'date-fns'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { useToast } from '@/hooks/use-toast'
 import { sendTransactionalEmail } from '@/lib/brevo'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
-import { getProfile } from '@/lib/actions/profile'
-
-interface PendingCharge extends Cliente {
-    nextDueDate: Date;
-    proposta: any; 
-}
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 
 export default function CobrancasPage() {
-  const [pendingCharges, setPendingCharges] = useState<PendingCharge[]>([])
+  const [charges, setCharges] = useState<Cobranca[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isSending, setIsSending] = useState<string | null>(null);
   const { toast } = useToast()
 
-  const getStatusInfo = (charge: Cliente) => {
-    if (charge.billing_status === 'pending_approval') {
-        return { text: 'Aguardando Aprovação', className: 'border-orange-500 bg-orange-500/10 text-orange-700' };
+  const getStatusInfo = (status: string, dueDate: string) => {
+    if (status === 'pago') {
+      return { text: 'Pago', className: 'border-green-500 bg-green-500/10 text-green-700' };
     }
-    if (charge.billing_status === 'active') {
-        return { text: 'Ativa', className: 'border-green-500 bg-green-500/10 text-green-700' };
+    if (isPast(new Date(dueDate))) {
+      return { text: 'Atrasado', className: 'border-red-500 bg-red-500/10 text-red-700' };
     }
-    return { text: 'Inativa', className: 'border-gray-500 bg-gray-500/10 text-gray-700' };
+    return { text: 'Pendente', className: 'border-yellow-500 bg-yellow-500/10 text-yellow-700' };
   }
 
-
-  useEffect(() => {
-    async function fetchData() {
+  const fetchData = async () => {
       setIsLoading(true)
-      const { data: clients, error } = await getClients();
+      const { data, error } = await getCharges();
 
-      if (error || !clients) {
+      if (error || !data) {
         toast({
             variant: 'destructive',
             title: 'Erro ao buscar dados',
-            description: error?.message || 'Não foi possível carregar os dados.'
+            description: error?.message || 'Não foi possível carregar as cobranças.'
         })
         setIsLoading(false)
         return
       }
-
-      const today = new Date();
-      const charges: PendingCharge[] = [];
-
-      clients
-        .forEach(client => {
-            const firstChargeDate = client.first_charge_date ? parseISO(client.first_charge_date) : null;
-            
-            if (client.billing_status === 'pending_approval' && firstChargeDate) {
-                charges.push({ ...client, nextDueDate: firstChargeDate, proposta: {} });
-            } else if (client.billing_status === 'active' && client.payment_day && firstChargeDate) {
-                let nextDueDate = startOfMonth(today);
-                nextDueDate.setDate(client.payment_day);
-                
-                if (isAfter(today, nextDueDate)) {
-                    nextDueDate = addMonths(nextDueDate, 1);
-                }
-
-                // Se a proxima data de vencimento for antes da data da primeira cobrança, use a data da primeira cobrança
-                if (isAfter(firstChargeDate, nextDueDate)) {
-                    nextDueDate = firstChargeDate;
-                }
-                
-                charges.push({ ...client, nextDueDate, proposta: { value: client.value } });
-            }
-        });
       
-      setPendingCharges(charges.sort((a,b) => a.nextDueDate.getTime() - b.nextDueDate.getTime()));
+      setCharges(data);
       setIsLoading(false)
     }
 
+  useEffect(() => {
     fetchData()
   }, [toast])
 
-
-  const handleSendCharge = async (charge: PendingCharge) => {
+  const handleSendReminder = async (charge: Cobranca) => {
       setIsSending(charge.id);
-      const clientName = charge.full_name || charge.company_name;
-      const clientEmail = charge.email;
+      const clientName = charge.clientes?.full_name || charge.clientes?.company_name;
+      const clientEmail = charge.clientes?.email;
       
       if (!clientEmail) {
           toast({ variant: 'destructive', title: "E-mail não encontrado", description: `O cliente ${clientName} não possui um e-mail cadastrado.` });
@@ -107,9 +73,7 @@ export default function CobrancasPage() {
           return;
       }
       
-      const portalUrl = new URL(`/portal/${charge.id}`, process.env.NEXT_PUBLIC_SITE_URL).toString();
-      
-      // Template de cobrança unificado
+      const portalUrl = new URL(`/portal/${charge.cliente_id}`, process.env.NEXT_PUBLIC_SITE_URL).toString();
       const BREVO_TEMPLATE_ID = 61;
 
       try {
@@ -119,7 +83,7 @@ export default function CobrancasPage() {
             {
                 NOME_CLIENTE: clientName,
                 VALOR_COBRANCA: (charge.value || 0).toFixed(2),
-                DATA_VENCIMENTO: format(charge.nextDueDate, 'dd/MM/yyyy'),
+                DATA_VENCIMENTO: format(new Date(charge.due_date), 'dd/MM/yyyy'),
                 LINK_PORTAL: portalUrl,
             },
             charge.user_id 
@@ -141,15 +105,18 @@ export default function CobrancasPage() {
       }
   }
 
-  const renderActionButton = (charge: PendingCharge) => {
-      const buttonText = charge.billing_status === 'pending_approval' ? 'Revisar e Enviar' : 'Enviar Lembrete';
-      return (
-          <Button size="sm" onClick={() => handleSendCharge(charge)} disabled={isSending === charge.id}>
-              {isSending === charge.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-              {buttonText}
-          </Button>
-      )
+  const handleMarkAsPaid = async (chargeId: string) => {
+    setIsLoading(true);
+    const { error } = await markChargeAsPaid(chargeId);
+     if (error) {
+      toast({ variant: 'destructive', title: 'Erro', description: error.message });
+    } else {
+      toast({ title: 'Sucesso!', description: 'Cobrança marcada como paga.' });
+      await fetchData(); // Refetch charges
+    }
+    setIsLoading(false);
   }
+
 
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 sm:gap-6 sm:p-6">
@@ -197,7 +164,7 @@ export default function CobrancasPage() {
                 <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm py-24">
                     <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                 </div>
-                ) : pendingCharges.length === 0 ? (
+                ) : charges.length === 0 ? (
                 <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm py-24">
                     <div className="flex flex-col items-center gap-1 text-center">
                     <FileWarning className="h-10 w-10 text-muted-foreground" />
@@ -214,7 +181,7 @@ export default function CobrancasPage() {
                     <CardHeader>
                         <CardTitle>Próximas Cobranças</CardTitle>
                         <CardDescription>
-                            Listagem de cobranças recorrentes ativas para o próximo ciclo.
+                            Listagem de cobranças pendentes. As cobranças são geradas automaticamente para clientes ativos.
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -222,37 +189,55 @@ export default function CobrancasPage() {
                         <TableHeader>
                         <TableRow>
                             <TableHead>Cliente</TableHead>
-                            <TableHead className="hidden md:table-cell">Status</TableHead>
-                            <TableHead>Próxima Cobrança</TableHead>
+                            <TableHead>Vencimento</TableHead>
                             <TableHead>Valor (R$)</TableHead>
+                            <TableHead>Status Pag.</TableHead>
                             <TableHead className="text-center">Ações</TableHead>
                         </TableRow>
                         </TableHeader>
                         <TableBody>
-                        {pendingCharges.map((charge) => {
-                          const status = getStatusInfo(charge);
+                        {charges.map((charge) => {
+                          const status = getStatusInfo(charge.status, charge.due_date);
                           return (
                             <TableRow key={charge.id}>
                             <TableCell className="font-medium">
                                 <div className="flex items-center gap-3">
                                 <Avatar className="h-6 w-6">
-                                    <AvatarImage src={charge?.avatar_url || ''} alt="Avatar do Cliente" />
-                                    <AvatarFallback>{(charge?.full_name || charge?.company_name || 'C').charAt(0)}</AvatarFallback>
+                                    <AvatarImage src={charge.clientes?.avatar_url || ''} alt="Avatar do Cliente" />
+                                    <AvatarFallback>{(charge.clientes?.full_name || charge.clientes?.company_name || 'C').charAt(0)}</AvatarFallback>
                                 </Avatar>
-                                <span>{charge?.full_name || charge?.company_name}</span>
+                                <span>{charge.clientes?.full_name || charge.clientes?.company_name}</span>
                                 </div>
                             </TableCell>
-                            <TableCell className="hidden md:table-cell">
-                                <Badge variant="outline" className={cn("font-normal", status.className)}>{status.text}</Badge>
-                            </TableCell>
                             <TableCell>
-                                {charge.nextDueDate ? format(charge.nextDueDate, 'dd/MM/yyyy') : 'N/A'}
+                                {format(new Date(charge.due_date), 'dd/MM/yyyy')}
                             </TableCell>
                             <TableCell>
                                 {charge.value ? `${Number(charge.value).toFixed(2)}` : 'N/A'}
                             </TableCell>
+                            <TableCell>
+                                <Badge variant="outline" className={cn("font-normal", status.className)}>{status.text}</Badge>
+                            </TableCell>
                             <TableCell className="text-center">
-                                {renderActionButton(charge)}
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="ghost" size="icon" disabled={isSending === charge.id}>
+                                            {isSending === charge.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <MoreVertical className="h-4 w-4" />}
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                        {charge.status === 'pendente' && (
+                                            <DropdownMenuItem onSelect={() => handleMarkAsPaid(charge.id)}>
+                                                <BadgeCheck className="mr-2 h-4 w-4" />
+                                                Marcar como pago
+                                            </DropdownMenuItem>
+                                        )}
+                                        <DropdownMenuItem onSelect={() => handleSendReminder(charge)}>
+                                            <Send className="mr-2 h-4 w-4" />
+                                            Enviar lembrete
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
                             </TableCell>
                             </TableRow>
                          )
@@ -279,3 +264,5 @@ export default function CobrancasPage() {
     </div>
   )
 }
+
+    
