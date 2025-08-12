@@ -105,6 +105,30 @@ export async function markChargeAsPaid(chargeId: string) {
 
   revalidatePath('/dashboard/cobrancas');
   revalidatePath('/dashboard/clientes/*'); // Revalida a página de detalhes do cliente
+  revalidatePath('/portal/*');
   return { error: null };
+}
+
+export async function saveInvoiceUrl(chargeId: string, invoiceUrl: string) {
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+        return { error: { message: 'Usuário não autenticado.' } };
+    }
+
+    const { error } = await supabase
+        .from('cobrancas')
+        .update({ invoice_url: invoiceUrl, updated_at: new Date().toISOString() })
+        .eq('id', chargeId)
+        .eq('user_id', user.id);
+
+    if (error) {
+        console.error('Supabase error saving invoice URL:', error);
+        return { error: { message: 'Não foi possível salvar o link da nota fiscal.' } };
+    }
+    
+    revalidatePath('/dashboard/cobrancas');
+    revalidatePath('/portal/*');
+    return { error: null };
 }
     

@@ -286,6 +286,7 @@ export default function ClientPortalPage() {
                                 <TableBody>
                                     {charges.map(charge => {
                                         const status = getStatusInfo(charge.status, charge.due_date);
+                                        const isInvoiceAvailable = charge.status === 'pago' && !!charge.invoice_url;
                                         return (
                                         <TableRow key={charge.id}>
                                             <TableCell>{format(new Date(charge.due_date), 'dd/MM/yyyy')}</TableCell>
@@ -294,11 +295,13 @@ export default function ClientPortalPage() {
                                                 <Badge variant="outline" className={cn("font-normal", status.className)}>{status.text}</Badge>
                                             </TableCell>
                                             <TableCell className="text-right space-x-2">
-                                                 <Button variant="outline" size="sm" disabled>
-                                                    <Download className="mr-2 h-4 w-4" />
-                                                    Nota Fiscal
+                                                 <Button asChild variant="outline" size="sm" disabled={!isInvoiceAvailable}>
+                                                    <Link href={charge.invoice_url || ''} target="_blank" rel="noopener noreferrer">
+                                                        <Download className="mr-2 h-4 w-4" />
+                                                        Nota Fiscal
+                                                    </Link>
                                                  </Button>
-                                                {charge.status === 'pendente' && (
+                                                {charge.status !== 'pago' && (
                                                     <Button size="sm" onClick={() => setSelectedCharge(charge)}>
                                                          <CreditCard className="mr-2 h-4 w-4" />
                                                          Pagar com PIX

@@ -105,6 +105,7 @@ export type Cobranca = {
     value: number;
     status: 'pendente' | 'pago' | 'atrasado';
     paid_at: string | null;
+    invoice_url: string | null;
     clientes: Cliente; // Join com clientes
 }
     
@@ -112,3 +113,4 @@ export type Cobranca = {
     
 
     
+

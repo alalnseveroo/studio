@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Loader2, Send, FileWarning, UserPlus, FilePlus, Link2, MoreVertical, BadgeCheck } from 'lucide-react'
+import { Loader2, Send, FileWarning, UserPlus, FilePlus, Link2, MoreVertical, BadgeCheck, Upload } from 'lucide-react'
 import { getCharges, markChargeAsPaid } from '@/lib/actions/cobrancas'
 import type { Cobranca } from '@/lib/types'
 import { format, isPast } from 'date-fns'
@@ -23,11 +23,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
+import { UploadInvoiceModal } from '@/components/upload-invoice-modal'
 
 export default function CobrancasPage() {
   const [charges, setCharges] = useState<Cobranca[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isSending, setIsSending] = useState<string | null>(null);
+  const [selectedChargeForInvoice, setSelectedChargeForInvoice] = useState<Cobranca | null>(null)
   const { toast } = useToast()
 
   const getStatusInfo = (status: string, dueDate: string) => {
@@ -117,8 +119,8 @@ export default function CobrancasPage() {
     setIsLoading(false);
   }
 
-
   return (
+    <>
     <div className="flex flex-1 flex-col gap-4 p-4 sm:gap-6 sm:p-6">
         <div className="flex items-center">
             <h1 className="text-lg font-semibold md:text-2xl">Gestão de Cobranças</h1>
@@ -192,6 +194,7 @@ export default function CobrancasPage() {
                             <TableHead>Vencimento</TableHead>
                             <TableHead>Valor (R$)</TableHead>
                             <TableHead>Status Pag.</TableHead>
+                            <TableHead>NF-e</TableHead>
                             <TableHead className="text-center">Ações</TableHead>
                         </TableRow>
                         </TableHeader>
@@ -218,6 +221,13 @@ export default function CobrancasPage() {
                             <TableCell>
                                 <Badge variant="outline" className={cn("font-normal", status.className)}>{status.text}</Badge>
                             </TableCell>
+                            <TableCell>
+                                {charge.invoice_url ? (
+                                    <Badge variant="secondary" className="border-blue-500 bg-blue-500/10 text-blue-700">Anexada</Badge>
+                                ) : (
+                                    <Badge variant="outline">Pendente</Badge>
+                                )}
+                            </TableCell>
                             <TableCell className="text-center">
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
@@ -226,6 +236,10 @@ export default function CobrancasPage() {
                                         </Button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="end">
+                                        <DropdownMenuItem onSelect={() => setSelectedChargeForInvoice(charge)}>
+                                            <Upload className="mr-2 h-4 w-4" />
+                                            Anexar NF-e
+                                        </DropdownMenuItem>
                                         {charge.status === 'pendente' && (
                                             <DropdownMenuItem onSelect={() => handleMarkAsPaid(charge.id)}>
                                                 <BadgeCheck className="mr-2 h-4 w-4" />
@@ -262,5 +276,15 @@ export default function CobrancasPage() {
             </TabsContent>
         </Tabs>
     </div>
+
+    {selectedChargeForInvoice && (
+        <UploadInvoiceModal
+            isOpen={!!selectedChargeForInvoice}
+            onClose={() => setSelectedChargeForInvoice(null)}
+            charge={selectedChargeForInvoice}
+            onUploadSuccess={fetchData}
+        />
+    )}
+    </>
   )
 }
