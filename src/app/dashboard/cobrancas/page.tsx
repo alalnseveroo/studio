@@ -108,8 +108,7 @@ export default function CobrancasPage() {
       
       const portalUrl = new URL(`/portal/${charge.id}`, process.env.NEXT_PUBLIC_SITE_URL).toString();
       
-      const isApproval = charge.billing_status === 'pending_approval';
-      const BREVO_TEMPLATE_ID = isApproval ? 58 : 61;
+      const BREVO_TEMPLATE_ID = 61;
 
       try {
         await sendTransactionalEmail(
@@ -117,7 +116,7 @@ export default function CobrancasPage() {
             BREVO_TEMPLATE_ID,
             {
                 NOME_CLIENTE: clientName,
-                NOME_CONTRATADA: 'Seu Assistente Virtual', // Default sender name
+                NOME_CONTRATADA: 'Seu Assistente Virtual',
                 VALOR_COBRANCA: (charge.proposta?.value || charge.value || 0).toFixed(2),
                 DATA_VENCIMENTO: format(charge.nextDueDate, 'dd/MM/yyyy'),
                 LINK_PORTAL: portalUrl,
@@ -125,7 +124,7 @@ export default function CobrancasPage() {
         );
         
         toast({
-            title: isApproval ? "Solicitação de Aprovação Enviada!" : "Lembrete de Cobrança Enviado!",
+            title: "E-mail de Cobrança Enviado!",
             description: `Um e-mail foi enviado para ${clientName}.`
         });
 
@@ -289,5 +288,3 @@ export default function CobrancasPage() {
     </div>
   )
 }
-
-    
