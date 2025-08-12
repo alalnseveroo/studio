@@ -56,9 +56,7 @@ export async function createFullClient(formData: any) {
   // Após criar o cliente no Supabase, cria/atualiza na Brevo
   try {
     if (data.email) {
-      await addOrUpdateContact(data.email, {
-        NOME_CLIENTE: data.full_name || '',
-      });
+      await addOrUpdateContact(data.email, { NOME_CLIENTE: data.full_name || '' });
     }
   } catch (brevoError: any) {
     // Não impede o fluxo principal, mas loga o erro

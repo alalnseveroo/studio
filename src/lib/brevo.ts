@@ -22,13 +22,15 @@ if (BREVO_API_KEY) {
 /**
  * Adiciona ou atualiza um contato na Brevo, definindo seus atributos.
  * @param email - O e-mail do contato.
- * @param attributes - Um objeto com os atributos a serem definidos. Ex: { PINSECRET: '123456' }
+ * @param attributes - Um objeto com os atributos a serem definidos. Ex: { NOME_CLIENTE: 'Fulano de Tal' }
  */
 export async function addOrUpdateContact(email: string, attributes: { [key: string]: any }) {
     if (!BREVO_API_KEY) throw new Error("A chave da API da Brevo não está configurada.");
 
     let createContact = new Brevo.CreateContact();
     createContact.email = email;
+    
+    // A API espera uma lista de objetos, mesmo que seja um só
     createContact.attributes = attributes;
     createContact.updateEnabled = true;
 
@@ -70,4 +72,3 @@ export async function sendTransactionalEmail(
         throw new Error(errorMessage);
     }
 }
-
