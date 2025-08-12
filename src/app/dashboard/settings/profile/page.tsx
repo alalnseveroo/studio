@@ -63,6 +63,16 @@ export default function ProfilePage() {
     resolver: zodResolver(profileSchema),
     defaultValues: {
       personType: 'cpf',
+      companyName: '',
+      cnpj: '',
+      fullName: '',
+      nationality: '',
+      civilStatus: '',
+      profession: '',
+      rg: '',
+      cpf: '',
+      address: '',
+      signature: '',
     },
   })
 
