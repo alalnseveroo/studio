@@ -1,3 +1,4 @@
+
 'use server';
 
 import * as Brevo from '@getbrevo/brevo';
@@ -17,9 +18,6 @@ if (BREVO_API_KEY) {
     contactsApi.setApiKey(Brevo.ContactsApiApiKeys.apiKey, BREVO_API_KEY);
 }
 
-// **IMPORTANTE**: Estes são os valores padrão
-const DEFAULT_SENDER_EMAIL = "cobrancas@nossodominio.com";
-const DEFAULT_SENDER_NAME = "DASH - Gestor de Contratos";
 
 /**
  * Adiciona ou atualiza um contato na Brevo, definindo seus atributos.
@@ -50,15 +48,11 @@ export async function addOrUpdateContact(email: string, attributes: { [key: stri
  * @param toEmail - O e-mail do destinatário.
  * @param templateId - O ID do template transacional na Brevo.
  * @param params - Parâmetros para preencher o template. Ex: { pinsecret: '123456' }
- * @param senderName - Nome do remetente (sobrescreve o padrão).
- * @param senderEmail - E-mail do remetente (sobrescreve o padrão).
  */
 export async function sendTransactionalEmail(
     toEmail: string, 
     templateId: number, 
-    params: { [key: string]: any },
-    senderName?: string,
-    senderEmail?: string
+    params: { [key: string]: any }
 ) {
     if (!BREVO_API_KEY) throw new Error("A chave da API da Brevo não está configurada.");
 
@@ -66,10 +60,6 @@ export async function sendTransactionalEmail(
     
     sendSmtpEmail.templateId = templateId;
     sendSmtpEmail.to = [{ email: toEmail }];
-    sendSmtpEmail.sender = { 
-        name: senderName || DEFAULT_SENDER_NAME, 
-        email: senderEmail || DEFAULT_SENDER_EMAIL 
-    };
     sendSmtpEmail.params = params;
 
     try {
@@ -80,3 +70,4 @@ export async function sendTransactionalEmail(
         throw new Error(errorMessage);
     }
 }
+
