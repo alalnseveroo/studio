@@ -55,7 +55,10 @@ export async function createFullClient(formData: any) {
   
   try {
     if (data) {
-        await sendClientWebhook('create', data);
+        // Adiciona a URL do portal ao objeto de dados antes de enviar para o webhook
+        const portalUrl = new URL(`/portal/${data.id}`, process.env.NEXT_PUBLIC_SITE_URL).toString();
+        const dataWithPortalUrl = { ...data, portal_url: portalUrl };
+        await sendClientWebhook('create', dataWithPortalUrl);
     }
   } catch (webhookError: any) {
     // Não bloqueia a criação do cliente se o webhook falhar, apenas registra o erro.
@@ -138,7 +141,10 @@ export async function updateClientProfile(id: string, formData: any) {
   
    try {
     if (updatedData) {
-        await sendClientWebhook('update', updatedData);
+        // Adiciona a URL do portal ao objeto de dados antes de enviar para o webhook
+        const portalUrl = new URL(`/portal/${updatedData.id}`, process.env.NEXT_PUBLIC_SITE_URL).toString();
+        const dataWithPortalUrl = { ...updatedData, portal_url: portalUrl };
+        await sendClientWebhook('update', dataWithPortalUrl);
     }
   } catch (webhookError: any) {
     console.warn(`Falha ao enviar webhook de atualização de cliente: ${webhookError.message}`);
