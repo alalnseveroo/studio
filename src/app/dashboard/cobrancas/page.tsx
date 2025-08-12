@@ -23,6 +23,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
+import { getProfile } from '@/lib/actions/profile'
 
 interface PendingCharge extends Cliente {
     nextDueDate: Date;
@@ -108,6 +109,7 @@ export default function CobrancasPage() {
       
       const portalUrl = new URL(`/portal/${charge.id}`, process.env.NEXT_PUBLIC_SITE_URL).toString();
       
+      // Template de cobrança unificado
       const BREVO_TEMPLATE_ID = 61;
 
       try {
@@ -116,16 +118,16 @@ export default function CobrancasPage() {
             BREVO_TEMPLATE_ID,
             {
                 NOME_CLIENTE: clientName,
-                VALOR_COBRANCA: (charge.proposta?.value || charge.value || 0).toFixed(2),
+                VALOR_COBRANCA: (charge.value || 0).toFixed(2),
                 DATA_VENCIMENTO: format(charge.nextDueDate, 'dd/MM/yyyy'),
                 LINK_PORTAL: portalUrl,
             },
-            charge.user_id // Passando o ID do usuário para a função
+            charge.user_id 
         );
         
         toast({
             title: "E-mail de Cobrança Enviado!",
-            description: `Um e-mail foi enviado para ${clientName}.`
+            description: `A cobrança foi enviada para ${clientName}.`
         });
 
       } catch (error: any) {

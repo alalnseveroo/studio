@@ -6,6 +6,7 @@ import { revalidatePath } from 'next/cache'
 import type { Cliente } from '@/lib/types';
 import { addOrUpdateContact } from '../brevo';
 import { buttonVariants } from '@/components/ui/button';
+import { format } from 'date-fns';
 
 const AVATAR_URLS = [
     'https://ktgckactmaqioszffuyx.supabase.co/storage/v1/object/public/icons/Ellipse%201.png',
@@ -54,10 +55,17 @@ export async function createFullClient(formData: any) {
     return { data: null, error: { message: `Não foi possível adicionar o cliente: ${error.message}` } }
   }
   
-  // Após criar o cliente no Supabase, cria/atualiza na Brevo
+  // Após criar o cliente no Supabase, cria/atualiza na Brevo com todos os atributos
   try {
     if (data.email) {
-      await addOrUpdateContact(data.email, { NOME_CLIENTE: data.full_name || '' });
+      const portalUrl = new URL(`/portal/${data.id}`, process.env.NEXT_PUBLIC_SITE_URL).toString();
+      const brevoAttributes = {
+        NOME_CLIENTE: data.full_name || '',
+        VALOR_COBRANCA: parseFloat(formData.value).toFixed(2),
+        DATA_VENCIMENTO: format(new Date(formData.firstChargeDate), 'dd/MM/yyyy'),
+        LINK_PORTAL: portalUrl,
+      };
+      await addOrUpdateContact(data.email, brevoAttributes);
     }
   } catch (brevoError: any) {
     // Não impede o fluxo principal, mas loga o erro
