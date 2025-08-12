@@ -34,7 +34,7 @@ import {
 } from "@/components/ui/pagination"
 import { Checkbox } from "@/components/ui/checkbox"
 import { AddClientSheet } from '@/components/add-client-sheet'
-import { getClients, deleteClient } from '@/lib/actions/clients'
+import { getClients, deleteClient, deleteMultipleClients } from '@/lib/actions/clients'
 import type { Cliente, Proposta } from '@/lib/types'
 import { getProposals } from '@/lib/actions/propostas'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -71,6 +71,7 @@ export default function ClientesPage() {
   const [currentPage, setCurrentPage] = useState(1)
   const [selectedClients, setSelectedClients] = useState<string[]>([])
   const [clientToDelete, setClientToDelete] = useState<Cliente | null>(null)
+  const [isBulkDeleteConfirmOpen, setIsBulkDeleteConfirmOpen] = useState(false)
   
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [newlyCreatedClient, setNewlyCreatedClient] = useState<Cliente | null>(null);
@@ -109,15 +110,39 @@ export default function ClientesPage() {
         description: 'O cliente foi removido com sucesso.',
       })
       await fetchClientsAndProposals()
+      setSelectedClients([])
     }
     setClientToDelete(null)
   }
 
+  const handleBulkDelete = async () => {
+    if (selectedClients.length === 0) return
+
+    const { error } = await deleteMultipleClients(selectedClients)
+
+    if (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao Excluir',
+        description: error.message,
+      })
+    } else {
+      toast({
+        title: 'Clientes Excluídos!',
+        description: `${selectedClients.length} clientes foram removidos com sucesso.`,
+      })
+      await fetchClientsAndProposals()
+      setSelectedClients([])
+    }
+    setIsBulkDeleteConfirmOpen(false)
+  }
+
+
   const handleClientAdded = (newClient: Cliente) => {
+    // setIsSheetOpen(false); // A folha se fecha
     setClients((prevClients) => [newClient, ...prevClients]);
-    setIsSheetOpen(false);
-    setNewlyCreatedClient(newClient);
-    setShowSuccessModal(true);
+    setNewlyCreatedClient(newClient); // Guarda o cliente novo
+    setShowSuccessModal(true); // Abre o modal de sucesso
   };
   
   const handleSuccessAction = (action: 'contract' | 'billing') => {
@@ -176,6 +201,19 @@ export default function ClientesPage() {
         <div className="flex items-center">
           <h1 className="text-lg font-semibold md:text-2xl">Clientes</h1>
           <div className="ml-auto flex items-center gap-2">
+            {selectedClients.length > 0 && (
+                <Button
+                    variant="destructive"
+                    size="sm"
+                    className="h-8 gap-1"
+                    onClick={() => setIsBulkDeleteConfirmOpen(true)}
+                >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
+                        Excluir ({selectedClients.length})
+                    </span>
+                </Button>
+            )}
             <Button size="sm" className="h-8 gap-1" onClick={() => setIsSheetOpen(true)}>
               <PlusCircle className="h-3.5 w-3.5" />
               <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
@@ -245,7 +283,7 @@ export default function ClientesPage() {
                   <TableRow className="bg-muted/50 hover:bg-muted/50">
                     <TableHead className="w-[60px] border-r">
                       <Checkbox
-                        checked={selectedClients.length > 0 && selectedClients.length === paginatedClients.length}
+                        checked={selectedClients.length > 0 && selectedClients.length === paginatedClients.length && paginatedClients.length > 0}
                         onCheckedChange={handleSelectAll}
                         aria-label="Selecionar todos"
                       />
@@ -393,6 +431,26 @@ export default function ClientesPage() {
             </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <AlertDialog open={isBulkDeleteConfirmOpen} onOpenChange={setIsBulkDeleteConfirmOpen}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+            <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+            <AlertDialogDescription>
+                Esta ação não pode ser desfeita. Isso excluirá permanentemente os <strong>{selectedClients.length} clientes selecionados</strong> e todos os seus dados associados.
+            </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+                onClick={handleBulkDelete}
+                className={cn(buttonVariants({ variant: "destructive" }))}
+            >
+                Sim, excluir clientes
+            </AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       
       <AlertDialog open={showSuccessModal} onOpenChange={setShowSuccessModal}>
         <AlertDialogContent>
@@ -424,3 +482,5 @@ export default function ClientesPage() {
     </>
   )
 }
+
+    

@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
-import { Button } from '@/components/ui/button'
+import { Button, buttonVariants } from '@/components/ui/button'
 import {
   Table,
   TableBody,
@@ -18,12 +18,22 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { PlusCircle, FileSignature, Loader2, Eye, MoreVertical, Send, Trash2 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { CreateContractModal } from '@/components/create-contract-modal'
-import { getContracts } from '@/lib/actions/contratos'
+import { getContracts, deleteMultipleContracts } from '@/lib/actions/contratos'
 import { getClients } from '@/lib/actions/clients'
 import { getProposals } from '@/lib/actions/propostas'
 import type { Contrato, Cliente, Proposta } from '@/lib/types'
@@ -31,6 +41,7 @@ import { format } from 'date-fns'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { cn } from '@/lib/utils'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { useToast } from '@/hooks/use-toast'
 
 export default function ContratosPage() {
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -41,32 +52,57 @@ export default function ContratosPage() {
   const [selectedContracts, setSelectedContracts] = useState<string[]>([])
   const [statusFilter, setStatusFilter] = useState('all')
   const [sortOrder, setSortOrder] = useState('desc')
+  const [isBulkDeleteConfirmOpen, setIsBulkDeleteConfirmOpen] = useState(false)
+  const { toast } = useToast()
 
+  const fetchAllData = async () => {
+    setIsLoading(true)
+    const [
+      { data: contractsData }, 
+      { data: clientsData }, 
+      { data: proposalsData }
+    ] = await Promise.all([
+      getContracts(),
+      getClients(),
+      getProposals()
+    ])
+    
+    setContracts(contractsData || [])
+    setClients(clientsData || [])
+    setProposals(proposalsData || [])
+    setIsLoading(false)
+  }
 
   useEffect(() => {
-    async function fetchData() {
-      setIsLoading(true)
-      const [
-        { data: contractsData }, 
-        { data: clientsData }, 
-        { data: proposalsData }
-      ] = await Promise.all([
-        getContracts(),
-        getClients(),
-        getProposals()
-      ])
-      
-      setContracts(contractsData || [])
-      setClients(clientsData || [])
-      setProposals(proposalsData || [])
-      setIsLoading(false)
-    }
-    fetchData()
+    fetchAllData()
   }, [])
 
   const handleContractAdded = (newContract: Contrato) => {
     setContracts((prev) => [newContract, ...prev])
   }
+  
+  const handleBulkDelete = async () => {
+    if (selectedContracts.length === 0) return
+
+    const { error } = await deleteMultipleContracts(selectedContracts)
+
+    if (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao Excluir Contratos',
+        description: error.message,
+      })
+    } else {
+      toast({
+        title: 'Contratos Excluídos!',
+        description: `${selectedContracts.length} contratos foram removidos com sucesso.`,
+      })
+      await fetchAllData() // Refetch all data
+      setSelectedContracts([]) // Clear selection
+    }
+    setIsBulkDeleteConfirmOpen(false)
+  }
+
   
   const getStatusVariant = (status: string) => {
     switch (status) {
@@ -139,6 +175,19 @@ export default function ContratosPage() {
         <div className="flex items-center">
           <h1 className="text-lg font-semibold md:text-2xl">Contratos</h1>
           <div className="ml-auto flex items-center gap-2">
+            {selectedContracts.length > 0 && (
+                 <Button
+                    variant="destructive"
+                    size="sm"
+                    className="h-8 gap-1"
+                    onClick={() => setIsBulkDeleteConfirmOpen(true)}
+                >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
+                        Excluir ({selectedContracts.length})
+                    </span>
+                </Button>
+            )}
             <Button size="sm" className="h-8 gap-1" onClick={() => setIsModalOpen(true)}>
               <PlusCircle className="h-3.5 w-3.5" />
               <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
@@ -262,7 +311,10 @@ export default function ContratosPage() {
                                       <Send className="mr-2 h-4 w-4" />
                                       Reenviar E-mail
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem className="text-destructive">
+                                    <DropdownMenuItem className="text-destructive" onSelect={() => {
+                                        setSelectedContracts([contract.id])
+                                        setIsBulkDeleteConfirmOpen(true)
+                                    }}>
                                       <Trash2 className="mr-2 h-4 w-4" />
                                       Excluir
                                     </DropdownMenuItem>
@@ -287,6 +339,28 @@ export default function ContratosPage() {
         proposals={proposals}
         onClientListChange={setClients}
       />
+      
+       <AlertDialog open={isBulkDeleteConfirmOpen} onOpenChange={setIsBulkDeleteConfirmOpen}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+            <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+            <AlertDialogDescription>
+                Esta ação não pode ser desfeita. Isso excluirá permanentemente o(s) <strong>{selectedContracts.length} contrato(s) selecionado(s)</strong>.
+            </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+                onClick={handleBulkDelete}
+                className={cn(buttonVariants({ variant: "destructive" }))}
+            >
+                Sim, excluir contrato(s)
+            </AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   )
 }
+
+    

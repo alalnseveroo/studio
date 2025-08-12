@@ -356,3 +356,28 @@ export async function signContractAsClient({ contractId, otp, signatureDataUrl }
     revalidatePath(`/portal/${contract.cliente_id}`);
     return { data: updatedContract, error: null };
 }
+
+export async function deleteMultipleContracts(ids: string[]) {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: { message: 'Usuário não autenticado.' } };
+  }
+
+  const { error } = await supabase
+    .from('contratos')
+    .delete()
+    .in('id', ids)
+    .eq('user_id', user.id);
+
+  if (error) {
+    console.error('Supabase bulk delete error (contracts):', error);
+    return { error: { message: `Não foi possível excluir os contratos selecionados: ${error.message}` } };
+  }
+
+  revalidatePath('/dashboard/contratos');
+  return { error: null };
+}
+
+    
