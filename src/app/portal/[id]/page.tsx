@@ -5,18 +5,32 @@ import { useState, useEffect, useCallback } from 'react'
 import { useParams } from 'next/navigation'
 import { getClientById } from '@/lib/actions/clients'
 import { getContractsForClientPortal } from '@/lib/actions/contratos'
+import { getChargesForClientPortal } from '@/lib/actions/cobrancas'
 import { getProfile } from '@/lib/actions/profile'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { AlertCircle, User, FileText, Check, Clock, Verified, Briefcase, Mail } from 'lucide-react'
+import { AlertCircle, User, FileText, Check, Clock, Verified, Briefcase, Mail, Download, CreditCard } from 'lucide-react'
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+} from "@/components/ui/alert-dialog"
+
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
-import type { Cliente, Contrato, Profile } from '@/lib/types'
+import type { Cliente, Contrato, Profile, Cobranca } from '@/lib/types'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Separator } from '@/components/ui/separator'
-import { Card } from '@/components/ui/card'
+import { Card, CardHeader, CardContent } from '@/components/ui/card'
 import PixQRCode from '@/components/pix-qrcode'
+import { format, isPast } from 'date-fns'
+import { cn } from '@/lib/utils'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 
 
 interface InfoRowProps {
@@ -47,8 +61,20 @@ export default function ClientPortalPage() {
   const [client, setClient] = useState<Cliente | null>(null)
   const [provider, setProvider] = useState<(Profile & {email: string}) | null>(null)
   const [contracts, setContracts] = useState<Contrato[]>([])
+  const [charges, setCharges] = useState<Cobranca[]>([])
+  const [selectedCharge, setSelectedCharge] = useState<Cobranca | null>(null);
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  
+  const getStatusInfo = (status: string, dueDate: string) => {
+    if (status === 'pago') {
+      return { text: 'Pago', className: 'border-green-500 bg-green-500/10 text-green-700' };
+    }
+    if (isPast(new Date(dueDate))) {
+      return { text: 'Atrasado', className: 'border-red-500 bg-red-500/10 text-red-700' };
+    }
+    return { text: 'Pendente', className: 'border-yellow-500 bg-yellow-500/10 text-yellow-700' };
+  }
 
   const fetchData = useCallback(async () => {
     if (!clientId) return
@@ -71,11 +97,17 @@ export default function ClientPortalPage() {
             }
         }
 
-        const { data: contractsData, error: contractsError } = await getContractsForClientPortal(clientId)
-        if (contractsError) {
-          console.error('Could not fetch contracts for portal', contractsError)
-        }
+        const [{ data: contractsData, error: contractsError }, { data: chargesData, error: chargesError }] = await Promise.all([
+            getContractsForClientPortal(clientId),
+            getChargesForClientPortal(clientId)
+        ]);
+
+        if (contractsError) console.error('Could not fetch contracts for portal', contractsError)
         setContracts(contractsData || []);
+        
+        if (chargesError) console.error('Could not fetch charges for portal', chargesError)
+        setCharges(chargesData || []);
+
     } catch (e: any) {
         setError(e.message);
     } finally {
@@ -150,6 +182,7 @@ export default function ClientPortalPage() {
 
 
   return (
+    <>
     <div className="relative min-h-screen w-full bg-background">
       <div className="absolute left-[60px] top-[60px] flex items-end gap-4">
         <div className="relative">
@@ -237,22 +270,82 @@ export default function ClientPortalPage() {
             </TabsContent>
             
              <TabsContent value="pagamentos" className="mt-6 space-y-6">
-                <h2 className="text-xl font-bold">Pagamentos e Notas</h2>
-                 {contracts.length > 0 && provider ? (
-                    <PixQRCode
-                        pixKey={provider.cpf || provider.cnpj || ''}
-                        value={contracts[0].propostas?.value || 0}
-                        beneficiaryName={provider.full_name || provider.company_name || 'Beneficiário'}
-                        beneficiaryCity={provider.address?.split(',').slice(-2, -1)[0]?.trim() || 'CIDADE'}
-                    />
+                <h2 className="text-xl font-bold">Pagamentos e Notas Fiscais</h2>
+                 {charges.length > 0 ? (
+                     <Card>
+                        <CardContent className="p-0">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Vencimento</TableHead>
+                                        <TableHead>Valor</TableHead>
+                                        <TableHead>Status</TableHead>
+                                        <TableHead className="text-right">Ações</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {charges.map(charge => {
+                                        const status = getStatusInfo(charge.status, charge.due_date);
+                                        return (
+                                        <TableRow key={charge.id}>
+                                            <TableCell>{format(new Date(charge.due_date), 'dd/MM/yyyy')}</TableCell>
+                                            <TableCell>R$ {Number(charge.value).toFixed(2)}</TableCell>
+                                            <TableCell>
+                                                <Badge variant="outline" className={cn("font-normal", status.className)}>{status.text}</Badge>
+                                            </TableCell>
+                                            <TableCell className="text-right space-x-2">
+                                                 <Button variant="outline" size="sm" disabled>
+                                                    <Download className="mr-2 h-4 w-4" />
+                                                    Nota Fiscal
+                                                 </Button>
+                                                {charge.status === 'pendente' && (
+                                                    <Button size="sm" onClick={() => setSelectedCharge(charge)}>
+                                                         <CreditCard className="mr-2 h-4 w-4" />
+                                                         Pagar com PIX
+                                                    </Button>
+                                                )}
+                                            </TableCell>
+                                        </TableRow>
+                                    )})}
+                                </TableBody>
+                            </Table>
+                        </CardContent>
+                     </Card>
                 ) : (
-                    <p className="text-sm text-muted-foreground">
-                        Informações de pagamento estarão disponíveis quando houver um contrato ativo e o perfil da contratada estiver completo.
-                    </p>
+                    <Alert variant="default">
+                        <FileText className="h-4 w-4" />
+                        <AlertTitle>Nenhuma Cobrança</AlertTitle>
+                        <AlertDescription>
+                           Ainda não há cobranças geradas para este contrato.
+                        </AlertDescription>
+                    </Alert>
                 )}
             </TabsContent>
         </Tabs>
       </main>
     </div>
+    
+     <AlertDialog open={!!selectedCharge} onOpenChange={() => setSelectedCharge(null)}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+            <AlertDialogTitle>Pagamento via PIX</AlertDialogTitle>
+            <AlertDialogDescription>
+                Use o QR Code ou a chave "Copia e Cola" para realizar o pagamento no app do seu banco.
+            </AlertDialogDescription>
+            </AlertDialogHeader>
+                {provider && selectedCharge && (
+                    <PixQRCode
+                        pixKey={provider.cpf || provider.cnpj || ''}
+                        value={selectedCharge.value || 0}
+                        beneficiaryName={provider.full_name || provider.company_name || 'Beneficiário'}
+                        beneficiaryCity={provider.address?.split(',').slice(-2, -1)[0]?.trim() || 'CIDADE'}
+                    />
+                )}
+            <AlertDialogFooter>
+                <AlertDialogCancel>Fechar</AlertDialogCancel>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
+    </>
   )
 }

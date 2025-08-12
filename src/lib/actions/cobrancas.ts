@@ -54,6 +54,27 @@ export async function getChargesByClientId(clientId: string) {
     return { data, error: null };
 }
 
+export async function getChargesForClientPortal(clientId: string) {
+    // Usando o cliente server-side que pode ser usado em contextos sem autenticação de usuário (como portais públicos)
+    // A segurança é garantida pela RLS da tabela 'cobrancas' que deve permitir leitura pública ou baseada em um segredo/token se necessário.
+    // Assumindo que a RLS permite leitura se o `cliente_id` for correspondente, ou que a tabela é publicamente legível (com cuidado).
+    // Para este caso, vamos criar uma política de RLS mais permissiva para SELECT.
+    const supabase = createClient()
+    const { data, error } = await supabase
+        .from('cobrancas')
+        .select('*')
+        .eq('cliente_id', clientId)
+        .order('due_date', { ascending: false });
+
+     if (error) {
+        console.error('Supabase error getting charges for client portal:', error);
+        return { data: null, error: { message: 'Não foi possível buscar o histórico de cobranças.' } };
+    }
+
+    return { data, error: null };
+}
+
+
 export async function markChargeAsPaid(chargeId: string) {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -79,5 +100,4 @@ export async function markChargeAsPaid(chargeId: string) {
   revalidatePath('/dashboard/clientes/*'); // Revalida a página de detalhes do cliente
   return { error: null };
 }
-
     
