@@ -185,8 +185,11 @@ function IdentificationStep({ form, onSubmit, toast }: { form: any, onSubmit: (v
             const response = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${doc}`);
             const data = await response.json();
             if (!response.ok) throw new Error(data.message || 'Não foi possível buscar os dados do CNPJ.');
-            form.setValue('fullName', data.razao_social, { shouldValidate: true });
-            form.setValue('email', data.email, { shouldValidate: true });
+            
+            form.setValue('fullName', data.razao_social || '', { shouldValidate: true });
+            form.setValue('email', data.email || '', { shouldValidate: true });
+            form.setValue('phone', form.getValues('phone') || '', { shouldValidate: true }); // Ensure phone is not undefined
+            
             toast({ title: 'Sucesso!', description: 'Dados da empresa preenchidos.' });
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Erro ao buscar CNPJ', description: error.message });
@@ -205,10 +208,10 @@ function IdentificationStep({ form, onSubmit, toast }: { form: any, onSubmit: (v
                 <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col h-[calc(100%-145px)]">
                     <div className="flex-1 overflow-y-auto p-6 space-y-3">
                         <FormField control={form.control} name="fullName" render={({ field }) => (
-                            <FormItem><FormLabel>Nome completo / Razão Social</FormLabel><FormControl><Input placeholder="Ex: Maria da Silva" {...field} /></FormControl><FormMessage /></FormItem>
+                            <FormItem><FormLabel>Nome completo / Razão Social</FormLabel><FormControl><Input placeholder="Ex: Maria da Silva" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem>
                         )}/>
                         <FormField control={form.control} name="email" render={({ field }) => (
-                            <FormItem><FormLabel>E-mail de contato</FormLabel><FormControl><Input type="email" placeholder="maria.silva@email.com" {...field} /></FormControl><FormMessage /></FormItem>
+                            <FormItem><FormLabel>E-mail de contato</FormLabel><FormControl><Input type="email" placeholder="maria.silva@email.com" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem>
                         )}/>
                         <div className="grid md:grid-cols-2 gap-4">
                             <FormField control={form.control} name="document" render={({ field }) => (
