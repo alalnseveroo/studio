@@ -113,13 +113,9 @@ export default function CobrancasPage() {
           return;
       }
       
-      if (!providerProfile) {
-           toast({ variant: 'destructive', title: "Perfil não encontrado", description: `Seu perfil de remetente não foi encontrado.` });
-           setIsSending(null);
-           return;
-      }
-      
-      const senderName = providerProfile.full_name || providerProfile.company_name || 'Seu Assistente Virtual';
+      // Removida a dependência do perfil do provedor para envio.
+      // O nome do remetente virá do padrão configurado na Brevo ou na função sendTransactionalEmail.
+      const senderName = providerProfile?.full_name || providerProfile?.company_name || 'Seu Assistente Virtual';
       const portalUrl = new URL(`/portal/${charge.id}`, process.env.NEXT_PUBLIC_SITE_URL).toString();
       
       // Usa o template 58 para aprovação inicial e 61 para lembretes de cobrança recorrente.
@@ -131,7 +127,7 @@ export default function CobrancasPage() {
             BREVO_TEMPLATE_ID,
             {
                 nome_cliente: clientName,
-                nome_contratada: senderName,
+                nome_contratada: senderName, // O nome da contratada ainda é útil no template
                 valor_cobranca: charge.proposta?.value?.toFixed(2) || charge.value?.toFixed(2),
                 data_vencimento: format(charge.nextDueDate, 'dd/MM/yyyy'),
                 link_portal: portalUrl,
@@ -303,3 +299,5 @@ export default function CobrancasPage() {
     </div>
   )
 }
+
+    
