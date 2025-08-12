@@ -4,9 +4,8 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import type { Cliente } from '@/lib/types';
-import { addOrUpdateContact } from '../brevo';
-import { buttonVariants } from '@/components/ui/button';
 import { format } from 'date-fns';
+import { sendClientWebhook } from './webhook';
 
 const AVATAR_URLS = [
     'https://ktgckactmaqioszffuyx.supabase.co/storage/v1/object/public/icons/Ellipse%201.png',
@@ -55,18 +54,12 @@ export async function createFullClient(formData: any) {
   }
   
   try {
-    if (data.email) {
-      const portalUrl = new URL(`/portal/${data.id}`, process.env.NEXT_PUBLIC_SITE_URL).toString();
-      const brevoAttributes = {
-        NOME_CLIENTE: data.full_name || '',
-        VALOR_COBRANCA: parseFloat(formData.value).toFixed(2),
-        DATA_VENCIMENTO: format(new Date(formData.firstChargeDate), 'dd/MM/yyyy'),
-        LINK_PORTAL: portalUrl,
-      };
-      await addOrUpdateContact(data.email, brevoAttributes);
+    if (data) {
+        await sendClientWebhook('create', data);
     }
-  } catch (brevoError: any) {
-    console.warn(`Falha ao sincronizar cliente com Brevo: ${brevoError.message}`);
+  } catch (webhookError: any) {
+    // Não bloqueia a criação do cliente se o webhook falhar, apenas registra o erro.
+    console.warn(`Falha ao enviar webhook de criação de cliente: ${webhookError.message}`);
   }
 
   revalidatePath('/dashboard/clientes')
@@ -136,13 +129,21 @@ export async function updateClientProfile(id: string, formData: any) {
     updated_at: new Date().toISOString(),
   };
 
-  const { error } = await supabase.from('clientes').update(profileData).eq('id', id)
+  const { data: updatedData, error } = await supabase.from('clientes').update(profileData).eq('id', id).select().single();
 
   if (error) {
     console.error('Supabase error:', error)
     return { error: { message: `Não foi possível salvar o perfil do cliente: ${error.message}` } }
   }
   
+   try {
+    if (updatedData) {
+        await sendClientWebhook('update', updatedData);
+    }
+  } catch (webhookError: any) {
+    console.warn(`Falha ao enviar webhook de atualização de cliente: ${webhookError.message}`);
+  }
+
   revalidatePath('/dashboard/clientes')
   revalidatePath(`/dashboard/clientes/${id}`)
   return { error: null }
@@ -207,5 +208,3 @@ export async function deleteClient(id: string) {
   revalidatePath('/dashboard/clientes');
   return { error: null };
 }
-
-    
