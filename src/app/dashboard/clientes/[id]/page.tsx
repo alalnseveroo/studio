@@ -63,6 +63,8 @@ const financialSchema = z.object({
   billing_status: z.enum(['active', 'inactive']),
   proposal_id: z.string().nullable(),
   value: z.string().nullable(),
+  payment_day: z.string().nullable(),
+  first_charge_date: z.string().nullable(),
 });
 
 
@@ -88,6 +90,8 @@ const combinedSchema = z.object({
   billing_status: z.enum(['active', 'inactive']),
   proposal_id: z.string().nullable(),
   value: z.string().nullable(),
+  payment_day: z.string().nullable(),
+  first_charge_date: z.string().nullable(),
 }).refine(data => {
     if (data.personType === 'cnpj') {
         return !!data.companyName && !!data.cnpj && !!data.representativeName && !!data.representativeCpf;
@@ -146,6 +150,8 @@ export default function ClienteEditPage() {
         billing_status: 'inactive',
         proposal_id: null,
         value: null,
+        payment_day: null,
+        first_charge_date: null,
     },
   });
 
@@ -207,6 +213,8 @@ export default function ClienteEditPage() {
         billing_status: data.billing_status || 'inactive',
         proposal_id: data.proposal_id || null,
         value: data.value ? String(data.value) : null,
+        payment_day: data.payment_day ? String(data.payment_day) : null,
+        first_charge_date: data.first_charge_date ? format(new Date(data.first_charge_date), 'yyyy-MM-dd') : null,
         ...addressParts,
         cep: addressParts.cep || '',
         street: addressParts.street || '',
@@ -277,7 +285,13 @@ export default function ClienteEditPage() {
         const result = await updateClientProfile(clientId, submissionData);
         error = result.error;
     } else if (step === 'financial') {
-        const result = await updateClientFinancials(clientId, { billing_status: values.billing_status, proposal_id: values.proposal_id, value: values.value });
+        const result = await updateClientFinancials(clientId, { 
+            billing_status: values.billing_status, 
+            proposal_id: values.proposal_id, 
+            value: values.value,
+            payment_day: values.payment_day,
+            first_charge_date: values.first_charge_date,
+        });
         error = result.error;
     }
 
@@ -665,6 +679,7 @@ function FinancialStep({ isEditing, setEditingStep, onSave, isLoading, proposals
     const proposal = proposals.find(p => p.id === selectedProposalId);
     if (proposal) {
         methods.setValue('value', proposal.value ? String(proposal.value) : '', { shouldValidate: true });
+        if(proposal.payment_day) methods.setValue('payment_day', String(proposal.payment_day), { shouldValidate: true });
     }
    }, [selectedProposalId, proposals, methods]);
 
@@ -716,6 +731,30 @@ function FinancialStep({ isEditing, setEditingStep, onSave, isLoading, proposals
                             </FormItem>
                         )}
                     />
+                    <div className="grid grid-cols-2 gap-4">
+                        <FormField
+                            control={methods.control}
+                            name="payment_day"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Dia do Vencimento</FormLabel>
+                                    <FormControl><Input type="number" placeholder="10" {...field} value={field.value || ''} /></FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={methods.control}
+                            name="first_charge_date"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Início das Cobranças</FormLabel>
+                                    <FormControl><Input type="date" {...field} value={field.value || ''} /></FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                    </div>
                     <FormField
                         control={methods.control}
                         name="billing_status"
@@ -766,12 +805,22 @@ function FinancialStep({ isEditing, setEditingStep, onSave, isLoading, proposals
                         <DollarSign className="mr-2 h-4 w-4 text-muted-foreground" />
                         <strong>Valor Mensal:</strong>&nbsp;R$ {Number(clientData.value || 0).toFixed(2)}
                     </p>
+                    <p className="flex items-center">
+                        <Calendar className="mr-2 h-4 w-4 text-muted-foreground" />
+                        <strong>Vencimento:</strong>&nbsp;Todo dia {clientData.payment_day || 'N/A'}
+                    </p>
+                     {clientData.first_charge_date && (
+                        <p className="flex items-center">
+                            <Calendar className="mr-2 h-4 w-4 text-muted-foreground" />
+                            <strong>Início das cobranças:</strong>&nbsp;{format(new Date(clientData.first_charge_date), 'dd/MM/yyyy')}
+                        </p>
+                     )}
                     {selectedProposal ? (
                         <div className="space-y-2 rounded-md border p-4 bg-muted/50">
                             <h4 className="font-semibold text-base">{selectedProposal.name}</h4>
                             <div className="flex items-center text-muted-foreground">
                                 <FileText className="mr-2 h-4 w-4" />
-                                <span>Vencimento todo dia {selectedProposal.payment_day}</span>
+                                <span>Proposta de serviço vinculada</span>
                             </div>
                         </div>
                     ) : (

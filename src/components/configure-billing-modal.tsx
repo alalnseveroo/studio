@@ -17,6 +17,7 @@ import {
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -40,7 +41,10 @@ import type { Proposta } from '@/lib/types'
 const billingSchema = z.object({
   proposal_id: z.string().nullable(),
   value: z.string().min(1, { message: 'O valor é obrigatório.'}),
+  payment_day: z.string().min(1, { message: 'O dia do vencimento é obrigatório.'}),
+  first_charge_date: z.string().optional(),
   billing_status: z.enum(['active', 'inactive']),
+  send_charge_now: z.boolean().default(false).optional(),
 })
 
 interface ConfigureBillingModalProps {
@@ -66,7 +70,10 @@ export function ConfigureBillingModal({
     defaultValues: {
         proposal_id: null,
         value: '',
-        billing_status: 'active'
+        payment_day: '',
+        first_charge_date: '',
+        billing_status: 'active',
+        send_charge_now: false,
     }
   })
 
@@ -75,8 +82,9 @@ export function ConfigureBillingModal({
   useEffect(() => {
     if (selectedProposalId) {
         const proposal = proposals.find(p => p.id === selectedProposalId);
-        if (proposal && proposal.value) {
-            form.setValue('value', String(proposal.value));
+        if (proposal) {
+            if (proposal.value) form.setValue('value', String(proposal.value));
+            if (proposal.payment_day) form.setValue('payment_day', String(proposal.payment_day));
         }
     }
   }, [selectedProposalId, proposals, form]);
@@ -109,8 +117,8 @@ export function ConfigureBillingModal({
   }
 
   return (
-      <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="sm:max-w-[425px]">
+      <Dialog open={isOpen} onOpenChange={(open) => { if (!open) { form.reset(); onClose(); } }}>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Configurar Cobrança Recorrente</DialogTitle>
             <DialogDescription>
@@ -118,7 +126,7 @@ export function ConfigureBillingModal({
             </DialogDescription>
           </DialogHeader>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6 py-4">
+            <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 py-4">
               <FormField
                 control={form.control}
                 name="proposal_id"
@@ -158,14 +166,36 @@ export function ConfigureBillingModal({
                         </FormItem>
                     )}
                 />
+                 <div className="grid grid-cols-2 gap-4">
+                     <FormField
+                        control={form.control}
+                        name="payment_day"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Dia do Vencimento</FormLabel>
+                                <FormControl><Input type="number" placeholder="10" {...field} value={field.value || ''} /></FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                     <FormField
+                        control={form.control}
+                        name="first_charge_date"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Data da 1ª Cobrança</FormLabel>
+                                <FormControl><Input type="date" {...field} value={field.value || ''} /></FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                 </div>
               <FormField
                 control={form.control}
                 name="billing_status"
                 render={({ field }) => (
                   <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
-                    <div className="space-y-0.5">
-                      <FormLabel>Ativar Cobrança Automática</FormLabel>
-                    </div>
+                    <FormLabel>Ativar Cobrança Automática</FormLabel>
                     <FormControl>
                       <Switch
                         checked={field.value === 'active'}
@@ -175,9 +205,29 @@ export function ConfigureBillingModal({
                   </FormItem>
                 )}
               />
+               <FormField
+                control={form.control}
+                name="send_charge_now"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                    <div className="space-y-0.5">
+                      <FormLabel>Enviar cobrança agora?</FormLabel>
+                      <FormDescription className="text-xs">
+                        Uma fatura com vencimento para hoje será gerada.
+                      </FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
               
               <DialogFooter>
-                <Button type="button" variant="ghost" onClick={onClose}>Cancelar</Button>
+                <Button type="button" variant="ghost" onClick={() => { form.reset(); onClose(); }}>Cancelar</Button>
                 <Button type="submit" disabled={isLoading}>
                   {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Salvar Configuração
@@ -189,3 +239,4 @@ export function ConfigureBillingModal({
       </Dialog>
   )
 }
+

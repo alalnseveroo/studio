@@ -52,20 +52,12 @@ export async function createFullClient(formData: any) {
   
   try {
     if (data) {
-        // Lógica de adicionar na Brevo via Webhook
-        const clientName = data.full_name || data.company_name;
         const portalUrl = new URL(`/portal/${data.id}`, process.env.NEXT_PUBLIC_SITE_URL).toString();
-
-        await addOrUpdateContact(data.email, {
-            NOME_CLIENTE: clientName,
-            VALOR_COBRANCA: "0", // Valor padrão inicial
-            DATA_VENCIMENTO: format(new Date(), 'dd/MM/yyyy'), // Data padrão inicial
-            LINK_PORTAL: portalUrl,
-        });
+        const dataWithPortalUrl = { ...data, portal_url: portalUrl };
+        await sendClientWebhook('create', dataWithPortalUrl);
     }
-  } catch (brevoError: any) {
-    console.warn(`Falha ao sincronizar contato com a Brevo: ${brevoError.message}`);
-    // Não bloqueia a criação do cliente se a API da Brevo falhar
+  } catch (webhookError: any) {
+    console.warn(`Falha ao enviar webhook de criação de cliente: ${webhookError.message}`);
   }
 
   revalidatePath('/dashboard/clientes')
@@ -157,7 +149,14 @@ export async function updateClientProfile(id: string, formData: any) {
 }
 
 
-export async function updateClientFinancials(id: string, financials: { billing_status: 'active' | 'inactive'; proposal_id: string | null; value: string | null }) {
+export async function updateClientFinancials(id: string, financials: { 
+    billing_status: 'active' | 'inactive'; 
+    proposal_id: string | null; 
+    value: string | null,
+    payment_day: string | null,
+    first_charge_date?: string | null,
+    send_charge_now?: boolean,
+}) {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
@@ -169,12 +168,19 @@ export async function updateClientFinancials(id: string, financials: { billing_s
       return { error: { message: 'O valor fornecido não é um número válido.' } };
   }
 
+  const parsedPaymentDay = financials.payment_day ? parseInt(financials.payment_day, 10) : null;
+   if (financials.payment_day && isNaN(parsedPaymentDay)) {
+      return { error: { message: 'O dia de pagamento fornecido não é um número válido.' } };
+  }
+
   const { error } = await supabase
     .from('clientes')
     .update({
       billing_status: financials.billing_status,
       proposal_id: financials.proposal_id,
       value: parsedValue,
+      payment_day: parsedPaymentDay,
+      first_charge_date: financials.first_charge_date || null,
       updated_at: new Date().toISOString(),
     })
     .eq('id', id)
@@ -184,6 +190,21 @@ export async function updateClientFinancials(id: string, financials: { billing_s
     console.error('Supabase error updating financials:', error);
     return { error: { message: `Não foi possível atualizar as configurações financeiras: ${error.message}` } };
   }
+  
+  if (financials.send_charge_now && parsedValue) {
+      const { error: chargeError } = await supabase.from('cobrancas').insert({
+          user_id: user.id,
+          cliente_id: id,
+          due_date: new Date().toISOString().split('T')[0], // Hoje
+          value: parsedValue,
+          status: 'pendente',
+      });
+      if (chargeError) {
+          console.error('Supabase error creating immediate charge:', chargeError);
+          return { error: { message: `Configurações salvas, mas não foi possível gerar a cobrança imediata: ${chargeError.message}`}};
+      }
+  }
+
 
   revalidatePath(`/dashboard/clientes/${id}`);
   revalidatePath('/dashboard/cobrancas');
