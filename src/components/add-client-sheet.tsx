@@ -188,6 +188,5 @@ export function AddClientSheet({ isOpen, onClose, onSuccess }: AddClientSheetPro
         </FormProvider>
       </SheetContent>
     </Sheet>
-    </>
   )
 }
