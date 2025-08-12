@@ -5,19 +5,16 @@ import * as Brevo from '@getbrevo/brevo';
 
 // Configuração da API da Brevo
 const apiInstance = new Brevo.TransactionalEmailsApi();
+const contactsApi = new Brevo.ContactsApi();
 
 const BREVO_API_KEY = process.env.BREVO_API_KEY;
+
 if (BREVO_API_KEY) {
     apiInstance.setApiKey(Brevo.TransactionalEmailsApiApiKeys.apiKey, BREVO_API_KEY);
+    contactsApi.setApiKey(Brevo.ContactsApiApiKeys.apiKey, BREVO_API_KEY);
 } else {
     console.warn("Chave da API da Brevo não encontrada. O envio de e-mails não funcionará.");
 }
-
-const contactsApi = new Brevo.ContactsApi();
-if (BREVO_API_KEY) {
-    contactsApi.setApiKey(Brevo.ContactsApiApiKeys.apiKey, BREVO_API_KEY);
-}
-
 
 /**
  * Adiciona ou atualiza um contato na Brevo, definindo seus atributos.
@@ -27,40 +24,51 @@ if (BREVO_API_KEY) {
 export async function addOrUpdateContact(email: string, attributes: { [key: string]: any }) {
     if (!BREVO_API_KEY) throw new Error("A chave da API da Brevo não está configurada.");
 
-    let updateContact = new Brevo.UpdateContact();
-    updateContact.attributes = attributes;
-    
+    let existingContact;
     try {
-        // Tenta atualizar o contato existente.
-        await contactsApi.updateContact(email, updateContact);
+        // Verifica se o contato já existe
+        existingContact = await contactsApi.getContactInfo(email);
     } catch (error: any) {
-        // Se o contato não existe (geralmente um erro 404), cria um novo.
-        if (error.response?.statusCode === 404) {
-            let createContact = new Brevo.CreateContact();
-            createContact.email = email;
-            createContact.attributes = attributes;
-            createContact.updateEnabled = true;
-            try {
-                await contactsApi.createContact(createContact);
-            } catch (createError: any) {
-                 const errorMessage = createError.body?.message || createError.message || 'Erro desconhecido ao criar contato na Brevo.';
-                 console.error("Erro na API da Brevo (createContact):", createError.body || createError);
-                 throw new Error(errorMessage);
-            }
-        } else {
-            const errorMessage = error.body?.message || error.message || 'Erro desconhecido ao atualizar contato na Brevo.';
-            console.error("Erro na API da Brevo (updateContact):", error.body || error);
+        if (error.response?.statusCode !== 404) {
+            // Se o erro for diferente de "Não encontrado", lança o erro
+            const errorMessage = error.body?.message || error.message || 'Erro desconhecido ao verificar contato na Brevo.';
+            console.error("Erro na API da Brevo (getContactInfo):", error.body || error);
+            throw new Error(errorMessage);
+        }
+    }
+
+    if (existingContact) {
+        // Se o contato existe, atualiza
+        let updateContact = new Brevo.UpdateContact();
+        updateContact.attributes = attributes;
+        try {
+            await contactsApi.updateContact(email, updateContact);
+        } catch (updateError: any) {
+            const errorMessage = updateError.body?.message || updateError.message || 'Erro desconhecido ao atualizar contato na Brevo.';
+            console.error("Erro na API da Brevo (updateContact):", updateError.body || updateError);
+            throw new Error(errorMessage);
+        }
+    } else {
+        // Se não existe, cria
+        let createContact = new Brevo.CreateContact();
+        createContact.email = email;
+        createContact.attributes = attributes;
+        createContact.updateEnabled = true; // Permite que futuros 'create' atualizem o contato
+        try {
+            await contactsApi.createContact(createContact);
+        } catch (createError: any) {
+            const errorMessage = createError.body?.message || createError.message || 'Erro desconhecido ao criar contato na Brevo.';
+            console.error("Erro na API da Brevo (createContact):", createError.body || createError);
             throw new Error(errorMessage);
         }
     }
 }
 
-
 /**
  * Envia um e-mail transacional usando um template da Brevo.
  * @param toEmail - O e-mail do destinatário.
  * @param templateId - O ID do template transacional na Brevo.
- * @param params - Parâmetros para preencher o template. Ex: { pinsecret: '123456' }
+ * @param params - Parâmetros para preencher o template. Ex: { PINSECRET: '123456' }
  */
 export async function sendTransactionalEmail(
     toEmail: string, 
@@ -68,6 +76,15 @@ export async function sendTransactionalEmail(
     params: { [key: string]: any }
 ) {
     if (!BREVO_API_KEY) throw new Error("A chave da API da Brevo não está configurada.");
+
+    // Atualiza o contato com os parâmetros antes de enviar o e-mail
+    // Isso garante que os atributos mais recentes sejam usados se o template os referenciar
+    try {
+        await addOrUpdateContact(toEmail, params);
+    } catch (contactError: any) {
+        console.warn(`Falha ao sincronizar atributos do contato ${toEmail} antes do envio: ${contactError.message}`);
+        // Continua mesmo se a atualização falhar, pois o e-mail ainda pode ser enviado.
+    }
 
     let sendSmtpEmail = new Brevo.SendSmtpEmail();
     
@@ -83,3 +100,5 @@ export async function sendTransactionalEmail(
         throw new Error(errorMessage);
     }
 }
+
+    

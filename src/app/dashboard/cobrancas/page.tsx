@@ -18,7 +18,6 @@ import type { Cliente, Profile } from '@/lib/types'
 import { format, isAfter, startOfMonth, addMonths, parseISO } from 'date-fns'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { useToast } from '@/hooks/use-toast'
-import { getProfile } from '@/lib/actions/profile'
 import { sendTransactionalEmail } from '@/lib/brevo'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import Link from 'next/link'
@@ -34,7 +33,6 @@ export default function CobrancasPage() {
   const [pendingCharges, setPendingCharges] = useState<PendingCharge[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isSending, setIsSending] = useState<string | null>(null);
-  const [providerProfile, setProviderProfile] = useState<(Profile & {email: string}) | null>(null);
   const { toast } = useToast()
 
   const getStatusInfo = (charge: Cliente) => {
@@ -51,10 +49,7 @@ export default function CobrancasPage() {
   useEffect(() => {
     async function fetchData() {
       setIsLoading(true)
-      const [{ data: clients, error }, { data: profileData }] = await Promise.all([
-        getClients(),
-        getProfile()
-      ]);
+      const { data: clients, error } = await getClients();
 
       if (error || !clients) {
         toast({
@@ -65,8 +60,6 @@ export default function CobrancasPage() {
         setIsLoading(false)
         return
       }
-
-      setProviderProfile(profileData as (Profile & { email: string; }) | null);
 
       const today = new Date();
       const charges: PendingCharge[] = [];
@@ -113,7 +106,6 @@ export default function CobrancasPage() {
           return;
       }
       
-      const senderName = providerProfile?.full_name || providerProfile?.company_name || 'Seu Assistente Virtual';
       const portalUrl = new URL(`/portal/${charge.id}`, process.env.NEXT_PUBLIC_SITE_URL).toString();
       
       const isApproval = charge.billing_status === 'pending_approval';
@@ -124,11 +116,11 @@ export default function CobrancasPage() {
             clientEmail,
             BREVO_TEMPLATE_ID,
             {
-                nome_cliente: clientName,
-                nome_contratada: senderName,
-                valor_cobranca: charge.proposta?.value?.toFixed(2) || charge.value?.toFixed(2),
-                data_vencimento: format(charge.nextDueDate, 'dd/MM/yyyy'),
-                link_portal: portalUrl,
+                NOME_CLIENTE: clientName,
+                NOME_CONTRATADA: 'Seu Assistente Virtual', // Default sender name
+                VALOR_COBRANCA: (charge.proposta?.value || charge.value || 0).toFixed(2),
+                DATA_VENCIMENTO: format(charge.nextDueDate, 'dd/MM/yyyy'),
+                LINK_PORTAL: portalUrl,
             }
         );
         
@@ -297,3 +289,5 @@ export default function CobrancasPage() {
     </div>
   )
 }
+
+    

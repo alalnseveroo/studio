@@ -250,9 +250,9 @@ export async function signContractAsProvider(contractId: string, otp: string) {
             const BREVO_TEMPLATE_ID_CLIENT_NOTIFICATION = 58; 
 
             await sendTransactionalEmail(contract.clientes.email, BREVO_TEMPLATE_ID_CLIENT_NOTIFICATION, {
-                nome_cliente: contract.clientes.full_name || contract.clientes.company_name,
-                nome_contratada: contratada.full_name || contratada.company_name,
-                link_contrato: portalUrl
+                NOME_CLIENTE: contract.clientes.full_name || contract.clientes.company_name,
+                NOME_CONTRATADA: contratada.full_name || contratada.company_name,
+                LINK_CONTRATO: portalUrl
             });
         } catch (emailError: any) {
             // Não bloqueia o processo se o e-mail falhar, mas registra o erro.
@@ -350,8 +350,5 @@ export async function signContractAsClient({ contractId, otp, signatureDataUrl }
     revalidatePath(`/portal/${contract.cliente_id}`);
     return { data: updatedContract, error: null };
 }
-
-
-    
 
     
