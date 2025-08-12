@@ -137,14 +137,14 @@ export function AddClientSheet({ isOpen, onClose }: { isOpen: boolean, onClose: 
       default:
         return (
            <>
-            <SheetHeader className="border-b px-6 pb-4 pt-6 bg-white">
+            <SheetHeader className="border-b bg-white px-6 pb-4 pt-6">
               <SheetTitle className="text-lg">Escolha o fluxo</SheetTitle>
               <SheetDescription className="text-sm">
                 Selecione uma das opções abaixo para continuar seu processo.
               </SheetDescription>
             </SheetHeader>
 
-            <div className="grid md:grid-cols-2 gap-4 p-6">
+            <div className="grid bg-white md:grid-cols-2 gap-4 p-6">
               <CardOption
                 icon={<IconBadge variant="contract" />}
                 title="Criar ou Renovar Contrato"
@@ -203,7 +203,7 @@ export function AddClientSheet({ isOpen, onClose }: { isOpen: boolean, onClose: 
               </CardOption>
             </div>
 
-            <SheetFooter className="w-full flex flex-row items-center justify-between border-t px-6 py-4 gap-2">
+            <SheetFooter className="w-full flex flex-row items-center justify-between border-t bg-white px-6 py-4 gap-2">
                 <Button variant="outline" onClick={onClose}>Cancelar</Button>
                 <Button
                     disabled={!canContinueSelection}
@@ -264,34 +264,34 @@ function IdentificationStep({ form, onSubmit, toast }: { form: any, onSubmit: (v
                 <SheetTitle>Primeiro, os dados da pessoa de contato.</SheetTitle>
                 <SheetDescription>Esta pessoa será a responsável principal pela comunicação e pagamentos.</SheetDescription>
             </SheetHeader>
-            <form onSubmit={form.handleSubmit(onSubmit)}>
-                <div className="p-6 space-y-6">
-                    <Card className="border-none shadow-none">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col h-[calc(100%-73px)]">
+                <div className="flex-1 overflow-y-auto p-6 space-y-4">
+                    <Card className="border-none shadow-none p-0">
                         <CardHeader className="p-0 mb-4">
                             <CardContent className="font-semibold p-0">Dados da Pessoa de Contato</CardContent>
                         </CardHeader>
-                        <CardContent className="p-0 space-y-4">
+                        <CardContent className="p-0 space-y-3">
                             <FormField control={form.control} name="fullName" render={({ field }) => (
                                 <FormItem><FormLabel>Nome completo</FormLabel><FormControl><Input placeholder="Ex: Maria da Silva" {...field} /></FormControl><FormMessage /></FormItem>
                             )}/>
                             <FormField control={form.control} name="email" render={({ field }) => (
                                 <FormItem><FormLabel>E-mail de contato</FormLabel><FormControl><Input type="email" placeholder="maria.silva@email.com" {...field} /></FormControl><FormMessage /></FormItem>
                             )}/>
-                            <div className="grid md:grid-cols-2 gap-4">
+                            <div className="grid md:grid-cols-2 gap-3">
                                 <FormField control={form.control} name="cpf" render={({ field }) => (
                                     <FormItem><FormLabel>CPF</FormLabel><FormControl><Input placeholder="000.000.000-00" {...field} onChange={e => field.onChange(formatCpf(e.target.value))} /></FormControl><FormMessage /></FormItem>
                                 )}/>
                                 <FormField control={form.control} name="phone" render={({ field }) => (
-                                    <FormItem><FormLabel>Contato (Telefone/WhatsApp)</FormLabel><FormControl><Input placeholder="(00) 00000-0000" {...field} onChange={e => field.onChange(formatPhone(e.target.value))} /></FormControl><FormMessage /></FormItem>
+                                    <FormItem><FormLabel>Contato (Telefone/WhatsApp)</FormLabel><FormControl><Input placeholder="(00) 00000-0000" {...field} onChange={e => field.onChange(formatPhone(e.target.value))} /></FormControl><FormMessage /></FormMessage /></FormItem>
                                 )}/>
                             </div>
                         </CardContent>
                     </Card>
 
-                    <Card className="border-none shadow-none">
+                    <Card className="border-none shadow-none p-0">
                         <CardContent className="p-0">
                             <FormField control={form.control} name="addCompanyData" render={({ field }) => (
-                                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
                                     <FormLabel className="font-normal cursor-pointer pr-4" onClick={() => field.onChange(!field.value)}>Adicionar dados de Pessoa Jurídica (PJ)</FormLabel>
                                     <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
                                 </FormItem>
@@ -306,11 +306,11 @@ function IdentificationStep({ form, onSubmit, toast }: { form: any, onSubmit: (v
                                     transition={{ duration: 0.3, ease: "easeInOut" }}
                                     className="overflow-hidden"
                                 >
-                                    <CardHeader className="px-0 pt-4 pb-2">
+                                    <CardHeader className="p-0 pt-4 pb-2">
                                         <CardContent className="font-semibold p-0">Dados da Empresa</CardContent>
-                                        <FormDescription>Busque pelo CNPJ para preencher (recomendado)</FormDescription>
+                                        <FormDescription className="px-0">Busque pelo CNPJ para preencher (recomendado)</FormDescription>
                                     </CardHeader>
-                                    <CardContent className="p-0 space-y-4">
+                                    <CardContent className="p-0 space-y-3">
                                         <FormField control={form.control} name="cnpj" render={({ field }) => (
                                             <FormItem>
                                                 <FormLabel>CNPJ</FormLabel>
@@ -408,5 +408,3 @@ function AnimatedCheckbox({ checked, ariaLabel }: { checked: boolean; ariaLabel?
     </div>
   )
 }
-
-    
