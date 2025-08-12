@@ -105,8 +105,8 @@ export default function ClientesPage() {
         setSelectedClientForContract(client.id);
         setIsContractModalOpen(true);
     } else {
-        // Handle billing action - maybe navigate to client's detail page with a specific tab
-        window.location.href = `/dashboard/clientes/${client.id}?tab=financial`;
+        // Redireciona para a página de detalhes do cliente com a aba financeira
+        window.location.href = `/dashboard/clientes/${client.id}`;
     }
   };
   

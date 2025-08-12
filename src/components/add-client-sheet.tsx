@@ -13,7 +13,6 @@ import { Switch } from '@/components/ui/switch'
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -43,16 +42,14 @@ const clientSchema = z.object({
   personType: z.enum(['cpf', 'cnpj']),
   // Common fields
   email: z.string().email({ message: "E-mail inválido."}),
-  phone: z.string().optional(),
-  address: z.string().min(1, { message: "O endereço é obrigatório." }),
+  // PF Fields
+  fullName: z.string().optional(),
+  cpf: z.string().optional(),
   // PJ Fields
   companyName: z.string().optional(),
   cnpj: z.string().optional(),
   representativeName: z.string().optional(),
   representativeCpf: z.string().optional(),
-  // PF Fields
-  fullName: z.string().optional(),
-  cpf: z.string().optional(),
   
 }).refine(data => {
     if (data.personType === 'cnpj') {
@@ -82,6 +79,20 @@ interface AddClientSheetProps {
   onSuccessAction: (action: 'contract' | 'billing', client: Cliente) => void;
 }
 
+const CardAction = ({ icon: Icon, title, description, onClick }: { icon: React.ElementType, title: string, description: string, onClick: () => void }) => (
+    <button
+        onClick={onClick}
+        className="flex items-start gap-4 rounded-lg border p-4 text-left text-sm transition-all hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring"
+    >
+        <Icon className="h-6 w-6 text-primary flex-shrink-0 mt-1" />
+        <div className="flex-1">
+            <p className="font-semibold">{title}</p>
+            <p className="text-muted-foreground">{description}</p>
+        </div>
+    </button>
+);
+
+
 export function AddClientSheet({ isOpen, onClose, onClientAdded, onSuccessAction }: AddClientSheetProps) {
   const [isLoading, setIsLoading] = React.useState(false);
   const [showSuccessModal, setShowSuccessModal] = React.useState(false);
@@ -97,8 +108,6 @@ export function AddClientSheet({ isOpen, onClose, onClientAdded, onSuccessAction
         companyName: '', 
         cnpj: '', 
         email: '', 
-        phone: '', 
-        address: '',
         representativeName: '',
         representativeCpf: '' 
     },
@@ -158,6 +167,10 @@ export function AddClientSheet({ isOpen, onClose, onClientAdded, onSuccessAction
                         )}
                     />
                     
+                     <FormField control={form.control} name="email" render={({ field }) => (
+                        <FormItem><FormLabel>E-mail de Contato Principal</FormLabel><FormControl><Input type="email" placeholder="contato@empresa.com" {...field} /></FormControl><FormMessage /></FormItem>
+                    )}/>
+                    
                     {personType === 'cpf' ? (
                         <div className="space-y-4">
                              <FormField control={form.control} name="fullName" render={({ field }) => (
@@ -183,17 +196,6 @@ export function AddClientSheet({ isOpen, onClose, onClientAdded, onSuccessAction
                             )}/>
                         </div>
                     )}
-                    
-                    <FormField control={form.control} name="email" render={({ field }) => (
-                        <FormItem><FormLabel>E-mail de Contato Principal</FormLabel><FormControl><Input type="email" placeholder="contato@empresa.com" {...field} /></FormControl><FormMessage /></FormItem>
-                    )}/>
-                     <FormField control={form.control} name="phone" render={({ field }) => (
-                        <FormItem><FormLabel>Telefone / WhatsApp</FormLabel><FormControl><Input placeholder="(00) 00000-0000" {...field} /></FormControl><FormMessage /></FormItem>
-                    )}/>
-                    <FormField control={form.control} name="address" render={({ field }) => (
-                        <FormItem><FormLabel>Endereço Completo</FormLabel><FormControl><Input placeholder="Rua, Nº, Bairro, Cidade - UF, CEP" {...field} /></FormControl><FormMessage /></FormItem>
-                    )}/>
-
                 </div>
                  <SheetFooter className="border-t p-6 flex justify-end">
                     <Button type="submit" disabled={isLoading}>
@@ -217,26 +219,18 @@ export function AddClientSheet({ isOpen, onClose, onClientAdded, onSuccessAction
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="grid gap-4 mt-2">
-             <button
+             <CardAction
+                icon={FileText}
+                title="Criar Contrato"
+                description="Elabore um contrato de prestação de serviços para formalizar a parceria com este cliente."
                 onClick={() => newlyCreatedClient && onSuccessAction('contract', newlyCreatedClient)}
-                className="flex items-start gap-4 rounded-lg border p-4 text-left text-sm transition-all hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring"
-            >
-                <FileText className="h-6 w-6 text-primary flex-shrink-0 mt-1" />
-                <div className="flex-1">
-                    <p className="font-semibold">Criar Contrato</p>
-                    <p className="text-muted-foreground">Elabore um contrato de prestação de serviços para formalizar a parceria com este cliente.</p>
-                </div>
-             </button>
-             <button
-                onClick={() => newlyCreatedClient && onSuccessAction('billing', newlyCreatedClient)}
-                className="flex items-start gap-4 rounded-lg border p-4 text-left text-sm transition-all hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring"
-            >
-                 <CreditCard className="h-6 w-6 text-primary flex-shrink-0 mt-1" />
-                 <div className="flex-1">
-                    <p className="font-semibold">Ir para o perfil do cliente</p>
-                    <p className="text-muted-foreground">Acesse o perfil para configurar uma cobrança, preencher dados e mais.</p>
-                </div>
-            </button>
+             />
+             <CardAction
+                 icon={CreditCard}
+                 title="Ir para o perfil do cliente"
+                 description="Acesse o perfil para configurar uma cobrança, preencher dados e mais."
+                 onClick={() => newlyCreatedClient && onSuccessAction('billing', newlyCreatedClient)}
+            />
           </div>
         </AlertDialogContent>
     </AlertDialog>
