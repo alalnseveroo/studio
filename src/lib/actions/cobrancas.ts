@@ -117,7 +117,7 @@ export async function saveInvoiceUrl(chargeId: string, invoiceUrl: string) {
 
     if (error) {
         console.error('Supabase error saving invoice URL:', error);
-        return { error: { message: 'Não foi possível salvar o link da nota fiscal.' } };
+        return { error: { message: `Não foi possível salvar o link da nota fiscal: ${error.message}` } };
     }
     
     revalidatePath('/dashboard/cobrancas');

@@ -101,7 +101,7 @@ export function UploadInvoiceModal({ isOpen, onClose, charge, onUploadSuccess }:
       toast({
         variant: 'destructive',
         title: 'Erro ao Salvar',
-        description: `Não foi possível salvar o link da nota fiscal no banco de dados: ${dbError.message}`,
+        description: dbError.message,
       })
     } else {
       toast({
