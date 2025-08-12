@@ -35,33 +35,43 @@ import {
 import { Checkbox } from "@/components/ui/checkbox"
 import { AddClientSheet } from '@/components/add-client-sheet'
 import { getClients, deleteClient } from '@/lib/actions/clients'
-import type { Cliente } from '@/lib/types'
+import type { Cliente, Proposta } from '@/lib/types'
+import { getProposals } from '@/lib/actions/propostas'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import Link from 'next/link'
 import { PlusCircle, Loader2, FilePen, Trash2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useToast } from '@/hooks/use-toast'
+import { CreateContractModal } from '@/components/create-contract-modal'
 
 const ITEMS_PER_PAGE = 10;
 
 export default function ClientesPage() {
   const [isSheetOpen, setIsSheetOpen] = useState(false)
+  const [isContractModalOpen, setIsContractModalOpen] = useState(false)
   const [clients, setClients] = useState<Cliente[]>([])
+  const [proposals, setProposals] = useState<Proposta[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [currentPage, setCurrentPage] = useState(1)
   const [selectedClients, setSelectedClients] = useState<string[]>([])
   const [clientToDelete, setClientToDelete] = useState<Cliente | null>(null)
+  const [selectedClientForContract, setSelectedClientForContract] = useState<string | null>(null);
+
   const { toast } = useToast()
 
-  const fetchClients = async () => {
+  const fetchClientsAndProposals = async () => {
     setIsLoading(true)
-    const { data } = await getClients()
-    setClients(data || [])
+    const [{ data: clientData }, { data: proposalData }] = await Promise.all([
+      getClients(),
+      getProposals(),
+    ]);
+    setClients(clientData || [])
+    setProposals(proposalData || [])
     setIsLoading(false)
   }
 
   useEffect(() => {
-    fetchClients()
+    fetchClientsAndProposals()
   }, [])
   
   const handleDeleteClient = async () => {
@@ -80,16 +90,25 @@ export default function ClientesPage() {
         title: 'Cliente Excluído!',
         description: 'O cliente foi removido com sucesso.',
       })
-      // Refetch clients after deletion
-      await fetchClients()
+      await fetchClientsAndProposals()
     }
     setClientToDelete(null)
   }
 
-
   const handleClientAdded = (newClient: Cliente) => {
-    setClients((prevClients) => [newClient, ...prevClients])
-  }
+    setClients((prevClients) => [newClient, ...prevClients]);
+  };
+  
+  const handleSuccessAction = (action: 'contract' | 'billing', client: Cliente) => {
+    setIsSheetOpen(false); // Close the add client sheet
+    if (action === 'contract') {
+        setSelectedClientForContract(client.id);
+        setIsContractModalOpen(true);
+    } else {
+        // Handle billing action - maybe navigate to client's detail page with a specific tab
+        window.location.href = `/dashboard/clientes/${client.id}?tab=financial`;
+    }
+  };
   
   const totalPages = Math.ceil(clients.length / ITEMS_PER_PAGE);
   const paginatedClients = clients.slice(
@@ -308,7 +327,23 @@ export default function ClientesPage() {
       <AddClientSheet
         isOpen={isSheetOpen}
         onClose={() => setIsSheetOpen(false)}
+        onClientAdded={handleClientAdded}
+        onSuccessAction={handleSuccessAction}
       />
+      
+      <CreateContractModal
+          isOpen={isContractModalOpen}
+          onClose={() => {
+              setIsContractModalOpen(false);
+              setSelectedClientForContract(null);
+          }}
+          clients={clients}
+          proposals={proposals}
+          onClientListChange={setClients}
+          selectedClientId={selectedClientForContract}
+          onContractAdded={() => fetchClientsAndProposals()} // Refetch everything after contract is created.
+      />
+
 
       <AlertDialog open={!!clientToDelete} onOpenChange={() => setClientToDelete(null)}>
         <AlertDialogContent>

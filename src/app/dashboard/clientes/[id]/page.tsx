@@ -217,7 +217,7 @@ export default function ClienteEditPage() {
         state: addressParts.state || '',
       };
       
-      methods.reset(defaultValues);
+      methods.reset(defaultValues as ClientFormData);
      
       const isInfoIncomplete = !clientInfoSchema.safeParse(defaultValues).success;
       const isAddressIncomplete = !addressSchema.safeParse(defaultValues).success;

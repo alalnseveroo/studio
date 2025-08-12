@@ -2,11 +2,10 @@
 "use client"
 
 import * as React from "react"
-import { useRouter } from "next/navigation"
 import { useForm, FormProvider } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
-import { Check, CreditCard, FileText, ArrowRight, Loader2, Search, User, Settings, ArrowLeft, Briefcase, UserCircle } from "lucide-react"
+import { Check, CreditCard, FileText, Loader2 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from '@/components/ui/input'
@@ -28,7 +27,6 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet"
-import { Label } from "@/components/ui/label"
 import {
   AlertDialog,
   AlertDialogContent,
@@ -37,30 +35,33 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 
-import { cn } from "@/lib/utils"
 import type { Cliente } from "@/lib/types"
 import { createFullClient } from "@/lib/actions/clients"
 import { useToast } from "@/hooks/use-toast"
 
 const clientSchema = z.object({
   personType: z.enum(['cpf', 'cnpj']),
-  // PJ Fields
-  companyName: z.string().optional(),
-  cnpj: z.string().optional(),
-  // PF Fields
-  fullName: z.string().optional(),
-  cpf: z.string().optional(),
   // Common fields
   email: z.string().email({ message: "E-mail inválido."}),
   phone: z.string().optional(),
+  address: z.string().min(1, { message: "O endereço é obrigatório." }),
+  // PJ Fields
+  companyName: z.string().optional(),
+  cnpj: z.string().optional(),
+  representativeName: z.string().optional(),
+  representativeCpf: z.string().optional(),
+  // PF Fields
+  fullName: z.string().optional(),
+  cpf: z.string().optional(),
+  
 }).refine(data => {
     if (data.personType === 'cnpj') {
-        return !!data.companyName && !!data.cnpj;
+        return !!data.companyName && !!data.cnpj && !!data.representativeName && !!data.representativeCpf;
     }
     return true;
 }, {
-    message: "Nome da empresa e CNPJ são obrigatórios.",
-    path: ["companyName"],
+    message: "Nome da empresa, CNPJ e dados do representante são obrigatórios.",
+    path: ["companyName"], 
 }).refine(data => {
     if (data.personType === 'cpf') {
         return !!data.fullName && !!data.cpf;
@@ -74,16 +75,33 @@ const clientSchema = z.object({
 
 type ClientFormData = z.infer<typeof clientSchema>;
 
-export function AddClientSheet({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) {
+interface AddClientSheetProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onClientAdded: (client: Cliente) => void;
+  onSuccessAction: (action: 'contract' | 'billing', client: Cliente) => void;
+}
+
+export function AddClientSheet({ isOpen, onClose, onClientAdded, onSuccessAction }: AddClientSheetProps) {
   const [isLoading, setIsLoading] = React.useState(false);
   const [showSuccessModal, setShowSuccessModal] = React.useState(false);
   const [newlyCreatedClient, setNewlyCreatedClient] = React.useState<Cliente | null>(null);
-  const router = useRouter()
   const { toast } = useToast()
 
   const form = useForm<ClientFormData>({
     resolver: zodResolver(clientSchema),
-    defaultValues: { personType: 'cpf', fullName: '', cpf: '', companyName: '', cnpj: '', email: '', phone: '' },
+    defaultValues: { 
+        personType: 'cpf', 
+        fullName: '', 
+        cpf: '', 
+        companyName: '', 
+        cnpj: '', 
+        email: '', 
+        phone: '', 
+        address: '',
+        representativeName: '',
+        representativeCpf: '' 
+    },
     mode: 'onBlur'
   });
 
@@ -105,22 +123,11 @@ export function AddClientSheet({ isOpen, onClose }: { isOpen: boolean, onClose: 
     if (error) {
         toast({ variant: 'destructive', title: 'Erro ao Criar Cliente', description: error.message });
     } else if (data) {
+        onClientAdded(data);
         setNewlyCreatedClient(data);
         setShowSuccessModal(true);
-        // We don't close the main sheet here, it will be closed by the success modal actions
     }
   };
-  
-  const handleSuccessAction = (action: 'contract' | 'billing') => {
-    setShowSuccessModal(false);
-    onClose();
-    if(action === 'contract') {
-        router.push('/dashboard/contratos'); // User can open the modal from there
-    } else {
-        router.push(`/dashboard/clientes/${newlyCreatedClient?.id}`);
-    }
-  }
-
 
   return (
     <>
@@ -154,28 +161,37 @@ export function AddClientSheet({ isOpen, onClose }: { isOpen: boolean, onClose: 
                     {personType === 'cpf' ? (
                         <div className="space-y-4">
                              <FormField control={form.control} name="fullName" render={({ field }) => (
-                                <FormItem><FormLabel>Nome Completo</FormLabel><FormControl><Input placeholder="Nome do cliente" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem>
+                                <FormItem><FormLabel>Nome Completo</FormLabel><FormControl><Input placeholder="Nome do cliente" {...field} /></FormControl><FormMessage /></FormItem>
                             )}/>
                              <FormField control={form.control} name="cpf" render={({ field }) => (
-                                <FormItem><FormLabel>CPF</FormLabel><FormControl><Input placeholder="000.000.000-00" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem>
+                                <FormItem><FormLabel>CPF</FormLabel><FormControl><Input placeholder="000.000.000-00" {...field} /></FormControl><FormMessage /></FormItem>
                             )}/>
                         </div>
                     ) : (
                          <div className="space-y-4">
                             <FormField control={form.control} name="companyName" render={({ field }) => (
-                                <FormItem><FormLabel>Razão Social</FormLabel><FormControl><Input placeholder="Empresa Exemplo LTDA" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem>
+                                <FormItem><FormLabel>Razão Social</FormLabel><FormControl><Input placeholder="Empresa Exemplo LTDA" {...field} /></FormControl><FormMessage /></FormItem>
                             )}/>
                             <FormField control={form.control} name="cnpj" render={({ field }) => (
-                                <FormItem><FormLabel>CNPJ</FormLabel><FormControl><Input placeholder="00.000.000/0001-00" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem>
+                                <FormItem><FormLabel>CNPJ</FormLabel><FormControl><Input placeholder="00.000.000/0001-00" {...field} /></FormControl><FormMessage /></FormItem>
+                            )}/>
+                            <FormField control={form.control} name="representativeName" render={({ field }) => (
+                                <FormItem><FormLabel>Nome do Representante Legal</FormLabel><FormControl><Input placeholder="Nome do responsável" {...field} /></FormControl><FormMessage /></FormItem>
+                            )}/>
+                             <FormField control={form.control} name="representativeCpf" render={({ field }) => (
+                                <FormItem><FormLabel>CPF do Representante</FormLabel><FormControl><Input placeholder="000.000.000-00" {...field} /></FormControl><FormMessage /></FormItem>
                             )}/>
                         </div>
                     )}
                     
                     <FormField control={form.control} name="email" render={({ field }) => (
-                        <FormItem><FormLabel>E-mail de Contato Principal</FormLabel><FormControl><Input type="email" placeholder="contato@empresa.com" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem>
+                        <FormItem><FormLabel>E-mail de Contato Principal</FormLabel><FormControl><Input type="email" placeholder="contato@empresa.com" {...field} /></FormControl><FormMessage /></FormItem>
                     )}/>
                      <FormField control={form.control} name="phone" render={({ field }) => (
-                        <FormItem><FormLabel>Telefone / WhatsApp</FormLabel><FormControl><Input placeholder="(00) 00000-0000" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem>
+                        <FormItem><FormLabel>Telefone / WhatsApp</FormLabel><FormControl><Input placeholder="(00) 00000-0000" {...field} /></FormControl><FormMessage /></FormItem>
+                    )}/>
+                    <FormField control={form.control} name="address" render={({ field }) => (
+                        <FormItem><FormLabel>Endereço Completo</FormLabel><FormControl><Input placeholder="Rua, Nº, Bairro, Cidade - UF, CEP" {...field} /></FormControl><FormMessage /></FormItem>
                     )}/>
 
                 </div>
@@ -202,7 +218,7 @@ export function AddClientSheet({ isOpen, onClose }: { isOpen: boolean, onClose: 
           </AlertDialogHeader>
           <div className="grid gap-4 mt-2">
              <button
-                onClick={() => handleSuccessAction('contract')}
+                onClick={() => newlyCreatedClient && onSuccessAction('contract', newlyCreatedClient)}
                 className="flex items-start gap-4 rounded-lg border p-4 text-left text-sm transition-all hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring"
             >
                 <FileText className="h-6 w-6 text-primary flex-shrink-0 mt-1" />
@@ -212,7 +228,7 @@ export function AddClientSheet({ isOpen, onClose }: { isOpen: boolean, onClose: 
                 </div>
              </button>
              <button
-                onClick={() => handleSuccessAction('billing')}
+                onClick={() => newlyCreatedClient && onSuccessAction('billing', newlyCreatedClient)}
                 className="flex items-start gap-4 rounded-lg border p-4 text-left text-sm transition-all hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring"
             >
                  <CreditCard className="h-6 w-6 text-primary flex-shrink-0 mt-1" />

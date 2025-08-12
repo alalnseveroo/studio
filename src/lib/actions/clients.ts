@@ -30,11 +30,14 @@ export async function createFullClient(formData: any) {
     avatar_url: avatarUrl,
     email: formData.email,
     phone: formData.phone,
+    address: formData.address,
     person_type: formData.personType,
     full_name: formData.personType === 'cpf' ? formData.fullName : null,
     cpf: formData.personType === 'cpf' ? formData.cpf : null,
     company_name: formData.personType === 'cnpj' ? formData.companyName : null,
     cnpj: formData.personType === 'cnpj' ? formData.cnpj : null,
+    representative_name: formData.personType === 'cnpj' ? formData.representativeName : null,
+    representative_cpf: formData.personType === 'cnpj' ? formData.representativeCpf : null,
     billing_status: 'inactive' as const, 
   };
 
@@ -203,5 +206,3 @@ export async function deleteClient(id: string) {
   revalidatePath('/dashboard/clientes');
   return { error: null };
 }
-
-    

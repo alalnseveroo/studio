@@ -50,6 +50,7 @@ interface CreateContractModalProps {
   clients: Cliente[]
   proposals: Proposta[]
   onClientListChange: (clients: Cliente[]) => void
+  selectedClientId?: string | null;
 }
 
 export function CreateContractModal({ 
@@ -58,7 +59,8 @@ export function CreateContractModal({
     onContractAdded, 
     clients, 
     proposals,
-    onClientListChange
+    onClientListChange,
+    selectedClientId
 }: CreateContractModalProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [isAddClientSheetOpen, setIsAddClientSheetOpen] = useState(false)
@@ -68,6 +70,13 @@ export function CreateContractModal({
   const form = useForm<z.infer<typeof contractSchema>>({
     resolver: zodResolver(contractSchema),
   })
+
+  useEffect(() => {
+    if (selectedClientId) {
+      form.setValue('clienteId', selectedClientId);
+    }
+  }, [selectedClientId, form]);
+
 
   const handleFormSubmit = async (values: z.infer<typeof contractSchema>) => {
     setIsLoading(true)
@@ -93,13 +102,12 @@ export function CreateContractModal({
   }
   
   const handleClientAdded = async (newClient: Cliente) => {
-    // Adiciona o novo cliente à lista e o seleciona no formulário
     const { data } = await getClients();
     if(data) {
         onClientListChange(data);
     }
     form.setValue('clienteId', newClient.id, { shouldValidate: true });
-    setIsAddClientSheetOpen(false); // Fecha o modal de adicionar cliente
+    setIsAddClientSheetOpen(false);
   }
 
   return (
@@ -146,7 +154,10 @@ export function CreateContractModal({
                       type="button" 
                       variant="link" 
                       className="p-0 h-auto text-sm"
-                      onClick={() => setIsAddClientSheetOpen(true)}
+                      onClick={() => {
+                        onClose(); // Close current modal before opening new one
+                        setTimeout(() => setIsAddClientSheetOpen(true), 150);
+                      }}
                     >
                       <PlusCircle className="mr-2 h-4 w-4" />
                       Adicionar novo cliente
@@ -195,10 +206,10 @@ export function CreateContractModal({
         <AddClientSheet
           isOpen={isAddClientSheetOpen}
           onClose={() => setIsAddClientSheetOpen(false)}
+          onClientAdded={handleClientAdded}
+          onSuccessAction={() => { /* This is handled by the parent page now */}}
         />
       )}
     </>
   )
 }
-
-    
