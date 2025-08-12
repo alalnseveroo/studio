@@ -125,14 +125,17 @@ export function ConfigureBillingModal({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Vincular Proposta (Opcional)</FormLabel>
-                     <Select onValueChange={field.onChange} value={field.value || ''}>
+                     <Select 
+                        onValueChange={(value) => field.onChange(value === 'null-value' ? null : value)} 
+                        value={field.value ?? 'null-value'}
+                     >
                       <FormControl>
                           <SelectTrigger>
                               <SelectValue placeholder="Selecione uma proposta" />
                           </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                          <SelectItem value="">Nenhuma</SelectItem>
+                          <SelectItem value="null-value">Nenhuma</SelectItem>
                           {proposals.map(proposal => (
                               <SelectItem key={proposal.id} value={proposal.id}>
                                   {proposal.name}
