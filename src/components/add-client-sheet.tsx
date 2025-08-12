@@ -5,7 +5,7 @@ import * as React from "react"
 import { useForm, FormProvider } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
-import { Check, CreditCard, FileText, Loader2 } from "lucide-react"
+import { Loader2 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from '@/components/ui/input'
@@ -26,13 +26,6 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet"
-import {
-  AlertDialog,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
 
 import type { Cliente } from "@/lib/types"
 import { createFullClient } from "@/lib/actions/clients"
@@ -76,28 +69,11 @@ type ClientFormData = z.infer<typeof clientSchema>;
 interface AddClientSheetProps {
   isOpen: boolean;
   onClose: () => void;
-  onClientAdded: (client: Cliente) => void;
-  onSuccessAction: (action: 'contract' | 'billing', client: Cliente) => void;
+  onSuccess: (client: Cliente) => void;
 }
 
-const CardAction = ({ icon: Icon, title, description, onClick }: { icon: React.ElementType, title: string, description: string, onClick: () => void }) => (
-    <button
-        onClick={onClick}
-        className="flex items-start gap-4 rounded-lg border p-4 text-left text-sm transition-all hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring"
-    >
-        <Icon className="h-6 w-6 text-primary flex-shrink-0 mt-1" />
-        <div className="flex-1">
-            <p className="font-semibold">{title}</p>
-            <p className="text-muted-foreground">{description}</p>
-        </div>
-    </button>
-);
-
-
-export function AddClientSheet({ isOpen, onClose, onClientAdded, onSuccessAction }: AddClientSheetProps) {
+export function AddClientSheet({ isOpen, onClose, onSuccess }: AddClientSheetProps) {
   const [isLoading, setIsLoading] = React.useState(false);
-  const [showSuccessModal, setShowSuccessModal] = React.useState(false);
-  const [newlyCreatedClient, setNewlyCreatedClient] = React.useState<Cliente | null>(null);
   const { toast } = useToast()
 
   const form = useForm<ClientFormData>({
@@ -121,8 +97,6 @@ export function AddClientSheet({ isOpen, onClose, onClientAdded, onSuccessAction
   React.useEffect(() => {
     if (isOpen) {
         form.reset();
-        setShowSuccessModal(false);
-        setNewlyCreatedClient(null);
     }
   }, [isOpen, form]);
 
@@ -134,15 +108,18 @@ export function AddClientSheet({ isOpen, onClose, onClientAdded, onSuccessAction
     if (error) {
         toast({ variant: 'destructive', title: 'Erro ao Criar Cliente', description: error.message });
     } else if (data) {
-        onClientAdded(data);
-        setNewlyCreatedClient(data);
-        setShowSuccessModal(true);
+        toast({ title: 'Cliente Adicionado!', description: 'O novo cliente foi salvo com sucesso.'})
+        onSuccess(data);
     }
   };
+  
+  const handleClose = () => {
+    form.reset();
+    onClose();
+  }
 
   return (
-    <>
-    <Sheet open={isOpen && !showSuccessModal} onOpenChange={onClose}>
+    <Sheet open={isOpen} onOpenChange={handleClose}>
       <SheetContent className="p-0 bg-white sm:max-w-xl">
         <FormProvider {...form}>
             <SheetHeader className="text-left border-b p-6">
@@ -211,34 +188,6 @@ export function AddClientSheet({ isOpen, onClose, onClientAdded, onSuccessAction
         </FormProvider>
       </SheetContent>
     </Sheet>
-    
-     <AlertDialog open={showSuccessModal}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
-                <Check className="h-6 w-6 text-green-500 bg-green-100 rounded-full p-1" />
-                Cliente criado com sucesso!
-            </AlertDialogTitle>
-            <AlertDialogDescription className="pt-4">
-              O que você gostaria de fazer agora?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <div className="grid gap-4 mt-2">
-             <CardAction
-                icon={FileText}
-                title="Criar Contrato"
-                description="Elabore um contrato de prestação de serviços para formalizar a parceria com este cliente."
-                onClick={() => newlyCreatedClient && onSuccessAction('contract', newlyCreatedClient)}
-             />
-             <CardAction
-                 icon={CreditCard}
-                 title="Configurar Cobrança"
-                 description="Defina uma cobrança recorrente para este cliente, com ou sem contrato."
-                 onClick={() => newlyCreatedClient && onSuccessAction('billing', newlyCreatedClient)}
-            />
-          </div>
-        </AlertDialogContent>
-    </AlertDialog>
-
     </>
   )
+}

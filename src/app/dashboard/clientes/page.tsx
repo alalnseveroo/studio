@@ -12,8 +12,6 @@ import {
 } from '@/components/ui/table'
 import {
   AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogFooter,
@@ -39,13 +37,27 @@ import type { Cliente, Proposta } from '@/lib/types'
 import { getProposals } from '@/lib/actions/propostas'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import Link from 'next/link'
-import { PlusCircle, Loader2, FilePen, Trash2 } from 'lucide-react'
+import { PlusCircle, Loader2, FilePen, Trash2, Check, FileText, CreditCard } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useToast } from '@/hooks/use-toast'
 import { CreateContractModal } from '@/components/create-contract-modal'
 import { ConfigureBillingModal } from '@/components/configure-billing-modal'
 
 const ITEMS_PER_PAGE = 10;
+
+const CardAction = ({ icon: Icon, title, description, onClick }: { icon: React.ElementType, title: string, description: string, onClick: () => void }) => (
+    <button
+        onClick={onClick}
+        className="flex items-start gap-4 rounded-lg border p-4 text-left text-sm transition-all hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring"
+    >
+        <Icon className="h-6 w-6 text-primary flex-shrink-0 mt-1" />
+        <div className="flex-1">
+            <p className="font-semibold">{title}</p>
+            <p className="text-muted-foreground">{description}</p>
+        </div>
+    </button>
+);
+
 
 export default function ClientesPage() {
   const [isSheetOpen, setIsSheetOpen] = useState(false)
@@ -57,7 +69,9 @@ export default function ClientesPage() {
   const [currentPage, setCurrentPage] = useState(1)
   const [selectedClients, setSelectedClients] = useState<string[]>([])
   const [clientToDelete, setClientToDelete] = useState<Cliente | null>(null)
-  const [selectedClient, setSelectedClient] = useState<string | null>(null);
+  
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [newlyCreatedClient, setNewlyCreatedClient] = useState<Cliente | null>(null);
 
   const { toast } = useToast()
 
@@ -99,11 +113,13 @@ export default function ClientesPage() {
 
   const handleClientAdded = (newClient: Cliente) => {
     setClients((prevClients) => [newClient, ...prevClients]);
+    setIsSheetOpen(false);
+    setNewlyCreatedClient(newClient);
+    setShowSuccessModal(true);
   };
   
-  const handleSuccessAction = (action: 'contract' | 'billing', client: Cliente) => {
-    setIsSheetOpen(false);
-    setSelectedClient(client.id);
+  const handleSuccessAction = (action: 'contract' | 'billing') => {
+    setShowSuccessModal(false);
     if (action === 'contract') {
         setIsContractModalOpen(true);
     } else {
@@ -328,30 +344,29 @@ export default function ClientesPage() {
       <AddClientSheet
         isOpen={isSheetOpen}
         onClose={() => setIsSheetOpen(false)}
-        onClientAdded={handleClientAdded}
-        onSuccessAction={handleSuccessAction}
+        onSuccess={handleClientAdded}
       />
       
       <CreateContractModal
           isOpen={isContractModalOpen}
           onClose={() => {
               setIsContractModalOpen(false);
-              setSelectedClient(null);
+              setNewlyCreatedClient(null);
           }}
           clients={clients}
           proposals={proposals}
           onClientListChange={setClients}
-          selectedClientId={selectedClient}
-          onContractAdded={() => fetchClientsAndProposals()} // Refetch everything after contract is created.
+          selectedClientId={newlyCreatedClient?.id}
+          onContractAdded={() => fetchClientsAndProposals()} 
       />
 
        <ConfigureBillingModal
         isOpen={isBillingModalOpen}
         onClose={() => {
           setIsBillingModalOpen(false);
-          setSelectedClient(null);
+          setNewlyCreatedClient(null);
         }}
-        clientId={selectedClient}
+        clientId={newlyCreatedClient?.id}
         proposals={proposals}
         onBillingConfigured={() => fetchClientsAndProposals()}
       />
@@ -376,8 +391,34 @@ export default function ClientesPage() {
             </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      
+      <AlertDialog open={showSuccessModal} onOpenChange={setShowSuccessModal}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+                <Check className="h-6 w-6 text-green-500 bg-green-100 rounded-full p-1" />
+                Cliente criado com sucesso!
+            </AlertDialogTitle>
+            <AlertDialogDescription className="pt-4">
+              O que você gostaria de fazer agora?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="grid gap-4 mt-2">
+             <CardAction
+                icon={FileText}
+                title="Criar Contrato"
+                description="Elabore um contrato de prestação de serviços para formalizar a parceria com este cliente."
+                onClick={() => handleSuccessAction('contract')}
+             />
+             <CardAction
+                 icon={CreditCard}
+                 title="Configurar Cobrança"
+                 description="Defina uma cobrança recorrente para este cliente, com ou sem contrato."
+                 onClick={() => handleSuccessAction('billing')}
+            />
+          </div>
+        </AlertDialogContent>
+    </AlertDialog>
     </>
   )
 }
-
-    
