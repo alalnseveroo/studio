@@ -78,9 +78,9 @@ export default async function DashboardPage() {
         getCharges()
     ]);
 
-    const totalRevenue = charges?.filter(c => c.status === 'pago').reduce((sum, c) => sum + c.value, 0) || 0;
-    const pendingAmount = charges?.filter(c => c.status === 'pendente' && !isPast(new Date(c.due_date))).reduce((sum, c) => sum + c.value, 0) || 0;
-    const overdueAmount = charges?.filter(c => c.status === 'pendente' && isPast(new Date(c.due_date))).reduce((sum, c) => sum + c.value, 0) || 0;
+    const totalRevenue = charges?.filter(c => c.status === 'pago').reduce((sum, c) => sum + (c.value || 0), 0) || 0;
+    const pendingAmount = charges?.filter(c => c.status === 'pendente' && !isPast(new Date(c.due_date))).reduce((sum, c) => sum + (c.value || 0), 0) || 0;
+    const overdueAmount = charges?.filter(c => c.status === 'pendente' && isPast(new Date(c.due_date))).reduce((sum, c) => sum + (c.value || 0), 0) || 0;
     const activeClients = clients?.filter(c => c.billing_status === 'active').length || 0;
 
     const recentContracts = contracts?.slice(0, 5) || [];
