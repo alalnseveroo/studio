@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/alert-dialog"
 
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
+import { Button, buttonVariants } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
 import {
   Pagination,
@@ -332,3 +332,5 @@ export default function ClientesPage() {
     </>
   )
 }
+
+    
