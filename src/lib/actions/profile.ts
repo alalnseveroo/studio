@@ -3,6 +3,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import type { ProfileFormData } from '@/app/dashboard/settings/profile/page';
+import { supabaseAdmin } from '../supabase/admin';
 
 export async function saveProfile(formData: ProfileFormData & { is_completed: boolean }) {
   const supabase = createClient()
@@ -64,9 +65,14 @@ export async function getProfile(userId?: string) {
         return { data: null, error: { message: 'Erro ao buscar perfil.' } };
     }
     
-    const { data: authUser, error: authErr } = await supabase.auth.admin.getUserById(targetUserId);
+    const { data: authUser, error: authErr } = await supabaseAdmin.auth.admin.getUserById(targetUserId);
+    
+    if (authErr) {
+        console.error('Error fetching auth user:', authErr);
+        return { data: null, error: { message: 'Erro ao buscar e-mail do usuário.' } };
+    }
+    
     const email = authUser?.user?.email;
-
 
     // Combine profile data with user email
     const profileWithEmail = data ? { ...data, email } : { id: targetUserId, email };
