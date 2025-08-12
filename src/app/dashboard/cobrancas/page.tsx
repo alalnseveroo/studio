@@ -113,13 +113,11 @@ export default function CobrancasPage() {
           return;
       }
       
-      // Removida a dependência do perfil do provedor para envio.
-      // O nome do remetente virá do padrão configurado na Brevo ou na função sendTransactionalEmail.
       const senderName = providerProfile?.full_name || providerProfile?.company_name || 'Seu Assistente Virtual';
       const portalUrl = new URL(`/portal/${charge.id}`, process.env.NEXT_PUBLIC_SITE_URL).toString();
       
-      // Usa o template 58 para aprovação inicial e 61 para lembretes de cobrança recorrente.
-      const BREVO_TEMPLATE_ID = charge.billing_status === 'pending_approval' ? 58 : 61;
+      const isApproval = charge.billing_status === 'pending_approval';
+      const BREVO_TEMPLATE_ID = isApproval ? 58 : 61;
 
       try {
         await sendTransactionalEmail(
@@ -127,7 +125,7 @@ export default function CobrancasPage() {
             BREVO_TEMPLATE_ID,
             {
                 nome_cliente: clientName,
-                nome_contratada: senderName, // O nome da contratada ainda é útil no template
+                nome_contratada: senderName,
                 valor_cobranca: charge.proposta?.value?.toFixed(2) || charge.value?.toFixed(2),
                 data_vencimento: format(charge.nextDueDate, 'dd/MM/yyyy'),
                 link_portal: portalUrl,
@@ -135,14 +133,14 @@ export default function CobrancasPage() {
         );
         
         toast({
-            title: "Cobrança Enviada!",
-            description: `Um e-mail de cobrança foi enviado para ${clientName}.`
+            title: isApproval ? "Solicitação de Aprovação Enviada!" : "Lembrete de Cobrança Enviado!",
+            description: `Um e-mail foi enviado para ${clientName}.`
         });
 
       } catch (error: any) {
           toast({
               variant: 'destructive',
-              title: "Erro ao enviar cobrança",
+              title: "Erro ao enviar e-mail",
               description: error.message || "Não foi possível enviar o e-mail."
           })
       } finally {
@@ -299,5 +297,3 @@ export default function CobrancasPage() {
     </div>
   )
 }
-
-    

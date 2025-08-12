@@ -27,20 +27,31 @@ if (BREVO_API_KEY) {
 export async function addOrUpdateContact(email: string, attributes: { [key: string]: any }) {
     if (!BREVO_API_KEY) throw new Error("A chave da API da Brevo não está configurada.");
 
-    let createContact = new Brevo.CreateContact();
-    createContact.email = email;
+    let updateContact = new Brevo.UpdateContact();
+    updateContact.attributes = attributes;
     
-    // A API espera uma lista de objetos, mesmo que seja um só
-    createContact.attributes = attributes;
-    createContact.updateEnabled = true;
-
     try {
-        await contactsApi.createContact(createContact);
+        // Tenta atualizar o contato existente.
+        await contactsApi.updateContact(email, updateContact);
     } catch (error: any) {
-        // O erro pode ser complexo, então extraímos a mensagem principal se possível
-        const errorMessage = error.body?.message || error.message || 'Erro desconhecido ao criar/atualizar contato na Brevo.';
-        console.error("Erro na API da Brevo (createContact):", error.body || error);
-        throw new Error(errorMessage);
+        // Se o contato não existe (geralmente um erro 404), cria um novo.
+        if (error.response?.statusCode === 404) {
+            let createContact = new Brevo.CreateContact();
+            createContact.email = email;
+            createContact.attributes = attributes;
+            createContact.updateEnabled = true;
+            try {
+                await contactsApi.createContact(createContact);
+            } catch (createError: any) {
+                 const errorMessage = createError.body?.message || createError.message || 'Erro desconhecido ao criar contato na Brevo.';
+                 console.error("Erro na API da Brevo (createContact):", createError.body || createError);
+                 throw new Error(errorMessage);
+            }
+        } else {
+            const errorMessage = error.body?.message || error.message || 'Erro desconhecido ao atualizar contato na Brevo.';
+            console.error("Erro na API da Brevo (updateContact):", error.body || error);
+            throw new Error(errorMessage);
+        }
     }
 }
 
