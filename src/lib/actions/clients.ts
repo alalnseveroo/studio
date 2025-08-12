@@ -24,25 +24,18 @@ export async function createFullClient(formData: any) {
   const clientId = `CL#${Math.floor(100000 + Math.random() * 900000)}`;
   const avatarUrl = AVATAR_URLS[Math.floor(Math.random() * AVATAR_URLS.length)];
   
-  const billingStatus = formData.firstChargeAction === 'manual' ? 'inactive' : 'active';
-
   const clientData = {
     user_id: user.id,
     client_id: clientId,
     avatar_url: avatarUrl,
-    full_name: formData.fullName,
     email: formData.email,
     phone: formData.phone,
-    cpf: formData.document, // Usando o campo 'document' para CPF/CNPJ
-    
-    // Billing info from wizard
-    proposal_id: formData.proposalId || null,
-    value: parseFloat(formData.value),
-    payment_day: parseInt(formData.paymentDay, 10),
-    first_charge_date: formData.firstChargeDate.toISOString(),
-    billing_status: billingStatus,
-    
-    person_type: 'cpf' as const, 
+    person_type: formData.personType,
+    full_name: formData.personType === 'cpf' ? formData.fullName : null,
+    cpf: formData.personType === 'cpf' ? formData.cpf : null,
+    company_name: formData.personType === 'cnpj' ? formData.companyName : null,
+    cnpj: formData.personType === 'cnpj' ? formData.cnpj : null,
+    billing_status: 'inactive' as const, 
   };
 
 
@@ -55,18 +48,15 @@ export async function createFullClient(formData: any) {
   
   try {
     if (data) {
-        // Adiciona a URL do portal ao objeto de dados antes de enviar para o webhook
         const portalUrl = new URL(`/portal/${data.id}`, process.env.NEXT_PUBLIC_SITE_URL).toString();
         const dataWithPortalUrl = { ...data, portal_url: portalUrl };
         await sendClientWebhook('create', dataWithPortalUrl);
     }
   } catch (webhookError: any) {
-    // Não bloqueia a criação do cliente se o webhook falhar, apenas registra o erro.
     console.warn(`Falha ao enviar webhook de criação de cliente: ${webhookError.message}`);
   }
 
   revalidatePath('/dashboard/clientes')
-  revalidatePath('/dashboard/cobrancas')
   return { data, error: null }
 }
 
@@ -141,7 +131,6 @@ export async function updateClientProfile(id: string, formData: any) {
   
    try {
     if (updatedData) {
-        // Adiciona a URL do portal ao objeto de dados antes de enviar para o webhook
         const portalUrl = new URL(`/portal/${updatedData.id}`, process.env.NEXT_PUBLIC_SITE_URL).toString();
         const dataWithPortalUrl = { ...updatedData, portal_url: portalUrl };
         await sendClientWebhook('update', dataWithPortalUrl);
@@ -214,3 +203,5 @@ export async function deleteClient(id: string) {
   revalidatePath('/dashboard/clientes');
   return { error: null };
 }
+
+    
