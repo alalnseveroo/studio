@@ -4,6 +4,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import type { Cliente } from '@/lib/types';
+import { addOrUpdateContact } from '../brevo';
 
 const AVATAR_URLS = [
     'https://ktgckactmaqioszffuyx.supabase.co/storage/v1/object/public/icons/Ellipse%201.png',
@@ -52,6 +53,18 @@ export async function createFullClient(formData: any) {
     return { data: null, error: { message: `Não foi possível adicionar o cliente: ${error.message}` } }
   }
   
+  // Após criar o cliente no Supabase, cria/atualiza na Brevo
+  try {
+    if (data.email) {
+      await addOrUpdateContact(data.email, {
+        NOME_CLIENTE: data.full_name || '',
+      });
+    }
+  } catch (brevoError: any) {
+    // Não impede o fluxo principal, mas loga o erro
+    console.warn(`Falha ao sincronizar cliente com Brevo: ${brevoError.message}`);
+  }
+
   revalidatePath('/dashboard/clientes')
   revalidatePath('/dashboard/cobrancas')
   return { data, error: null }
@@ -159,7 +172,3 @@ export async function updateClientFinancials(id: string, financials: { billing_s
   revalidatePath('/dashboard/cobrancas');
   return { error: null };
 }
-
-    
-
-    
