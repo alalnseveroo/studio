@@ -113,20 +113,19 @@ export default function CobrancasPage() {
           return;
       }
       
-      if (!providerProfile || !providerProfile.email) {
-           toast({ variant: 'destructive', title: "Perfil incompleto", description: `Seu perfil ou e-mail de remetente não foram encontrados.` });
+      if (!providerProfile) {
+           toast({ variant: 'destructive', title: "Perfil não encontrado", description: `Seu perfil de remetente não foi encontrado.` });
            setIsSending(null);
            return;
       }
       
       const senderName = providerProfile.full_name || providerProfile.company_name || 'Seu Assistente Virtual';
-      const senderEmail = providerProfile.email; 
+      const portalUrl = new URL(`/portal/${charge.id}`, process.env.NEXT_PUBLIC_SITE_URL).toString();
+      
+      // Usa o template 58 para aprovação inicial e 61 para lembretes de cobrança recorrente.
+      const BREVO_TEMPLATE_ID = charge.billing_status === 'pending_approval' ? 58 : 61;
 
       try {
-        // Usa o template 58 para aprovação inicial e 61 para lembretes de cobrança recorrente.
-        const BREVO_TEMPLATE_ID = charge.billing_status === 'pending_approval' ? 58 : 61;
-        const portalUrl = new URL(`/portal/${charge.id}`, process.env.NEXT_PUBLIC_SITE_URL).toString();
-
         await sendTransactionalEmail(
             clientEmail,
             BREVO_TEMPLATE_ID,
@@ -136,9 +135,7 @@ export default function CobrancasPage() {
                 valor_cobranca: charge.proposta?.value?.toFixed(2) || charge.value?.toFixed(2),
                 data_vencimento: format(charge.nextDueDate, 'dd/MM/yyyy'),
                 link_portal: portalUrl,
-            },
-            senderName,
-            senderEmail
+            }
         );
         
         toast({
@@ -306,5 +303,3 @@ export default function CobrancasPage() {
     </div>
   )
 }
-
-    
