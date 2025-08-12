@@ -116,11 +116,11 @@ export default function CobrancasPage() {
             BREVO_TEMPLATE_ID,
             {
                 NOME_CLIENTE: clientName,
-                NOME_CONTRATADA: 'Seu Assistente Virtual',
                 VALOR_COBRANCA: (charge.proposta?.value || charge.value || 0).toFixed(2),
                 DATA_VENCIMENTO: format(charge.nextDueDate, 'dd/MM/yyyy'),
                 LINK_PORTAL: portalUrl,
-            }
+            },
+            charge.user_id // Passando o ID do usuário para a função
         );
         
         toast({
@@ -140,23 +140,12 @@ export default function CobrancasPage() {
   }
 
   const renderActionButton = (charge: PendingCharge) => {
-      if (charge.billing_status === 'pending_approval') {
-          return (
-              <Button size="sm" onClick={() => handleSendCharge(charge)} disabled={isSending === charge.id}>
-                  {isSending === charge.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-                  Revisar e Enviar
-              </Button>
-          )
-      }
+      const buttonText = charge.billing_status === 'pending_approval' ? 'Revisar e Enviar' : 'Enviar Lembrete';
       return (
-           <Button size="sm" onClick={() => handleSendCharge(charge)} disabled={isSending === charge.id}>
-                {isSending === charge.id ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                    <Send className="mr-2 h-4 w-4" />
-                )}
-                Enviar Lembrete
-            </Button>
+          <Button size="sm" onClick={() => handleSendCharge(charge)} disabled={isSending === charge.id}>
+              {isSending === charge.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+              {buttonText}
+          </Button>
       )
   }
 

@@ -2,6 +2,8 @@
 'use server';
 
 import * as Brevo from '@getbrevo/brevo';
+import { createClient } from './supabase/server';
+import type { Profile } from './types';
 
 // Configuração da API da Brevo
 const apiInstance = new Brevo.TransactionalEmailsApi();
@@ -26,11 +28,9 @@ export async function addOrUpdateContact(email: string, attributes: { [key: stri
 
     let existingContact;
     try {
-        // Verifica se o contato já existe
         existingContact = await contactsApi.getContactInfo(email);
     } catch (error: any) {
         if (error.response?.statusCode !== 404) {
-            // Se o erro for diferente de "Não encontrado", lança o erro
             const errorMessage = error.body?.message || error.message || 'Erro desconhecido ao verificar contato na Brevo.';
             console.error("Erro na API da Brevo (getContactInfo):", error.body || error);
             throw new Error(errorMessage);
@@ -38,7 +38,6 @@ export async function addOrUpdateContact(email: string, attributes: { [key: stri
     }
 
     if (existingContact) {
-        // Se o contato existe, atualiza
         let updateContact = new Brevo.UpdateContact();
         updateContact.attributes = attributes;
         try {
@@ -49,11 +48,10 @@ export async function addOrUpdateContact(email: string, attributes: { [key: stri
             throw new Error(errorMessage);
         }
     } else {
-        // Se não existe, cria
         let createContact = new Brevo.CreateContact();
         createContact.email = email;
         createContact.attributes = attributes;
-        createContact.updateEnabled = true; // Permite que futuros 'create' atualizem o contato
+        createContact.updateEnabled = true;
         try {
             await contactsApi.createContact(createContact);
         } catch (createError: any) {
@@ -68,29 +66,47 @@ export async function addOrUpdateContact(email: string, attributes: { [key: stri
  * Envia um e-mail transacional usando um template da Brevo.
  * @param toEmail - O e-mail do destinatário.
  * @param templateId - O ID do template transacional na Brevo.
- * @param params - Parâmetros para preencher o template. Ex: { PINSECRET: '123456' }
+ * @param params - Parâmetros para preencher o template. Ex: { NOME_CLIENTE: '...', PINSECRET: '...' }
+ * @param userId - O ID do usuário logado (contratada) para buscar o nome do remetente.
  */
 export async function sendTransactionalEmail(
     toEmail: string, 
     templateId: number, 
-    params: { [key: string]: any }
+    params: { [key: string]: any },
+    userId: string
 ) {
     if (!BREVO_API_KEY) throw new Error("A chave da API da Brevo não está configurada.");
 
-    // Atualiza o contato com os parâmetros antes de enviar o e-mail
-    // Isso garante que os atributos mais recentes sejam usados se o template os referenciar
+    const supabase = createClient();
+    const { data: providerProfile, error: profileError } = await supabase
+        .from('profiles')
+        .select('full_name, company_name')
+        .eq('id', userId)
+        .single();
+        
+    if (profileError) {
+        console.error("Erro ao buscar perfil da contratada:", profileError);
+        throw new Error("Não foi possível buscar os dados da contratada para o envio do e-mail.");
+    }
+    
+    const providerName = providerProfile?.full_name || providerProfile?.company_name || 'Sua Assistente Virtual';
+    
+    const allParams = {
+        ...params,
+        NOME_CONTRATADA: providerName
+    };
+
     try {
-        await addOrUpdateContact(toEmail, params);
+        await addOrUpdateContact(toEmail, allParams);
     } catch (contactError: any) {
         console.warn(`Falha ao sincronizar atributos do contato ${toEmail} antes do envio: ${contactError.message}`);
-        // Continua mesmo se a atualização falhar, pois o e-mail ainda pode ser enviado.
     }
 
     let sendSmtpEmail = new Brevo.SendSmtpEmail();
     
     sendSmtpEmail.templateId = templateId;
     sendSmtpEmail.to = [{ email: toEmail }];
-    sendSmtpEmail.params = params;
+    sendSmtpEmail.params = allParams;
 
     try {
         await apiInstance.sendTransacEmail(sendSmtpEmail);
@@ -100,5 +116,3 @@ export async function sendTransactionalEmail(
         throw new Error(errorMessage);
     }
 }
-
-    

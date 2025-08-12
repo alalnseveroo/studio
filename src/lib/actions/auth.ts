@@ -1,3 +1,4 @@
+
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
@@ -51,7 +52,7 @@ export async function sendClientVerificationCode(contractId: string) {
   
   const { data: contract, error: contractError } = await supabase
     .from('contratos')
-    .select('id, cliente_id, clientes (email)')
+    .select('id, user_id, cliente_id, clientes (email, full_name, company_name)')
     .eq('id', contractId)
     .single();
 
@@ -60,6 +61,7 @@ export async function sendClientVerificationCode(contractId: string) {
   }
 
   const clientEmail = contract.clientes.email;
+  const clientName = contract.clientes.full_name || contract.clientes.company_name;
   const code = crypto.randomInt(100000, 999999).toString();
   const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutos de validade
 
@@ -76,16 +78,21 @@ export async function sendClientVerificationCode(contractId: string) {
   }
   
   try {
-    await addOrUpdateContact(clientEmail, { PINSECRET: code });
-    
-    // Usando o ID do template fornecido pelo usuário.
     const BREVO_TEMPLATE_ID = 58; 
-    await sendTransactionalEmail(clientEmail, BREVO_TEMPLATE_ID, { pinsecret: code });
+    await sendTransactionalEmail(
+        clientEmail, 
+        BREVO_TEMPLATE_ID, 
+        { 
+            PINSECRET: code,
+            NOME_CLIENTE: clientName,
+        },
+        contract.user_id
+    );
 
     return { success: true, message: `Um e-mail com o código de verificação foi enviado para ${clientEmail}.` };
   } catch (brevoError: any) {
     console.error("Brevo API Error:", brevoError);
-    return { success: false, error: { message: `Falha ao enviar o e--mail de verificação. Detalhes: ${brevoError.message}` } };
+    return { success: false, error: { message: `Falha ao enviar o e-mail de verificação. Detalhes: ${brevoError.message}` } };
   }
 }
 

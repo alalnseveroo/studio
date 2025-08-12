@@ -249,11 +249,15 @@ export async function signContractAsProvider(contractId: string, otp: string) {
             
             const BREVO_TEMPLATE_ID_CLIENT_NOTIFICATION = 58; 
 
-            await sendTransactionalEmail(contract.clientes.email, BREVO_TEMPLATE_ID_CLIENT_NOTIFICATION, {
-                NOME_CLIENTE: contract.clientes.full_name || contract.clientes.company_name,
-                NOME_CONTRATADA: contratada.full_name || contratada.company_name,
-                LINK_CONTRATO: portalUrl
-            });
+            await sendTransactionalEmail(
+                contract.clientes.email,
+                BREVO_TEMPLATE_ID_CLIENT_NOTIFICATION,
+                {
+                    NOME_CLIENTE: contract.clientes.full_name || contract.clientes.company_name,
+                    LINK_CONTRATO: portalUrl
+                },
+                user.id
+            );
         } catch (emailError: any) {
             // Não bloqueia o processo se o e-mail falhar, mas registra o erro.
             console.error(`Falha ao enviar e-mail de notificação para o cliente ${contract.clientes.email}:`, emailError.message);
@@ -350,5 +354,3 @@ export async function signContractAsClient({ contractId, otp, signatureDataUrl }
     revalidatePath(`/portal/${contract.cliente_id}`);
     return { data: updatedContract, error: null };
 }
-
-    
