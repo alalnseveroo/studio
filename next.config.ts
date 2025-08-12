@@ -19,8 +19,8 @@ const nextConfig: NextConfig = {
     ],
   },
   env: {
-    SUPABASE_URL: process.env.SUPABASE_URL,
-    SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY,
+    SUPABASE_URL: 'https://pouynmrblzvwlhrfyins.supabase.co',
+    SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBvdXlubXJibHp2d2xocmZ5aW5zIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUwMDk3ODMsImV4cCI6MjA3MDU4NTc4M30.ShP6C-DXUAUo18g1eoG6c5V_y6Dv7fvJQ3bn8S-9EbM',
     BREVO_API_KEY: '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',
   }
 };

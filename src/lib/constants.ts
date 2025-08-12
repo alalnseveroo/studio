@@ -1,5 +1,5 @@
-export const SUPABASE_URL = 'https://ktgckactmaqioszffuyx.supabase.co';
-export const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt0Z2NrYWN0bWFxaW9zemZmdXl4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ1MjM4NDIsImV4cCI6MjA3MDA5OTg0Mn0._Nzq3Z9N5gb5gUU9swd2oDPHlFd73WFsf945l7jWvcQ';
+export const SUPABASE_URL = 'https://pouynmrblzvwlhrfyins.supabase.co';
+export const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBvdXlubXJibHp2d2xocmZ5aW5zIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUwMDk3ODMsImV4cCI6MjA3MDU4NTc4M30.ShP6C-DXUAUo18g1eoG6c5V_y6Dv7fvJQ3bn8S-9EbM';
 
 export const ALL_SERVICES = [
   { id: 'atendimento_whatsapp', label: 'Atendimento e Comunicação: Gestão de comunicações via WhatsApp Business.' },
