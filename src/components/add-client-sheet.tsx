@@ -42,6 +42,7 @@ const clientSchema = z.object({
   personType: z.enum(['cpf', 'cnpj']),
   // Common fields
   email: z.string().email({ message: "E-mail inválido."}),
+  address: z.string().min(10, { message: "O endereço completo é obrigatório."}),
   // PF Fields
   fullName: z.string().optional(),
   cpf: z.string().optional(),
@@ -108,6 +109,7 @@ export function AddClientSheet({ isOpen, onClose, onClientAdded, onSuccessAction
         companyName: '', 
         cnpj: '', 
         email: '', 
+        address: '',
         representativeName: '',
         representativeCpf: '' 
     },
@@ -196,10 +198,13 @@ export function AddClientSheet({ isOpen, onClose, onClientAdded, onSuccessAction
                             )}/>
                         </div>
                     )}
+                     <FormField control={form.control} name="address" render={({ field }) => (
+                        <FormItem><FormLabel>Endereço Completo</FormLabel><FormControl><Input placeholder="Rua, Número, Bairro, CEP, Cidade, Estado" {...field} /></FormControl><FormMessage /></FormItem>
+                    )}/>
                 </div>
                  <SheetFooter className="border-t p-6 flex justify-end">
                     <Button type="submit" disabled={isLoading}>
-                        {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Salvar Cliente'}
+                        {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Salvar e Avançar'}
                     </Button>
                 </SheetFooter>
             </form>
@@ -227,8 +232,8 @@ export function AddClientSheet({ isOpen, onClose, onClientAdded, onSuccessAction
              />
              <CardAction
                  icon={CreditCard}
-                 title="Ir para o perfil do cliente"
-                 description="Acesse o perfil para configurar uma cobrança, preencher dados e mais."
+                 title="Configurar Cobrança"
+                 description="Defina uma cobrança recorrente para este cliente, com ou sem contrato."
                  onClick={() => newlyCreatedClient && onSuccessAction('billing', newlyCreatedClient)}
             />
           </div>
@@ -237,6 +242,3 @@ export function AddClientSheet({ isOpen, onClose, onClientAdded, onSuccessAction
 
     </>
   )
-}
-
-    

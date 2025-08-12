@@ -43,19 +43,21 @@ import { PlusCircle, Loader2, FilePen, Trash2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useToast } from '@/hooks/use-toast'
 import { CreateContractModal } from '@/components/create-contract-modal'
+import { ConfigureBillingModal } from '@/components/configure-billing-modal'
 
 const ITEMS_PER_PAGE = 10;
 
 export default function ClientesPage() {
   const [isSheetOpen, setIsSheetOpen] = useState(false)
   const [isContractModalOpen, setIsContractModalOpen] = useState(false)
+  const [isBillingModalOpen, setIsBillingModalOpen] = useState(false)
   const [clients, setClients] = useState<Cliente[]>([])
   const [proposals, setProposals] = useState<Proposta[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [currentPage, setCurrentPage] = useState(1)
   const [selectedClients, setSelectedClients] = useState<string[]>([])
   const [clientToDelete, setClientToDelete] = useState<Cliente | null>(null)
-  const [selectedClientForContract, setSelectedClientForContract] = useState<string | null>(null);
+  const [selectedClient, setSelectedClient] = useState<string | null>(null);
 
   const { toast } = useToast()
 
@@ -100,13 +102,12 @@ export default function ClientesPage() {
   };
   
   const handleSuccessAction = (action: 'contract' | 'billing', client: Cliente) => {
-    setIsSheetOpen(false); // Close the add client sheet
+    setIsSheetOpen(false);
+    setSelectedClient(client.id);
     if (action === 'contract') {
-        setSelectedClientForContract(client.id);
         setIsContractModalOpen(true);
     } else {
-        // Redireciona para a página de detalhes do cliente com a aba financeira
-        window.location.href = `/dashboard/clientes/${client.id}`;
+        setIsBillingModalOpen(true);
     }
   };
   
@@ -335,13 +336,24 @@ export default function ClientesPage() {
           isOpen={isContractModalOpen}
           onClose={() => {
               setIsContractModalOpen(false);
-              setSelectedClientForContract(null);
+              setSelectedClient(null);
           }}
           clients={clients}
           proposals={proposals}
           onClientListChange={setClients}
-          selectedClientId={selectedClientForContract}
+          selectedClientId={selectedClient}
           onContractAdded={() => fetchClientsAndProposals()} // Refetch everything after contract is created.
+      />
+
+       <ConfigureBillingModal
+        isOpen={isBillingModalOpen}
+        onClose={() => {
+          setIsBillingModalOpen(false);
+          setSelectedClient(null);
+        }}
+        clientId={selectedClient}
+        proposals={proposals}
+        onBillingConfigured={() => fetchClientsAndProposals()}
       />
 
 
