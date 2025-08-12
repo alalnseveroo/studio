@@ -137,7 +137,7 @@ export function AddClientSheet({ isOpen, onClose }: { isOpen: boolean, onClose: 
       default:
         return (
            <>
-            <SheetHeader className="border-b bg-white px-6 pb-4 pt-6">
+            <SheetHeader className="bg-white px-6 pb-4 pt-6 border-b">
               <SheetTitle className="text-lg">Escolha o fluxo</SheetTitle>
               <SheetDescription className="text-sm">
                 Selecione uma das opções abaixo para continuar seu processo.
@@ -259,87 +259,89 @@ function IdentificationStep({ form, onSubmit, toast }: { form: any, onSubmit: (v
     };
     
     return (
-        <FormProvider {...form}>
-            <SheetHeader className="text-left border-b p-6">
-                <SheetTitle>Primeiro, os dados da pessoa de contato.</SheetTitle>
-                <SheetDescription>Esta pessoa será a responsável principal pela comunicação e pagamentos.</SheetDescription>
-            </SheetHeader>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col h-[calc(100%-73px)]">
-                <div className="flex-1 overflow-y-auto p-6 space-y-4">
-                    <Card className="border-none shadow-none p-0">
-                        <CardHeader className="p-0 mb-4">
-                            <CardContent className="font-semibold p-0">Dados da Pessoa de Contato</CardContent>
-                        </CardHeader>
-                        <CardContent className="p-0 space-y-3">
-                            <FormField control={form.control} name="fullName" render={({ field }) => (
-                                <FormItem><FormLabel>Nome completo</FormLabel><FormControl><Input placeholder="Ex: Maria da Silva" {...field} /></FormControl><FormMessage /></FormItem>
-                            )}/>
-                            <FormField control={form.control} name="email" render={({ field }) => (
-                                <FormItem><FormLabel>E-mail de contato</FormLabel><FormControl><Input type="email" placeholder="maria.silva@email.com" {...field} /></FormControl><FormMessage /></FormItem>
-                            )}/>
-                            <div className="grid md:grid-cols-2 gap-3">
-                                <FormField control={form.control} name="cpf" render={({ field }) => (
-                                    <FormItem><FormLabel>CPF</FormLabel><FormControl><Input placeholder="000.000.000-00" {...field} onChange={e => field.onChange(formatCpf(e.target.value))} /></FormControl><FormMessage /></FormItem>
+        <>
+            <FormProvider {...form}>
+                <SheetHeader className="text-left border-b p-6">
+                    <SheetTitle>Primeiro, os dados da pessoa de contato.</SheetTitle>
+                    <SheetDescription>Esta pessoa será a responsável principal pela comunicação e pagamentos.</SheetDescription>
+                </SheetHeader>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col h-[calc(100%-73px)]">
+                    <div className="flex-1 overflow-y-auto p-6 space-y-2">
+                        <Card className="border-none shadow-none p-0">
+                            <CardHeader className="p-0 mb-2">
+                                <CardContent className="font-semibold p-0">Dados da Pessoa de Contato</CardContent>
+                            </CardHeader>
+                            <CardContent className="p-0 space-y-2">
+                                <FormField control={form.control} name="fullName" render={({ field }) => (
+                                    <FormItem><FormLabel>Nome completo</FormLabel><FormControl><Input placeholder="Ex: Maria da Silva" {...field} /></FormControl><FormMessage /></FormItem>
                                 )}/>
-                                <FormField control={form.control} name="phone" render={({ field }) => (
-                                    <FormItem><FormLabel>Contato (Telefone/WhatsApp)</FormLabel><FormControl><Input placeholder="(00) 00000-0000" {...field} onChange={e => field.onChange(formatPhone(e.target.value))} /></FormControl><FormMessage /></FormMessage /></FormItem>
+                                <FormField control={form.control} name="email" render={({ field }) => (
+                                    <FormItem><FormLabel>E-mail de contato</FormLabel><FormControl><Input type="email" placeholder="maria.silva@email.com" {...field} /></FormControl><FormMessage /></FormItem>
                                 )}/>
-                            </div>
-                        </CardContent>
-                    </Card>
+                                <div className="grid md:grid-cols-2 gap-3">
+                                    <FormField control={form.control} name="cpf" render={({ field }) => (
+                                        <FormItem><FormLabel>CPF</FormLabel><FormControl><Input placeholder="000.000.000-00" {...field} onChange={e => field.onChange(formatCpf(e.target.value))} /></FormControl><FormMessage /></FormItem>
+                                    )}/>
+                                    <FormField control={form.control} name="phone" render={({ field }) => (
+                                        <FormItem><FormLabel>Contato (Telefone/WhatsApp)</FormLabel><FormControl><Input placeholder="(00) 00000-0000" {...field} onChange={e => field.onChange(formatPhone(e.target.value))} /></FormControl><FormMessage /></FormItem>
+                                    )}/>
+                                </div>
+                            </CardContent>
+                        </Card>
 
-                    <Card className="border-none shadow-none p-0">
-                        <CardContent className="p-0">
-                            <FormField control={form.control} name="addCompanyData" render={({ field }) => (
-                                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
-                                    <FormLabel className="font-normal cursor-pointer pr-4" onClick={() => field.onChange(!field.value)}>Adicionar dados de Pessoa Jurídica (PJ)</FormLabel>
-                                    <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
-                                </FormItem>
-                            )}/>
-                        </CardContent>
-                        <AnimatePresence initial={false}>
-                            {watchAddCompany && (
-                                <motion.div
-                                    key="content"
-                                    initial="collapsed" animate="open" exit="collapsed"
-                                    variants={{ open: { opacity: 1, height: "auto" }, collapsed: { opacity: 0, height: 0 } }}
-                                    transition={{ duration: 0.3, ease: "easeInOut" }}
-                                    className="overflow-hidden"
-                                >
-                                    <CardHeader className="p-0 pt-4 pb-2">
-                                        <CardContent className="font-semibold p-0">Dados da Empresa</CardContent>
-                                        <FormDescription className="px-0">Busque pelo CNPJ para preencher (recomendado)</FormDescription>
-                                    </CardHeader>
-                                    <CardContent className="p-0 space-y-3">
-                                        <FormField control={form.control} name="cnpj" render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>CNPJ</FormLabel>
-                                                <div className="flex items-center gap-2">
-                                                    <FormControl><Input placeholder="00.000.000/0001-00" {...field} onChange={(e) => field.onChange(formatCnpj(e.target.value))}/></FormControl>
-                                                    <Button type="button" size="icon" onClick={handleCnpjSearch} disabled={isFetchingCnpj}>{isFetchingCnpj ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}</Button>
-                                                </div>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}/>
-                                        <FormField control={form.control} name="companyName" render={({ field }) => (
-                                            <FormItem><FormLabel>Razão Social</FormLabel><FormControl><Input placeholder="Empresa Exemplo LTDA" {...field} /></FormControl><FormMessage /></FormItem>
-                                        )}/>
-                                        <FormField control={form.control} name="tradeName" render={({ field }) => (
-                                            <FormItem><FormLabel>Nome Fantasia (opcional)</FormLabel><FormControl><Input placeholder="Nome da Marca" {...field} /></FormControl><FormMessage /></FormItem>
-                                        )}/>
-                                    </CardContent>
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
-                    </Card>
-                </div>
-                 <SheetFooter className="border-t p-6 flex justify-end">
-                    <Button type="submit">
-                        Ir para Configuração <ArrowRight className="ml-2 h-4 w-4" />
-                    </Button>
-                </SheetFooter>
-            </form>
-        </FormProvider>
+                        <Card className="border-none shadow-none p-0">
+                            <CardContent className="p-0">
+                                <FormField control={form.control} name="addCompanyData" render={({ field }) => (
+                                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 mt-4">
+                                        <FormLabel className="font-normal cursor-pointer pr-4" onClick={() => field.onChange(!field.value)}>Adicionar dados de Pessoa Jurídica (PJ)</FormLabel>
+                                        <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                                    </FormItem>
+                                )}/>
+                            </CardContent>
+                            <AnimatePresence initial={false}>
+                                {watchAddCompany && (
+                                    <motion.div
+                                        key="content"
+                                        initial="collapsed" animate="open" exit="collapsed"
+                                        variants={{ open: { opacity: 1, height: "auto" }, collapsed: { opacity: 0, height: 0 } }}
+                                        transition={{ duration: 0.3, ease: "easeInOut" }}
+                                        className="overflow-hidden"
+                                    >
+                                        <CardHeader className="p-0 pt-4 pb-2">
+                                            <CardContent className="font-semibold p-0">Dados da Empresa</CardContent>
+                                            <FormDescription className="px-0">Busque pelo CNPJ para preencher (recomendado)</FormDescription>
+                                        </CardHeader>
+                                        <CardContent className="p-0 space-y-2">
+                                            <FormField control={form.control} name="cnpj" render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>CNPJ</FormLabel>
+                                                    <div className="flex items-center gap-2">
+                                                        <FormControl><Input placeholder="00.000.000/0001-00" {...field} onChange={(e) => field.onChange(formatCnpj(e.target.value))}/></FormControl>
+                                                        <Button type="button" size="icon" onClick={handleCnpjSearch} disabled={isFetchingCnpj}>{isFetchingCnpj ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}</Button>
+                                                    </div>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}/>
+                                            <FormField control={form.control} name="companyName" render={({ field }) => (
+                                                <FormItem><FormLabel>Razão Social</FormLabel><FormControl><Input placeholder="Empresa Exemplo LTDA" {...field} /></FormControl><FormMessage /></FormItem>
+                                            )}/>
+                                            <FormField control={form.control} name="tradeName" render={({ field }) => (
+                                                <FormItem><FormLabel>Nome Fantasia (opcional)</FormLabel><FormControl><Input placeholder="Nome da Marca" {...field} /></FormControl><FormMessage /></FormItem>
+                                            )}/>
+                                        </CardContent>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+                        </Card>
+                    </div>
+                     <SheetFooter className="border-t p-6 flex justify-end">
+                        <Button type="submit">
+                            Ir para Configuração <ArrowRight className="ml-2 h-4 w-4" />
+                        </Button>
+                    </SheetFooter>
+                </form>
+            </FormProvider>
+        </>
     )
 }
 
@@ -351,7 +353,7 @@ function CardOption({ icon, title, description, checked, dimmed, onClick, childr
       onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick?.() } }}
       aria-pressed={checked}
       className={cn(
-        "group relative w-full rounded-2xl border bg-white p-5 md:p-6 text-left shadow-sm transition-all h-full",
+        "group relative w-full rounded-2xl border bg-white p-5 text-left shadow-sm transition-all h-full",
         checked ? "border-emerald-500" : "border-gray-200",
         dimmed ? "opacity-75" : "hover:-translate-y-0.5 hover:shadow-md",
         "outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-emerald-500",
