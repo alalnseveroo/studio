@@ -82,7 +82,8 @@ export function AddClientSheet({ isOpen, onClose, onSuccess }: AddClientSheetPro
   const form = useForm<ClientFormData>({
     resolver: zodResolver(clientSchema),
     defaultValues: { 
-        personType: 'cpf', 
+        personType: 'cpf',
+        sex: undefined,
         fullName: '', 
         cpf: '', 
         companyName: '', 
@@ -162,7 +163,7 @@ export function AddClientSheet({ isOpen, onClose, onSuccess }: AddClientSheetPro
                             <FormControl>
                                 <RadioGroup
                                 onValueChange={field.onChange}
-                                defaultValue={field.value}
+                                value={field.value}
                                 className="flex space-x-4"
                                 >
                                 <FormItem className="flex items-center space-x-2 space-y-0">

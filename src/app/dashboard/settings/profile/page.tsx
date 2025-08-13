@@ -65,6 +65,7 @@ export default function ProfilePage() {
     resolver: zodResolver(profileSchema),
     defaultValues: {
       personType: 'cpf',
+      sex: undefined,
       companyName: '',
       cnpj: '',
       fullName: '',
@@ -237,7 +238,7 @@ export default function ProfilePage() {
                       <FormControl>
                         <RadioGroup
                           onValueChange={field.onChange}
-                          defaultValue={field.value}
+                          value={field.value}
                           className="flex space-x-4 pt-2"
                         >
                           <FormItem className="flex items-center space-x-2 space-y-0">
