@@ -81,7 +81,7 @@ function UserNav({ user }: { user: (Profile & { email: string })}) {
 function DashboardHeader({ userProfile }: { userProfile: (Profile & { email: string }) | null }) {
      return (
         <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-            <div className="container flex h-16 items-center justify-between">
+            <div className="flex h-16 items-center justify-between px-4 sm:px-6">
                 <div className="flex items-center gap-6">
                     <Link href="/dashboard" className="flex items-center space-x-2">
                         <Package2 className="h-6 w-6" />
@@ -116,7 +116,7 @@ export default async function DashboardLayout({
   return (
     <div className="flex min-h-screen flex-col">
         <DashboardHeader userProfile={userProfile as Profile & { email: string } | null} />
-        <main className="flex-1 container py-6">{children}</main>
+        <main className="flex-1 p-4 sm:p-6">{children}</main>
     </div>
   )
 }
