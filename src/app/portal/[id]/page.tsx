@@ -8,7 +8,7 @@ import { getContractsForClientPortal } from '@/lib/actions/contratos'
 import { getChargesForClientPortal } from '@/lib/actions/cobrancas'
 import { getProfile } from '@/lib/actions/profile'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { AlertCircle, User, FileText, Check, Clock, Verified, Briefcase, Mail, Download, CreditCard } from 'lucide-react'
+import { AlertCircle, User, FileText, Check, Clock, Verified, Briefcase, Mail, Download, CreditCard, Lock } from 'lucide-react'
 import {
   AlertDialog,
   AlertDialogContent,
@@ -295,12 +295,20 @@ export default function ClientPortalPage() {
                                                 <Badge variant="outline" className={cn("font-normal", status.className)}>{status.text}</Badge>
                                             </TableCell>
                                             <TableCell className="text-right space-x-2">
-                                                 <Button asChild variant="outline" size="sm" disabled={!isInvoiceAvailable}>
-                                                    <Link href={charge.invoice_url || ''} target="_blank" rel="noopener noreferrer">
-                                                        <Download className="mr-2 h-4 w-4" />
+                                                {isInvoiceAvailable ? (
+                                                     <Button asChild variant="outline" size="sm">
+                                                        <Link href={charge.invoice_url!} target="_blank" rel="noopener noreferrer">
+                                                            <Download className="mr-2 h-4 w-4" />
+                                                            Nota Fiscal
+                                                        </Link>
+                                                     </Button>
+                                                ) : (
+                                                    <Button variant="outline" size="sm" disabled>
+                                                        <Lock className="mr-2 h-4 w-4" />
                                                         Nota Fiscal
-                                                    </Link>
-                                                 </Button>
+                                                    </Button>
+                                                )}
+
                                                 {charge.status !== 'pago' && (
                                                     <Button size="sm" onClick={() => setSelectedCharge(charge)}>
                                                          <CreditCard className="mr-2 h-4 w-4" />
@@ -352,3 +360,5 @@ export default function ClientPortalPage() {
     </>
   )
 }
+
+    
