@@ -23,7 +23,7 @@ import { saveProfile, getProfile } from '@/lib/actions/profile'
 import { useToast } from '@/hooks/use-toast'
 import type { Profile } from '@/lib/types'
 import Link from 'next/link'
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
+import Image from 'next/image'
 
 
 const STEPS = {
@@ -211,14 +211,22 @@ export default function ProfilePage() {
   if (isSaved) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-4 p-4 text-center">
-        <CheckCircle className="h-16 w-16 text-green-500" />
-        <h1 className="text-2xl font-bold">Perfil Concluído!</h1>
-        <p className="max-w-md text-muted-foreground">
-          Seus dados foram salvos com sucesso. Agora você tem acesso completo a todas as funcionalidades da plataforma.
+        <Image 
+            src="https://pouynmrblzvwlhrfyins.supabase.co/storage/v1/object/public/icons/imags/Untitled%20folder/Zero%20Tasks%203.png" 
+            alt="Proposta de Serviço" 
+            width={150} 
+            height={150} 
+            className="size-[150px]"
+        />
+        <h1 className="text-2xl font-bold">Incrível. Agora seu perfil pode criar sua primeira Proposta de Serviço!</h1>
+        <p className="max-w-xl text-muted-foreground">
+            Como funciona? Você cria uma proposta com valores, serviços e prazos pré-definidos uma única vez e pode usar quantas vezes quiser. Esse é o segundo passo para automatizar cobranças e fechar contratos.
+            <br/><br/>
+            Vamos começar!
         </p>
         <Button asChild className="mt-4">
-          <Link href="/dashboard">
-            Ir para o Dashboard
+          <Link href="/dashboard/propostas/nova">
+            Criar minha primeira Proposta de Serviço
             <ArrowRight className="ml-2 h-4 w-4" />
           </Link>
         </Button>
@@ -233,7 +241,7 @@ export default function ProfilePage() {
           <p className="text-muted-foreground">Siga os passos para completar seu cadastro e começar a usar.</p>
       </div>
        {!isSaved && (
-             <Alert variant="default" className="border-blue-200 bg-blue-50 text-blue-800 mb-6">
+            <Alert variant="default" className="border-blue-200 bg-blue-50 text-blue-800 mb-6">
                 <PartyPopper className="h-4 w-4 !text-blue-600" />
                 <AlertTitle>Bem-vindo(a) à Assistei!</AlertTitle>
                 <AlertDescription>
