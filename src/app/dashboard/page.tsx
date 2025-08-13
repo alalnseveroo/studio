@@ -92,7 +92,7 @@ export default async function DashboardPage() {
     const recentContracts = contracts?.slice(0, 5) || [];
     const recentCharges = charges?.slice(0, 5) || [];
     
-    const isProfileComplete = profile?.is_completed;
+    const isProfileComplete = !!profile?.is_completed;
     const showFreeTierAlert = profile?.plan_type === 'free_tier' && !isProfileComplete;
 
   return (
