@@ -3,6 +3,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import {
   Table,
   TableBody,
@@ -46,7 +47,6 @@ import { cn } from '@/lib/utils'
 import { useToast } from '@/hooks/use-toast'
 import { CreateContractModal } from '@/components/create-contract-modal'
 import { ConfigureBillingModal } from '@/components/configure-billing-modal'
-import { UpgradePlanModal } from '@/components/upgrade-plan-modal'
 
 
 const ITEMS_PER_PAGE = 10;
@@ -69,7 +69,6 @@ export default function ClientesPage() {
   const [isSheetOpen, setIsSheetOpen] = useState(false)
   const [isContractModalOpen, setIsContractModalOpen] = useState(false)
   const [isBillingModalOpen, setIsBillingModalOpen] = useState(false)
-  const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false)
   
   const [clients, setClients] = useState<Cliente[]>([])
   const [proposals, setProposals] = useState<Proposta[]>([])
@@ -85,6 +84,7 @@ export default function ClientesPage() {
   const [newlyCreatedClient, setNewlyCreatedClient] = useState<Cliente | null>(null);
 
   const { toast } = useToast()
+  const router = useRouter()
 
   const fetchInitialData = async () => {
     setIsLoading(true)
@@ -108,7 +108,7 @@ export default function ClientesPage() {
     const creditLimit = profile?.credits ?? 1;
 
     if (profile?.plan_type === 'free_tier' && clientCount >= creditLimit) {
-      setIsUpgradeModalOpen(true);
+      router.push('/dashboard/upgrade');
     } else {
       setIsSheetOpen(true);
     }
@@ -407,11 +407,6 @@ export default function ClientesPage() {
         onClose={() => setIsSheetOpen(false)}
         onSuccess={handleClientAdded}
       />
-
-       <UpgradePlanModal
-        isOpen={isUpgradeModalOpen}
-        onClose={() => setIsUpgradeModalOpen(false)}
-      />
       
       <CreateContractModal
           isOpen={isContractModalOpen}
@@ -508,3 +503,5 @@ export default function ClientesPage() {
     </>
   )
 }
+
+    
