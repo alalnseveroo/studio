@@ -92,7 +92,7 @@ export default async function DashboardPage() {
     const recentContracts = contracts?.slice(0, 5) || [];
     const recentCharges = charges?.slice(0, 5) || [];
     
-    const showFreeTierAlert = profile?.plan_type === 'free_tier';
+    const showFreeTierAlert = profile?.plan_type === 'free_tier' && !profile?.is_completed;
 
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 sm:gap-6 sm:p-10">
@@ -103,9 +103,13 @@ export default async function DashboardPage() {
        {showFreeTierAlert && (
           <Alert variant="default" className="bg-green-50 border-green-200">
             <Gift className="h-4 w-4 text-green-600" />
-            <AlertTitle className="text-green-800">Você recebeu 1 crédito de presente</AlertTitle>
+            <AlertTitle className="text-green-800">Você recebeu 1 crédito de presente!</AlertTitle>
             <AlertDescription className="text-green-700">
-                Isso quer dizer que pode usar o fluxo completo para seu primeiro cliente, incluindo cobranças automáticas, contratos e portal do cliente, para sempre.
+                Isso quer dizer que pode usar o fluxo completo para seu primeiro cliente. Para começar,{' '}
+                <Link href="/dashboard/settings/profile" className="font-bold underline hover:text-green-800">
+                    clique aqui para configurar seu perfil
+                </Link>
+                .
             </AlertDescription>
         </Alert>
        )}
