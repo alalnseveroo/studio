@@ -3,10 +3,10 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import {
   Bell,
   Inbox,
-  Package2,
   LogOut,
   Settings
 } from 'lucide-react'
@@ -97,9 +97,13 @@ function DashboardHeader({
         <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
             <div className="flex h-16 items-center justify-between px-10">
                 <div className="flex items-center gap-6">
-                    <Link href="/dashboard" className="flex items-center space-x-2">
-                        <Package2 className="h-6 w-6" />
-                        <span className="hidden font-bold sm:inline-block">Crivo</span>
+                    <Link href="/dashboard" className="flex items-center">
+                        <Image 
+                            src="https://pouynmrblzvwlhrfyins.supabase.co/storage/v1/object/public/icons/imags/Untitled%20folder/Crivo.png" 
+                            alt="Crivo Logo"
+                            width={80}
+                            height={30}
+                        />
                     </Link>
                     <MainNav />
                 </div>
