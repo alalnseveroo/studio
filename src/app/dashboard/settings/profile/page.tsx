@@ -198,7 +198,7 @@ export default function ProfilePage() {
           <PartyPopper className="h-4 w-4 !text-blue-600" />
           <AlertTitle>Bem-vindo(a) à Assistei!</AlertTitle>
           <AlertDescription>
-            Como presente de boas-vindas, você recebeu <strong>1 crédito</strong> para cadastrar seu primeiro cliente gratuitamente. Complete seu perfil para começar a usar.
+            Como presente de boas-vindas, você recebeu <strong>1 crédito</strong> para cadastrar seu primeiro cliente. Você poderá usar todos os benefícios da plataforma para este cliente, como geração de contratos e cobranças automáticas, para sempre. Complete seu perfil para começar.
           </AlertDescription>
         </Alert>
 
