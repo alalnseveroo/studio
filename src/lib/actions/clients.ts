@@ -4,7 +4,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
-import type { Cliente, Profile } from '@/lib/types';
+import type { Cliente, Profile, Proposta } from '@/lib/types';
 import { format } from 'date-fns'
 import { sendClientWebhook } from './webhook';
 import { addOrUpdateContact, sendTransactionalEmail } from '../brevo';
@@ -242,24 +242,47 @@ export async function updateClientFinancials(id: string, financials: {
     return { error: { message: 'Perfil da contratada não encontrado.' } };
   }
 
-
-  const { error } = await supabase
-    .from('clientes')
-    .update({
+  const financialUpdateData = {
       billing_status: financials.billing_status,
       proposal_id: financials.proposal_id,
       value: parsedValue,
       payment_day: parsedPaymentDay,
       first_charge_date: financials.first_charge_date || null,
       updated_at: new Date().toISOString(),
-    })
+    };
+
+  const { data: updatedClient, error } = await supabase
+    .from('clientes')
+    .update(financialUpdateData)
     .eq('id', id)
-    .eq('user_id', user.id);
+    .eq('user_id', user.id)
+    .select('*, propostas(*)')
+    .single();
 
   if (error) {
     console.error('Supabase error updating financials:', error);
     return { error: { message: `Não foi possível atualizar as configurações financeiras: ${error.message}` } };
   }
+  
+  // Enviar webhook com dados atualizados
+   try {
+    if (updatedClient) {
+        const portalUrl = new URL(`/portal/${updatedClient.id}`, process.env.NEXT_PUBLIC_SITE_URL).toString();
+        const providerName = providerProfile.full_name || providerProfile.company_name;
+
+        const dataWithContext = { 
+            ...updatedClient,
+            portal_url: portalUrl,
+            provider_name: providerName,
+            // Adiciona a proposta completa se existir
+            proposta: updatedClient.propostas 
+        };
+        await sendClientWebhook('update', dataWithContext);
+    }
+  } catch (webhookError: any) {
+    console.warn(`Falha ao enviar webhook de atualização financeira: ${webhookError.message}`);
+  }
+
   
   if (financials.send_charge_now && parsedValue && client.email) {
       const dueDate = new Date();
