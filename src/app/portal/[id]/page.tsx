@@ -79,7 +79,7 @@ export default function ClientPortalPage() {
 
   const fetchData = useCallback(async () => {
     if (!clientId) return
-    if (!isLoading) setIsLoading(true); // Show loader only on subsequent fetches
+    
     setError(null)
     
     try {
@@ -114,11 +114,12 @@ export default function ClientPortalPage() {
     } finally {
         setIsLoading(false)
     }
-  }, [clientId, isLoading])
+  }, [clientId])
 
   useEffect(() => {
+    setIsLoading(true);
     fetchData()
-  }, [clientId]) // Initial fetch
+  }, [fetchData]) // Initial fetch
 
   useEffect(() => {
     if (!clientId) return;
