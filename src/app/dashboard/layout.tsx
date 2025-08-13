@@ -173,7 +173,7 @@ export default function DashboardLayout({
                 onNavAttempt={handleNavigationAttempt}
                 isProfileComplete={isProfileComplete}
             />
-            <main className="flex-1 sm:p-10">{children}</main>
+            <main className="flex-1 p-4 sm:p-10">{children}</main>
         </div>
         
         <AlertDialog open={isProfileNeededDialogOpen} onOpenChange={setIsProfileNeededDialogOpen}>

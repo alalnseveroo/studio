@@ -92,11 +92,11 @@ export default async function DashboardPage() {
     const recentContracts = contracts?.slice(0, 5) || [];
     const recentCharges = charges?.slice(0, 5) || [];
     
-    // Mostra o alerta se não houver perfil ou se o perfil do plano gratuito estiver incompleto.
-    const showFreeTierAlert = !profile || (profile.plan_type === 'free_tier' && !profile.is_completed);
+    const isProfileComplete = profile?.is_completed;
+    const showFreeTierAlert = profile?.plan_type === 'free_tier' && !isProfileComplete;
 
   return (
-    <div className="flex flex-1 flex-col gap-4 p-4 sm:gap-6 sm:p-10">
+    <div className="flex flex-1 flex-col gap-4 sm:gap-6">
       <div className="flex items-center">
         <h1 className="text-lg font-semibold md:text-2xl">Dashboard</h1>
       </div>
@@ -180,12 +180,19 @@ export default async function DashboardPage() {
                 Os últimos contratos gerados no sistema.
               </CardDescription>
             </div>
-            <Button asChild size="sm" className="ml-auto gap-1">
-              <Link href="/dashboard/contratos">
+            {isProfileComplete ? (
+              <Button asChild size="sm" className="ml-auto gap-1">
+                <Link href="/dashboard/contratos">
+                  Ver Todos
+                  <ArrowUpRight className="h-4 w-4" />
+                </Link>
+              </Button>
+            ) : (
+              <Button size="sm" className="ml-auto gap-1" disabled>
                 Ver Todos
                 <ArrowUpRight className="h-4 w-4" />
-              </Link>
-            </Button>
+              </Button>
+            )}
           </CardHeader>
           <CardContent>
              {recentContracts.length > 0 ? (
@@ -234,11 +241,17 @@ export default async function DashboardPage() {
                 <div className="flex flex-col items-center justify-center gap-2 text-center py-12">
                     <FileSignature className="h-8 w-8 text-muted-foreground" />
                     <p className="text-sm text-muted-foreground">Nenhum contrato gerado ainda.</p>
-                     <Button asChild size="sm" className="mt-2">
-                        <Link href="/dashboard/contratos">
+                     {isProfileComplete ? (
+                        <Button asChild size="sm" className="mt-2">
+                           <Link href="/dashboard/contratos">
+                               Gerar Contrato
+                           </Link>
+                       </Button>
+                     ) : (
+                        <Button size="sm" className="mt-2" disabled>
                             Gerar Contrato
-                        </Link>
-                    </Button>
+                        </Button>
+                     )}
                 </div>
              )}
           </CardContent>
@@ -278,11 +291,17 @@ export default async function DashboardPage() {
                  <div className="flex flex-col items-center justify-center gap-2 text-center py-12">
                     <ClipboardList className="h-8 w-8 text-muted-foreground" />
                     <p className="text-sm text-muted-foreground">Nenhuma cobrança encontrada.</p>
-                     <Button asChild size="sm" className="mt-2">
-                        <Link href="/dashboard/clientes">
+                     {isProfileComplete ? (
+                        <Button asChild size="sm" className="mt-2">
+                            <Link href="/dashboard/clientes">
+                                Adicionar Cliente
+                            </Link>
+                        </Button>
+                     ) : (
+                        <Button size="sm" className="mt-2" disabled>
                             Adicionar Cliente
-                        </Link>
-                    </Button>
+                        </Button>
+                     )}
                 </div>
             )}
           </CardContent>
