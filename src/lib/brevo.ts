@@ -3,6 +3,7 @@
 
 import * as Brevo from '@getbrevo/brevo';
 import { createClient } from './supabase/server';
+import { createClient as createEdgeClient } from '@supabase/supabase-js';
 
 // Configuração da API da Brevo
 const apiInstance = new Brevo.TransactionalEmailsApi();
@@ -55,15 +56,22 @@ export async function addOrUpdateContact(email: string, attributes: { [key: stri
 
 /**
  * Envia um e-mail transacional usando um template da Brevo.
+ * Pode ser chamado de Server Actions ou Edge Functions.
  * @param toEmail - O e-mail do destinatário.
  * @param templateId - O ID do template transacional na Brevo.
  * @param params - Parâmetros para preencher o template.
  * @param userId - O ID do usuário logado (contratada) para buscar o nome do remetente.
+ * @param supabaseClient - Instância opcional do cliente supabase para uso em Edge Functions.
  */
-export async function sendTransactionalEmail({ toEmail, templateId, params, userId }: EmailParams) {
+export async function sendTransactionalEmail(
+    { toEmail, templateId, params, userId }: EmailParams,
+    supabaseClient?: any 
+) {
     if (!BREVO_API_KEY) throw new Error("A chave da API da Brevo não está configurada.");
-
-    const supabase = createClient();
+    
+    // Usa o cliente fornecido (de Edge) ou cria um novo (de Server)
+    const supabase = supabaseClient || createClient();
+    
     let providerName = 'Sua Assistente Virtual'; // Valor padrão
     
     // O nome da contratada já deve vir nos params, mas buscamos como fallback.
@@ -76,9 +84,10 @@ export async function sendTransactionalEmail({ toEmail, templateId, params, user
             
         if (profileError) {
             console.error("Erro ao buscar perfil da contratada:", profileError);
-            throw new Error("Não foi possível buscar os dados da contratada para o envio do e-mail.");
+            // Não lança erro, continua com o nome padrão
+        } else {
+             providerName = providerProfile?.full_name || providerProfile?.company_name || 'Sua Assistente Virtual';
         }
-        providerName = providerProfile?.full_name || providerProfile?.company_name || 'Sua Assistente Virtual';
     } else {
         providerName = params.CONTRATADA_NOME;
     }

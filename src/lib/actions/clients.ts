@@ -263,7 +263,7 @@ export async function updateClientFinancials(id: string, financials: {
       try {
           await sendTransactionalEmail({
               toEmail: client.email,
-              templateId: 63,
+              templateId: 63, // Lembrete Manual / Cobrança imediata
               params: {
                   CLIENTE_NOME: client.full_name || client.company_name,
                   CONTRATADA_NOME: providerProfile.full_name || providerProfile.company_name,
