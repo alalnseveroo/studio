@@ -27,7 +27,8 @@ const PlanCard = ({
     features,
     selectedPlan,
     onSelect,
-    isFeatured
+    isFeatured,
+    className
 }: { 
     planId: string,
     title: string, 
@@ -38,38 +39,42 @@ const PlanCard = ({
     features: string[], 
     selectedPlan: string,
     onSelect: (plan: string) => void,
-    isFeatured?: boolean
+    isFeatured?: boolean,
+    className?: string
 }) => {
     const isSelected = selectedPlan === planId;
     return (
-        <label
-            htmlFor={planId}
+        <div
+            onClick={() => onSelect(planId)}
             className={cn(
-                "block cursor-pointer rounded-xl border-2 p-5 transition-all",
-                isSelected ? "border-primary shadow-lg" : "border-border"
+                "cursor-pointer rounded-xl border-2 p-5 transition-all h-full flex flex-col",
+                isSelected ? "border-primary shadow-lg" : "border-border",
+                className
             )}
         >
-            <div className="flex items-center justify-between">
-                <h3 className="font-bold text-lg">{title}</h3>
+            <div className="flex items-start justify-between">
+                <div>
+                    <h3 className="font-bold text-base">{title}</h3>
+                    <p className="text-xs text-muted-foreground mt-1">{description}</p>
+                </div>
                 <RadioGroup>
-                    <RadioGroupItem value={planId} id={planId} checked={isSelected} onClick={() => onSelect(planId)} />
+                    <RadioGroupItem value={planId} id={planId} checked={isSelected} />
                 </RadioGroup>
             </div>
-            <p className="text-sm text-muted-foreground mt-1">{description}</p>
-            <div className="mt-4">
-                <span className="text-3xl font-bold">{price}</span>
-                <span className="text-sm text-muted-foreground">{priceSuffix}</span>
+            <div className="mt-3">
+                <span className="text-2xl font-bold">{price}</span>
+                <span className="text-xs text-muted-foreground ml-1">{priceSuffix}</span>
             </div>
-            <p className="text-sm text-muted-foreground mt-2">{bodyText}</p>
-             <div className="space-y-2.5 pt-4">
+            <p className="text-xs text-muted-foreground mt-2 flex-grow">{bodyText}</p>
+             <div className="space-y-2 pt-4 mt-auto">
                 {features.map((feature, index) => (
-                    <div key={index} className="flex items-start gap-2 text-sm">
-                        <Check className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0"/>
+                    <div key={index} className="flex items-start gap-2 text-xs">
+                        <Check className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0"/>
                         <span>{feature}</span>
                     </div>
                 ))}
             </div>
-        </label>
+        </div>
     )
 }
 
@@ -112,44 +117,49 @@ export function UpgradePlanModal({ isOpen, onClose }: UpgradePlanModalProps) {
                     </div>
                 </div>
                 <div className="flex flex-col justify-center p-8 md:p-16 bg-background">
-                    <div className="space-y-6 w-full max-w-md mx-auto">
-                        <PlanCard
-                            planId="flexible"
-                            title="Plano Flexível"
-                            description="Ideal para quem está começando ou prefere não ter um custo fixo mensal."
-                            price="R$ 10,00"
-                            priceSuffix="/mês, por cliente ativo"
-                            bodyText="Pague apenas pelos clientes que assinou contrato ou você coloca no piloto automático. Cadastrar contatos na sua base é sempre gratuito."
-                            features={[
-                                "Seu 1º cliente é grátis, sempre!",
-                                "Cobrança automática e notas fiscais",
-                                "Portal do Cliente.",
-                                "Contratos completos",
-                                "Cancele a qualquer momento, sem burocracia."
-                            ]}
-                            selectedPlan={selectedPlan}
-                            onSelect={setSelectedPlan}
-                        />
-                        <PlanCard
-                            planId="professional"
-                            title="Plano Profissional"
-                            description="Perfeito para quem já tem uma carteira de clientes e quer escalar sem limites."
-                            price="R$ 29,90"
-                            priceSuffix="/mês"
-                            bodyText="Tudo ilimitado. A tranquilidade de um custo fixo para crescer o seu negócio sem surpresas."
-                            features={[
-                                "Clientes ILIMITADOS na gestão automática.",
-                                "Contratos e Propostas ILIMITADOS.",
-                                "Acesso a todas as funcionalidades premium.",
-                                "O melhor custo-benefício a partir de 3 clientes."
-                            ]}
-                            selectedPlan={selectedPlan}
-                            onSelect={setSelectedPlan}
-                            isFeatured
-                        />
-                         <Button size="lg" className="w-full text-base py-6">
-                            {selectedPlan === 'flexible' ? 'Continuar com o Plano Flexível' : 'Assinar Plano Profissional'}
-                        </Button>
+                    <div className="w-full max-w-2xl mx-auto">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
+                            <PlanCard
+                                planId="flexible"
+                                title="Plano Flexível"
+                                description="Ideal para quem está começando."
+                                price="R$ 10,00"
+                                priceSuffix="/mês, por cliente"
+                                bodyText="Pague apenas pelos clientes que você gerencia. Cadastrar contatos é sempre gratuito."
+                                features={[
+                                    "Seu 1º cliente é grátis, sempre!",
+                                    "Cobrança automática",
+                                    "Portal do Cliente",
+                                    "Contratos e Propostas"
+                                ]}
+                                selectedPlan={selectedPlan}
+                                onSelect={setSelectedPlan}
+                                className="bg-[#ddd6fe]"
+                            />
+                            <PlanCard
+                                planId="professional"
+                                title="Plano Profissional"
+                                description="Para quem quer escalar sem limites."
+                                price="R$ 29,90"
+                                priceSuffix="/mês"
+                                bodyText="Tudo ilimitado. Custo fixo para crescer seu negócio sem surpresas."
+                                features={[
+                                    "Clientes ILIMITADOS",
+                                    "Contratos ILIMITADOS",
+                                    "Acesso a todas as funcionalidades",
+                                    "Melhor custo-benefício a partir de 3 clientes"
+                                ]}
+                                selectedPlan={selectedPlan}
+                                onSelect={setSelectedPlan}
+                                isFeatured
+                                className="bg-[#bbf7d0]"
+                            />
+                        </div>
+                        <div className="mt-6">
+                            <Button size="lg" className="w-full text-base py-6">
+                                {selectedPlan === 'flexible' ? 'Continuar com o Plano Flexível' : 'Assinar Plano Profissional'}
+                            </Button>
+                        </div>
                     </div>
                 </div>
             </div>
