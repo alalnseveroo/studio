@@ -1,4 +1,5 @@
 
+
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
@@ -335,7 +336,7 @@ export default function ClienteEditPage() {
   
   return (
     <FormProvider {...methods}>
-      <div className="flex flex-1 flex-col gap-6 p-4 sm:p-6">
+      <div className="flex flex-1 flex-col gap-6 p-4 sm:p-10">
         <div className="flex items-center gap-4">
              <Button asChild variant="outline" size="icon" className="h-7 w-7">
               <Link href="/dashboard/clientes">
@@ -899,3 +900,4 @@ function ChargeHistory({ charges, onMarkAsPaid }: { charges: Cobranca[], onMarkA
     
 
     
+

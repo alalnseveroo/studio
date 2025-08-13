@@ -1,4 +1,5 @@
 
+
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -216,7 +217,7 @@ export default function ClientesPage() {
 
   return (
     <>
-      <div className="flex flex-1 flex-col gap-4 p-4 sm:gap-6 sm:p-6">
+      <div className="flex flex-1 flex-col gap-4 p-4 sm:gap-6 sm:p-10">
         <div className="flex items-center">
           <h1 className="text-lg font-semibold md:text-2xl">Clientes</h1>
           <div className="ml-auto flex items-center gap-2">

@@ -1,4 +1,5 @@
 
+
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
@@ -65,7 +66,7 @@ export default function PropostaDetailPage() {
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-4 p-4 sm:gap-6 sm:p-6">
+    <div className="flex flex-1 flex-col gap-4 p-4 sm:gap-6 sm:p-10">
       <div className="flex items-center gap-4">
          <Button asChild variant="outline" size="icon" className="h-7 w-7">
             <Link href="/dashboard/propostas">
