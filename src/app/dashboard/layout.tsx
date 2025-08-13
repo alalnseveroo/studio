@@ -15,6 +15,7 @@ import {
   LogOut,
   ChevronsUpDown,
   DollarSign,
+  Inbox,
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 
@@ -28,18 +29,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuItem,
-  SidebarMenuButton,
-  SidebarProvider,
-  SidebarFooter,
-  SidebarTrigger,
-  SidebarInset,
-} from "@/components/ui/sidebar"
 import { signOut } from '@/lib/actions/auth'
 import { getProfile } from '@/lib/actions/profile'
 import type { Profile } from '@/lib/types'
@@ -65,18 +54,20 @@ function MainNav() {
     }
 
     return (
-        <SidebarMenu>
+        <nav className="hidden md:flex items-center space-x-6 text-sm font-medium">
             {navItems.map((item) => (
-            <SidebarMenuItem key={item.href}>
-                <Link href={item.href}>
-                    <SidebarMenuButton tooltip={item.label} isActive={isActive(item.href, item.exact)}>
-                        <item.icon />
-                        <span>{item.label}</span>
-                    </SidebarMenuButton>
+                <Link
+                    key={item.href}
+                    href={item.href}
+                    className={cn(
+                        "transition-colors hover:text-primary",
+                        isActive(item.href, item.exact) ? "text-primary" : "text-muted-foreground"
+                    )}
+                >
+                    {item.label}
                 </Link>
-            </SidebarMenuItem>
             ))}
-        </SidebarMenu>
+        </nav>
     )
 }
 
@@ -142,9 +133,26 @@ function DashboardHeader() {
      }, [])
 
      return (
-        <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
-            <div className="ml-auto flex items-center gap-2">
-                {userProfile ? <UserNav user={userProfile} /> : <div className="size-10 rounded-full bg-muted animate-pulse" />}
+        <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+            <div className="container flex h-16 items-center">
+                <div className="mr-4 hidden md:flex">
+                    <Link href="/dashboard" className="mr-6 flex items-center space-x-2">
+                        <Package2 className="h-6 w-6" />
+                        <span className="hidden font-bold sm:inline-block">Virtei</span>
+                    </Link>
+                    <MainNav />
+                </div>
+                <div className="ml-auto flex items-center gap-4">
+                    <Button variant="ghost" size="icon">
+                        <Bell className="h-5 w-5" />
+                        <span className="sr-only">Notificações</span>
+                    </Button>
+                    <Button variant="ghost" size="icon">
+                        <Inbox className="h-5 w-5" />
+                        <span className="sr-only">Caixa de Entrada</span>
+                    </Button>
+                    {userProfile ? <UserNav user={userProfile} /> : <div className="size-10 rounded-full bg-muted animate-pulse" />}
+                </div>
             </div>
         </header>
      )
@@ -157,16 +165,9 @@ export default function DashboardLayout({
   children: React.ReactNode
 }) {
   return (
-    <SidebarProvider>
-        <Sidebar side="left" variant="sidebar" collapsible="icon" className="bg-sidebar">
-             <SidebarContent className="p-4">
-                <MainNav />
-            </SidebarContent>
-        </Sidebar>
-        <SidebarInset>
-            <DashboardHeader />
-            <main className="flex flex-1 flex-col">{children}</main>
-        </SidebarInset>
-    </SidebarProvider>
+    <div className="flex min-h-screen flex-col">
+        <DashboardHeader />
+        <main className="flex-1 container py-6">{children}</main>
+    </div>
   )
 }
