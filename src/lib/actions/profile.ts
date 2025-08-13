@@ -4,6 +4,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import type { ProfileFormData } from '@/app/dashboard/settings/profile/page';
+import { sendProfileWebhook } from './webhook';
 
 const AVATAR_USER_MALE = 'https://pouynmrblzvwlhrfyins.supabase.co/storage/v1/object/public/icons/AvatarUser/avatar-assist-homem.png';
 const AVATAR_USER_FEMALE = 'https://pouynmrblzvwlhrfyins.supabase.co/storage/v1/object/public/icons/AvatarUser/avatar-assist-muler.png';
@@ -37,13 +38,22 @@ export async function saveProfile(formData: ProfileFormData & { is_completed: bo
     avatar_url: avatarUrl,
     updated_at: new Date().toISOString(),
     is_completed: formData.is_completed,
+    email: user.email, // Incluindo email para o webhook
   };
 
-  const { error } = await supabase.from('profiles').upsert(profileData)
+  const { data, error } = await supabase.from('profiles').upsert(profileData).select().single();
 
   if (error) {
     console.error('Supabase error:', error)
     return { error: { message: `Não foi possível salvar o perfil: ${error.message}` } }
+  }
+  
+  try {
+      if(data) {
+          await sendProfileWebhook('update', data);
+      }
+  } catch (webhookError: any) {
+      console.warn(`Falha ao enviar webhook de atualização de perfil: ${webhookError.message}`);
   }
 
   return { error: null }
@@ -58,10 +68,6 @@ export async function getProfile(userId?: string) {
     const { data: { user } } = await supabase.auth.getUser();
 
     if (userId) {
-        // This case is for when an admin might be fetching another user's profile.
-        // For now, we don't have an admin role, so we can't get other users' emails securely on the server
-        // without the admin client, which was causing issues.
-        // We will assume for now we only fetch the logged-in user's profile.
         targetUserId = userId;
     } else if (user) {
         targetUserId = user.id;
@@ -83,12 +89,10 @@ export async function getProfile(userId?: string) {
         return { data: null, error: { message: 'Erro ao buscar perfil.' } };
     }
     
-    // If we're fetching the logged-in user's profile, we already have the email.
     if (!email && user && user.id === targetUserId) {
         email = user.email;
     }
 
-    // Combine profile data with user email
     const profileWithEmail = profileData ? { ...profileData, email } : { id: targetUserId, email };
 
     return { data: profileWithEmail, error: null };
