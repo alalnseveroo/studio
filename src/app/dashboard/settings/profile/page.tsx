@@ -1,8 +1,7 @@
 
-
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
@@ -11,71 +10,97 @@ import { Input } from '@/components/ui/input'
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
 } from '@/components/ui/form'
-import { Switch } from '@/components/ui/switch'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { CheckCircle, AlertTriangle, Loader2, ArrowLeft, PartyPopper } from 'lucide-react'
+import { CheckCircle, AlertTriangle, Loader2, ArrowLeft, ArrowRight, User, Building, MapPin, PencilLine, PartyPopper, Search } from 'lucide-react'
 import SignatureCanvas from 'react-signature-canvas'
 import { saveProfile, getProfile } from '@/lib/actions/profile'
 import { useToast } from '@/hooks/use-toast'
 import type { Profile } from '@/lib/types'
 import Link from 'next/link'
 
+const STEPS = {
+  TYPE: 1,
+  PERSONAL: 2,
+  COMPANY: 3,
+  ADDRESS: 4,
+  SIGNATURE: 5,
+};
+
 const profileSchema = z.object({
-  personType: z.enum(['cpf', 'cnpj']),
+  personType: z.enum(['cpf', 'cnpj'], { required_error: "Selecione o tipo de pessoa."}),
   sex: z.enum(['male', 'female'], { required_error: 'Por favor, selecione o sexo.' }),
+  
+  // PF Fields
+  fullName: z.string().min(3, 'O nome completo é obrigatório.'),
+  nationality: z.string().min(3, 'A nacionalidade é obrigatória.'),
+  civilStatus: z.string().min(3, 'O estado civil é obrigatório.'),
+  profession: z.string().min(3, 'A profissão é obrigatória.'),
+  rg: z.string().min(5, 'O RG é obrigatório.'),
+  cpf: z.string().min(11, 'O CPF é obrigatório.'),
+  
   // PJ Fields
   companyName: z.string().optional(),
   cnpj: z.string().optional(),
-  // PF Fields
-  fullName: z.string().optional(),
-  nationality: z.string().optional(),
-  civilStatus: z.string().optional(),
-  profession: z.string().optional(),
-  rg: z.string().optional(),
-  cpf: z.string().optional(),
-  // Common field
-  address: z.string().optional(),
+  
+  // Address Fields
+  cep: z.string().min(8, 'O CEP é obrigatório.'),
+  street: z.string().min(3, 'A rua é obrigatória.'),
+  number: z.string().min(1, 'O número é obrigatório.'),
+  complement: z.string().optional(),
+  neighborhood: z.string().min(3, 'O bairro é obrigatório.'),
+  city: z.string().min(3, 'A cidade é obrigatória.'),
+  state: z.string().min(2, 'O estado é obrigatório.'),
+
+  // Signature
   signature: z.string().optional(),
 }).refine(data => {
-  if (data.personType === 'cnpj') {
-    return !!data.companyName && !!data.cnpj && !!data.address;
-  }
-  return !!data.fullName && !!data.nationality && !!data.civilStatus && !!data.profession && !!data.rg && !!data.cpf && !!data.address;
+    if (data.personType === 'cnpj') {
+        return !!data.companyName && !!data.cnpj;
+    }
+    return true;
 }, {
-  message: "Preencha todos os campos obrigatórios.",
-  path: ["form"],
+    message: "Para Pessoa Jurídica, Nome da Empresa e CNPJ são obrigatórios.",
+    path: ["companyName"],
 });
+
 
 export type ProfileFormData = z.infer<typeof profileSchema>;
 
 export default function ProfilePage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSaved, setIsSaved] = useState(false)
+  const [currentStep, setCurrentStep] = useState(STEPS.TYPE);
   const sigCanvas = useRef<SignatureCanvas>(null);
   const { toast } = useToast()
 
   const form = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
+    mode: 'onBlur',
     defaultValues: {
       personType: 'cpf',
       sex: undefined,
-      companyName: '',
-      cnpj: '',
       fullName: '',
       nationality: '',
       civilStatus: '',
       profession: '',
       rg: '',
       cpf: '',
-      address: '',
+      companyName: '',
+      cnpj: '',
+      cep: '',
+      street: '',
+      number: '',
+      complement: '',
+      neighborhood: '',
+      city: '',
+      state: '',
       signature: '',
     },
   })
@@ -83,28 +108,37 @@ export default function ProfilePage() {
   useEffect(() => {
     async function fetchProfile() {
       setIsLoading(true);
-      const { data, error } = await getProfile();
+      const { data } = await getProfile();
       if (data) {
         if(data.is_completed) {
             setIsSaved(true)
-        }
-        form.reset({
-          personType: data.person_type || 'cpf',
-          sex: data.sex,
-          companyName: data.company_name || '',
-          cnpj: data.cnpj || '',
-          fullName: data.full_name || '',
-          nationality: data.nationality || '',
-          civilStatus: data.civil_status || '',
-          profession: data.profession || '',
-          rg: data.rg || '',
-          cpf: data.cpf || '',
-          address: data.address || '',
-        });
-        if (data.signature) {
-           setTimeout(() => {
-               sigCanvas.current?.fromDataURL(data.signature as string)
-           }, 100)
+        } else {
+            // Se já tem dados mas não completou, pula para o passo que falta
+            const parsed = profileSchema.safeParse(data);
+            if (parsed.success) {
+                setCurrentStep(STEPS.SIGNATURE);
+            }
+            form.reset({
+                personType: data.person_type || 'cpf',
+                sex: data.sex,
+                fullName: data.full_name || '',
+                nationality: data.nationality || '',
+                civilStatus: data.civil_status || '',
+                profession: data.profession || '',
+                rg: data.rg || '',
+                cpf: data.cpf || '',
+                companyName: data.company_name || '',
+                cnpj: data.cnpj || '',
+                cep: data.address?.match(/CEP: ([\d-]+)/)?.[1].replace(/\D/g, '') || '',
+                street: data.address?.split(',')[0] || '',
+                number: data.address?.split(',')[1]?.trim().split(' ')[0] || '',
+                neighborhood: data.address?.split('-')[1]?.split(',')[0]?.trim() || '',
+                city: data.address?.split(',').slice(-2, -1)[0]?.trim() || '',
+                state: data.address?.split('-').slice(-1)[0]?.trim().split(',')[0] || '',
+            });
+             if (data.signature) {
+                setTimeout(() => sigCanvas.current?.fromDataURL(data.signature as string), 100);
+            }
         }
       }
       setIsLoading(false);
@@ -112,298 +146,387 @@ export default function ProfilePage() {
     fetchProfile();
   }, [form]);
 
+  const personType = form.watch('personType');
+  const maxSteps = personType === 'cpf' ? 4 : 5; // PF: Type, Personal, Address, Signature. PJ: Type, Personal, Company, Address, Signature
+  
+  const stepFields: Record<number, (keyof ProfileFormData)[]> = {
+    [STEPS.TYPE]: ['personType'],
+    [STEPS.PERSONAL]: ['sex', 'fullName', 'nationality', 'civilStatus', 'profession', 'rg', 'cpf'],
+    [STEPS.COMPANY]: ['companyName', 'cnpj'],
+    [STEPS.ADDRESS]: ['cep', 'street', 'number', 'neighborhood', 'city', 'state'],
+    [STEPS.SIGNATURE]: ['signature'],
+  };
 
-  const personType = form.watch('personType')
+  const getStepForPersonType = (step: number) => {
+    if (personType === 'cpf') {
+      if (step === STEPS.COMPANY) return STEPS.ADDRESS;
+      if (step === STEPS.ADDRESS) return STEPS.SIGNATURE;
+    }
+    return step;
+  }
+
+  const handleNext = async () => {
+    const fieldsToValidate = stepFields[currentStep];
+    const isValid = await form.trigger(fieldsToValidate);
+
+    if (isValid) {
+      if (currentStep === STEPS.SIGNATURE) {
+        await onSubmit(form.getValues());
+      } else {
+        setCurrentStep(prev => getStepForPersonType(prev + 1));
+      }
+    }
+  }
+
+  const handleBack = () => {
+    if (currentStep > STEPS.TYPE) {
+      setCurrentStep(prev => {
+        if (personType === 'cpf' && prev === STEPS.ADDRESS) return STEPS.PERSONAL;
+        return prev - 1
+      });
+    }
+  }
 
   const onSubmit = async (values: ProfileFormData) => {
-    setIsLoading(true)
+    setIsLoading(true);
 
     const signatureData = sigCanvas.current?.getTrimmedCanvas().toDataURL('image/png');
     if (!signatureData || sigCanvas.current?.isEmpty()) {
         form.setError('signature', { type: 'manual', message: 'A assinatura é obrigatória.'})
-        setIsLoading(false)
+        setIsLoading(false);
         return;
     }
+    
+    // Constrói o endereço completo
+    const address = `${values.street}, ${values.number}${values.complement ? `, ${values.complement}` : ''} - ${values.neighborhood}, ${values.city} - ${values.state}, CEP: ${values.cep}`;
 
-    const data = { ...values, signature: signatureData, is_completed: true };
+    const data = { ...values, signature: signatureData, address, is_completed: true };
     
     const { error } = await saveProfile(data);
 
-    setIsLoading(false)
+    setIsLoading(false);
 
     if (error) {
-      toast({
-        variant: 'destructive',
-        title: 'Erro ao Salvar Perfil',
-        description: error.message,
-      })
+      toast({ variant: 'destructive', title: 'Erro ao Salvar Perfil', description: error.message });
     } else {
-      toast({
-        title: 'Perfil Salvo!',
-        description: 'Seus dados foram salvos e agora você pode gerar contratos.',
-      })
-      setIsSaved(true)
+      toast({ title: 'Perfil Salvo!', description: 'Seus dados foram salvos e agora você pode usar o sistema.' });
+      setIsSaved(true);
     }
   }
 
-  const clearSignature = () => {
-    sigCanvas.current?.clear();
-    form.setValue('signature', '');
-  }
-
   if (isLoading) {
-    return (
-      <div className="flex flex-1 flex-col gap-4 p-4 sm:gap-6 sm:p-10 items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin" />
-      </div>
-    )
+    return <div className="flex flex-1 items-center justify-center p-6"><Loader2 className="h-8 w-8 animate-spin" /></div>
   }
 
   if (isSaved) {
     return (
-      <div className="flex flex-1 flex-col gap-4 p-4 sm:gap-6 sm:p-10">
-        <div className="flex items-center gap-4">
-            <h1 className="text-lg font-semibold md:text-2xl">Perfil da Contratada</h1>
-        </div>
-        <Alert variant="default" className="bg-green-50 border-green-200">
-            <CheckCircle className="h-4 w-4 !text-green-600" />
-            <AlertTitle className="text-green-800">Perfil Completo!</AlertTitle>
-            <AlertDescription className="text-green-700">
-                Seus dados foram salvos. O sistema está liberado, agora você já pode gerar e assinar contratos.
-            </AlertDescription>
-        </Alert>
+      <div className="flex flex-1 flex-col items-center justify-center gap-4 p-4 text-center">
+        <CheckCircle className="h-16 w-16 text-green-500" />
+        <h1 className="text-2xl font-bold">Perfil Concluído!</h1>
+        <p className="max-w-md text-muted-foreground">
+          Seus dados foram salvos com sucesso. Agora você tem acesso completo a todas as funcionalidades da plataforma.
+        </p>
         <Button asChild className="mt-4">
-            <Link href="/dashboard">
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Voltar para o Dashboard
-            </Link>
+          <Link href="/dashboard">
+            Ir para o Dashboard
+            <ArrowRight className="ml-2 h-4 w-4" />
+          </Link>
         </Button>
       </div>
-    )
+    );
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-4 p-4 sm:gap-6 sm:p-10">
-      <div className="flex items-center gap-4">
-        <h1 className="text-lg font-semibold md:text-2xl">Perfil da Contratada</h1>
+    <div className="w-full max-w-2xl mx-auto p-4 sm:p-6">
+      <div className="mb-8 text-center">
+          <h1 className="text-2xl font-bold md:text-3xl">Configuração do Perfil</h1>
+          <p className="text-muted-foreground">Siga os passos para completar seu cadastro e começar a usar.</p>
       </div>
-       
-        <Alert variant="default" className="border-blue-200 bg-blue-50 text-blue-800">
-          <PartyPopper className="h-4 w-4 !text-blue-600" />
-          <AlertTitle>Bem-vindo(a) à Assistei!</AlertTitle>
-          <AlertDescription>
-            Como presente de boas-vindas, você recebeu <strong>1 crédito</strong> para cadastrar seu primeiro cliente. Você poderá usar todos os benefícios da plataforma para este cliente, como geração de contratos e cobranças automáticas, para sempre. Complete seu perfil para começar.
-          </AlertDescription>
-        </Alert>
+       {!isSaved && (
+             <Alert variant="default" className="border-blue-200 bg-blue-50 text-blue-800 mb-6">
+                <PartyPopper className="h-4 w-4 !text-blue-600" />
+                <AlertTitle>Bem-vindo(a) à Assistei!</AlertTitle>
+                <AlertDescription>
+                    Como presente de boas-vindas, você recebeu <strong>1 crédito</strong> para cadastrar seu primeiro cliente. Você poderá usar todos os benefícios da plataforma para este cliente, como geração de contratos e cobranças automáticas, para sempre. Complete seu perfil para começar.
+                </AlertDescription>
+            </Alert>
+       )}
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-          <Card className="bg-white">
-            <CardHeader>
-              <CardTitle>Tipo de Contratação</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <FormField
-                control={form.control}
-                name="personType"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                    <div className="space-y-0.5">
-                      <FormLabel className="text-base">
-                        Selecione o tipo de pessoa
-                      </FormLabel>
-                      <FormDescription>
-                        Você está atuando como Pessoa Física (CPF) ou Pessoa Jurídica (CNPJ)?
-                      </FormDescription>
-                    </div>
-                    <FormControl>
-                      <div className="flex items-center space-x-2">
-                        <span className={personType === 'cpf' ? 'font-bold' : ''}>CPF</span>
-                        <Switch
-                          checked={field.value === 'cnpj'}
-                          onCheckedChange={(checked) => field.onChange(checked ? 'cnpj' : 'cpf')}
-                        />
-                        <span className={personType === 'cnpj' ? 'font-bold' : ''}>CNPJ</span>
-                      </div>
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-               <FormField
-                  control={form.control}
-                  name="sex"
-                  render={({ field }) => (
-                    <FormItem className="space-y-3 rounded-lg border p-4">
-                      <FormLabel className="text-base">Sexo</FormLabel>
-                       <FormDescription>
-                        Esta informação será usada para definir seu avatar na plataforma.
-                      </FormDescription>
-                      <FormControl>
-                        <RadioGroup
-                          onValueChange={field.onChange}
-                          value={field.value}
-                          className="flex space-x-4 pt-2"
-                        >
-                          <FormItem className="flex items-center space-x-2 space-y-0">
-                            <FormControl>
-                              <RadioGroupItem value="female" />
-                            </FormControl>
-                            <FormLabel className="font-normal">Feminino</FormLabel>
-                          </FormItem>
-                          <FormItem className="flex items-center space-x-2 space-y-0">
-                            <FormControl>
-                              <RadioGroupItem value="male" />
-                            </FormControl>
-                            <FormLabel className="font-normal">Masculino</FormLabel>
-                          </FormItem>
-                        </RadioGroup>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-            </CardContent>
-          </Card>
-          
-          {personType === 'cnpj' && (
-             <Card className="bg-white">
-                <CardHeader>
-                    <CardTitle>Dados da Pessoa Jurídica</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <FormField control={form.control} name="companyName" render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Nome da Empresa ou Nome Completo (MEI)</FormLabel>
-                            <FormControl><Input placeholder="Minha Empresa LTDA" {...field} value={field.value || ''} /></FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )} />
-                    <FormField control={form.control} name="cnpj" render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>CNPJ</FormLabel>
-                            <FormControl><Input placeholder="00.000.000/0001-00" {...field} value={field.value || ''} /></FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )} />
-                     <FormField control={form.control} name="address" render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Endereço Completo</FormLabel>
-                            <FormControl><Input placeholder="Rua, Número, Bairro, CEP, Cidade, Estado" {...field} value={field.value || ''} /></FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )} />
-                </CardContent>
-             </Card>
-          )}
+        <form className="space-y-8">
+            {currentStep === STEPS.TYPE && <TypeStep form={form} />}
+            {currentStep === STEPS.PERSONAL && <PersonalStep form={form} />}
+            {personType === 'cnpj' && currentStep === STEPS.COMPANY && <CompanyStep form={form} />}
+            {currentStep === getStepForPersonType(STEPS.ADDRESS) && <AddressStep form={form} />}
+            {currentStep === getStepForPersonType(STEPS.SIGNATURE) && <SignatureStep form={form} sigCanvas={sigCanvas} />}
 
-          {personType === 'cpf' && (
-            <Card className="bg-white">
-                <CardHeader>
-                    <CardTitle>Dados da Pessoa Física</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                     <FormField control={form.control} name="fullName" render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Nome Completo</FormLabel>
-                            <FormControl><Input placeholder="Seu nome completo" {...field} value={field.value || ''} /></FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )} />
-                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <FormField control={form.control} name="nationality" render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Nacionalidade</FormLabel>
-                                <FormControl><Input placeholder="Brasileira" {...field} value={field.value || ''} /></FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )} />
-                        <FormField control={form.control} name="civilStatus" render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Estado Civil</FormLabel>
-                                <FormControl><Input placeholder="Solteiro(a)" {...field} value={field.value || ''} /></FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )} />
-                     </div>
-                     <FormField control={form.control} name="profession" render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Profissão</FormLabel>
-                            <FormControl><Input placeholder="Assistente Virtual" {...field} value={field.value || ''} /></FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )} />
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <FormField control={form.control} name="rg" render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>RG</FormLabel>
-                                <FormControl><Input placeholder="00.000.000-0" {...field} value={field.value || ''} /></FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )} />
-                        <FormField control={form.control} name="cpf" render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>CPF</FormLabel>
-                                <FormControl><Input placeholder="000.000.000-00" {...field} value={field.value || ''} /></FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )} />
-                    </div>
-                     <FormField control={form.control} name="address" render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Endereço Completo</FormLabel>
-                            <FormControl><Input placeholder="Rua, Número, Bairro, CEP, Cidade, Estado" {...field} value={field.value || ''} /></FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )} />
-                </CardContent>
-            </Card>
-          )}
-
-          <Card className="bg-white">
-            <CardHeader>
-                <CardTitle>Assinatura</CardTitle>
-                <CardDescription>Desenhe sua assinatura no campo abaixo. Ela será usada para assinar os contratos digitalmente.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <FormField
-                    control={form.control}
-                    name="signature"
-                    render={({ field }) => (
-                    <FormItem>
-                        <FormControl>
-                            <div className="w-full h-48 rounded-md border border-input bg-background">
-                                <SignatureCanvas 
-                                    ref={sigCanvas}
-                                    penColor='black'
-                                    canvasProps={{className: 'w-full h-full'}}
-                                    onEnd={() => field.onChange(sigCanvas.current?.toDataURL())}
-                                />
-                            </div>
-                        </FormControl>
-                        <FormMessage />
-                    </FormItem>
-                 )} />
-                 <Button type="button" variant="outline" size="sm" onClick={clearSignature} className="mt-2">
-                    Limpar Assinatura
-                 </Button>
-            </CardContent>
-          </Card>
-          
-          <Alert variant="destructive">
-            <AlertTriangle className="h-4 w-4" />
-            <AlertTitle>Atenção!</AlertTitle>
-            <AlertDescription>
-                Após salvar, os dados do perfil não poderão ser alterados. Verifique todas as informações com cuidado antes de continuar. Esta ação é irreversível.
-            </AlertDescription>
-          </Alert>
-
-          <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Salvar e Bloquear Perfil
-          </Button>
-          {form.formState.errors.form && <p className="text-sm font-medium text-destructive">{form.formState.errors.form.message}</p>}
+            <div className="flex justify-between items-center pt-4">
+                <Button type="button" variant="outline" onClick={handleBack} disabled={currentStep === STEPS.TYPE || isLoading}>
+                    <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
+                </Button>
+                <Button type="button" onClick={handleNext} disabled={isLoading}>
+                    {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : (currentStep === getStepForPersonType(STEPS.SIGNATURE) ? 'Salvar Perfil' : 'Avançar')}
+                    {currentStep !== getStepForPersonType(STEPS.SIGNATURE) && <ArrowRight className="ml-2 h-4 w-4" />}
+                </Button>
+            </div>
         </form>
       </Form>
     </div>
   )
 }
+
+// Step Components
+
+const StepCard = ({ icon: Icon, title, description, children }: { icon: React.ElementType, title: string, description: string, children: React.ReactNode }) => (
+    <Card>
+        <CardHeader className="flex flex-row items-start gap-4 space-y-0">
+            <div className="p-3 bg-muted rounded-full">
+                <Icon className="h-6 w-6 text-primary" />
+            </div>
+            <div className="flex-1">
+                <CardTitle>{title}</CardTitle>
+                <CardDescription>{description}</CardDescription>
+            </div>
+        </CardHeader>
+        <CardContent>{children}</CardContent>
+    </Card>
+);
+
+const TypeStep = ({ form }: { form: any }) => (
+    <StepCard icon={User} title="Tipo de Perfil" description="Como você irá prestar os serviços?">
+         <FormField
+            control={form.control}
+            name="personType"
+            render={({ field }) => (
+            <FormItem className="space-y-3">
+                <FormControl>
+                <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormItem>
+                        <FormControl>
+                            <RadioGroupItem value="cpf" id="cpf" className="sr-only peer" />
+                        </FormControl>
+                        <FormLabel htmlFor="cpf" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
+                            <Building className="mb-3 h-6 w-6" />
+                            Pessoa Física (Autônomo)
+                        </FormLabel>
+                    </FormItem>
+                    <FormItem>
+                         <FormControl>
+                            <RadioGroupItem value="cnpj" id="cnpj" className="sr-only peer" />
+                        </FormControl>
+                         <FormLabel htmlFor="cnpj" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
+                            <User className="mb-3 h-6 w-6" />
+                            Pessoa Jurídica (MEI/Empresa)
+                        </FormLabel>
+                    </FormItem>
+                </RadioGroup>
+                </FormControl>
+                <FormMessage />
+            </FormItem>
+            )}
+        />
+    </StepCard>
+);
+
+const PersonalStep = ({ form }: { form: any }) => (
+    <StepCard icon={User} title="Dados Pessoais" description="Estas informações aparecerão no contrato.">
+        <div className="space-y-4">
+             <FormField control={form.control} name="fullName" render={({ field }) => (
+                <FormItem><FormLabel>Nome Completo</FormLabel><FormControl><Input placeholder="Seu nome completo" {...field} /></FormControl><FormMessage /></FormItem>
+            )} />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField control={form.control} name="nationality" render={({ field }) => (
+                    <FormItem><FormLabel>Nacionalidade</FormLabel><FormControl><Input placeholder="Brasileira" {...field} /></FormControl><FormMessage /></FormItem>
+                )} />
+                <FormField control={form.control} name="civilStatus" render={({ field }) => (
+                    <FormItem><FormLabel>Estado Civil</FormLabel><FormControl><Input placeholder="Solteiro(a)" {...field} /></FormControl><FormMessage /></FormItem>
+                )} />
+            </div>
+            <FormField control={form.control} name="profession" render={({ field }) => (
+                <FormItem><FormLabel>Profissão</FormLabel><FormControl><Input placeholder="Assistente Virtual" {...field} /></FormControl><FormMessage /></FormItem>
+            )} />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField control={form.control} name="rg" render={({ field }) => (
+                    <FormItem><FormLabel>RG</FormLabel><FormControl><Input placeholder="00.000.000-0" {...field} /></FormControl><FormMessage /></FormItem>
+                )} />
+                <FormField control={form.control} name="cpf" render={({ field }) => (
+                    <FormItem><FormLabel>CPF</FormLabel><FormControl><Input placeholder="000.000.000-00" {...field} /></FormControl><FormMessage /></FormItem>
+                )} />
+            </div>
+             <FormField
+                control={form.control}
+                name="sex"
+                render={({ field }) => (
+                <FormItem className="space-y-3">
+                    <FormLabel>Sexo</FormLabel>
+                    <FormControl>
+                    <RadioGroup onValueChange={field.onChange} value={field.value} className="flex space-x-4">
+                        <FormItem className="flex items-center space-x-2 space-y-0">
+                        <FormControl><RadioGroupItem value="female" /></FormControl>
+                        <FormLabel className="font-normal">Feminino</FormLabel>
+                        </FormItem>
+                        <FormItem className="flex items-center space-x-2 space-y-0">
+                        <FormControl><RadioGroupItem value="male" /></FormControl>
+                        <FormLabel className="font-normal">Masculino</FormLabel>
+                        </FormItem>
+                    </RadioGroup>
+                    </FormControl>
+                    <FormMessage />
+                </FormItem>
+                )}
+            />
+        </div>
+    </StepCard>
+);
+
+const CompanyStep = ({ form }: { form: any }) => {
+    const [isFetching, setIsFetching] = useState(false);
+    const { toast } = useToast();
+
+    const handleCnpjSearch = async () => {
+        const cnpj = form.getValues('cnpj')?.replace(/\D/g, '');
+        if (!cnpj || cnpj.length !== 14) {
+            toast({ variant: 'destructive', title: 'CNPJ Inválido', description: 'O CNPJ deve ter 14 dígitos.' });
+            return;
+        }
+        setIsFetching(true);
+        try {
+            const response = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cnpj}`);
+            if (!response.ok) throw new Error('Não foi possível buscar os dados do CNPJ.');
+            const data = await response.json();
+            form.setValue('companyName', data.razao_social, { shouldValidate: true });
+            form.setValue('street', data.logradouro, { shouldValidate: true });
+            form.setValue('number', data.numero, { shouldValidate: true });
+            form.setValue('complement', data.complemento, { shouldValidate: true });
+            form.setValue('neighborhood', data.bairro, { shouldValidate: true });
+            form.setValue('city', data.municipio, { shouldValidate: true });
+            form.setValue('state', data.uf, { shouldValidate: true });
+            form.setValue('cep', data.cep.replace(/\D/g, ''), { shouldValidate: true });
+            toast({ title: 'Sucesso!', description: 'Dados da empresa preenchidos.' });
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Erro ao buscar CNPJ', description: error.message });
+        } finally {
+            setIsFetching(false);
+        }
+    };
+
+    return (
+        <StepCard icon={Building} title="Dados da Empresa" description="Preencha os dados do seu CNPJ.">
+            <div className="space-y-4">
+                 <FormField control={form.control} name="cnpj" render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>CNPJ</FormLabel>
+                        <div className="flex items-center gap-2">
+                           <FormControl><Input placeholder="00.000.000/0001-00" {...field} /></FormControl>
+                           <Button type="button" size="icon" onClick={handleCnpjSearch} disabled={isFetching}>
+                                {isFetching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+                           </Button>
+                        </div>
+                        <FormMessage />
+                    </FormItem>
+                )} />
+                <FormField control={form.control} name="companyName" render={({ field }) => (
+                    <FormItem><FormLabel>Nome da Empresa (Razão Social)</FormLabel><FormControl><Input placeholder="Minha Empresa LTDA" {...field} /></FormControl><FormMessage /></FormItem>
+                )} />
+            </div>
+        </StepCard>
+    );
+};
+
+
+const AddressStep = ({ form }: { form: any }) => {
+    const [isFetching, setIsFetching] = useState(false);
+    const { toast } = useToast();
+    
+    const handleCepSearch = async () => {
+        const cep = form.getValues('cep')?.replace(/\D/g, '');
+        if (!cep || cep.length !== 8) {
+            toast({ variant: 'destructive', title: 'CEP Inválido', description: 'O CEP deve ter 8 dígitos.' });
+            return;
+        }
+        setIsFetching(true);
+        try {
+            const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+            if (!response.ok) throw new Error('Não foi possível buscar o CEP.');
+            const data = await response.json();
+            if (data.erro) throw new Error('CEP não encontrado.');
+            form.setValue('street', data.logradouro, { shouldValidate: true });
+            form.setValue('neighborhood', data.bairro, { shouldValidate: true });
+            form.setValue('city', data.localidade, { shouldValidate: true });
+            form.setValue('state', data.uf, { shouldValidate: true });
+            toast({ title: 'Sucesso!', description: 'Endereço preenchido.' });
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Erro ao buscar CEP', description: error.message });
+        } finally {
+            setIsFetching(false);
+        }
+    };
+
+    return (
+        <StepCard icon={MapPin} title="Endereço" description="Seu endereço profissional ou residencial.">
+            <div className="space-y-4">
+                 <FormField control={form.control} name="cep" render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>CEP</FormLabel>
+                         <div className="flex items-center gap-2">
+                            <FormControl><Input placeholder="00000-000" {...field} /></FormControl>
+                            <Button type="button" size="icon" onClick={handleCepSearch} disabled={isFetching}>
+                                {isFetching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+                           </Button>
+                        </div>
+                        <FormMessage />
+                    </FormItem>
+                )} />
+                <FormField control={form.control} name="street" render={({ field }) => (
+                    <FormItem><FormLabel>Rua / Logradouro</FormLabel><FormControl><Input placeholder="Rua das Flores" {...field} /></FormControl><FormMessage /></FormItem>
+                )} />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField control={form.control} name="number" render={({ field }) => (
+                        <FormItem><FormLabel>Número</FormLabel><FormControl><Input placeholder="123" {...field} /></FormControl><FormMessage /></FormItem>
+                    )} />
+                    <FormField control={form.control} name="complement" render={({ field }) => (
+                        <FormItem><FormLabel>Complemento (Opcional)</FormLabel><FormControl><Input placeholder="Apto 45" {...field} /></FormControl><FormMessage /></FormItem>
+                    )} />
+                </div>
+                 <FormField control={form.control} name="neighborhood" render={({ field }) => (
+                    <FormItem><FormLabel>Bairro</FormLabel><FormControl><Input placeholder="Centro" {...field} /></FormControl><FormMessage /></FormItem>
+                )} />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                     <FormField control={form.control} name="city" render={({ field }) => (
+                        <FormItem><FormLabel>Cidade</FormLabel><FormControl><Input placeholder="São Paulo" {...field} /></FormControl><FormMessage /></FormItem>
+                    )} />
+                    <FormField control={form.control} name="state" render={({ field }) => (
+                        <FormItem><FormLabel>Estado (UF)</FormLabel><FormControl><Input placeholder="SP" {...field} /></FormControl><FormMessage /></FormItem>
+                    )} />
+                </div>
+            </div>
+        </StepCard>
+    );
+}
+
+const SignatureStep = ({ form, sigCanvas }: { form: any, sigCanvas: React.RefObject<SignatureCanvas> }) => (
+    <StepCard icon={PencilLine} title="Assinatura Digital" description="Desenhe sua assinatura. Ela será usada nos contratos.">
+         <FormField
+            control={form.control}
+            name="signature"
+            render={({ field }) => (
+            <FormItem>
+                <FormControl>
+                    <div className="w-full h-48 rounded-md border border-input bg-background">
+                        <SignatureCanvas 
+                            ref={sigCanvas}
+                            penColor='black'
+                            canvasProps={{className: 'w-full h-full'}}
+                            onEnd={() => field.onChange(sigCanvas.current?.toDataURL())}
+                        />
+                    </div>
+                </FormControl>
+                <FormMessage />
+            </FormItem>
+            )} 
+        />
+        <Button type="button" variant="outline" size="sm" onClick={() => sigCanvas.current?.clear()} className="mt-2">
+            Limpar
+        </Button>
+    </StepCard>
+);
