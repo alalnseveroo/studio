@@ -12,7 +12,7 @@ export default function LoginPage() {
             <div className="hidden md:flex items-center justify-center">
                  <Image 
                     src="https://pouynmrblzvwlhrfyins.supabase.co/storage/v1/object/public/icons/imags/Office%20Working%201.png" 
-                    alt="Assistei Login" 
+                    alt="Crivo Login" 
                     width={400} 
                     height={400}
                     className="size-[400px]"

@@ -3,7 +3,7 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster"
 
 export const metadata: Metadata = {
-  title: 'Assistei: Organizando o trabalho de profissionais incríveis',
+  title: 'Crivo: Organizando o trabalho de profissionais incríveis',
   description: 'Organizando o trabalho de profissionais incríveis',
 };
 

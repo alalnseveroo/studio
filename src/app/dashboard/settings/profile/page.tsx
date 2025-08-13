@@ -244,7 +244,7 @@ export default function ProfilePage() {
        {!isSaved && (
             <Alert variant="default" className="border-blue-200 bg-blue-50 text-blue-800 mb-6">
                 <PartyPopper className="h-4 w-4 !text-blue-600" />
-                <AlertTitle>Bem-vindo(a) à Assistei!</AlertTitle>
+                <AlertTitle>Bem-vindo(a) à Crivo!</AlertTitle>
                 <AlertDescription>
                     Como presente de boas-vindas, você recebeu <strong>1 crédito</strong> para cadastrar seu primeiro cliente. Você poderá usar todos os benefícios da plataforma para este cliente, como geração de contratos e cobranças automáticas, para sempre. Complete seu perfil para começar.
                 </AlertDescription>
@@ -293,36 +293,46 @@ const StepHeader = ({ icon: Icon, title, description }: { icon: React.ElementTyp
 const TypeStep = ({ form }: { form: any }) => (
     <div>
         <StepHeader icon={User} title="Tipo de Perfil" description="Como você irá prestar os serviços?" />
-         <FormField
-            control={form.control}
-            name="personType"
-            render={({ field }) => (
+        <FormField
+          control={form.control}
+          name="personType"
+          render={({ field }) => (
             <FormItem className="space-y-3">
-                <FormControl>
-                <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormItem>
-                        <FormControl>
-                            <RadioGroupItem value="cpf" id="cpf" className="sr-only peer" />
-                        </FormControl>
-                        <FormLabel htmlFor="cpf" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
-                            <User className="mb-3 h-6 w-6" />
-                            Pessoa Física (Autônomo)
-                        </FormLabel>
-                    </FormItem>
-                    <FormItem>
-                         <FormControl>
-                            <RadioGroupItem value="cnpj" id="cnpj" className="sr-only peer" />
-                        </FormControl>
-                         <FormLabel htmlFor="cnpj" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
-                            <Building className="mb-3 h-6 w-6" />
-                            Pessoa Jurídica (MEI/Empresa)
-                        </FormLabel>
-                    </FormItem>
+              <FormControl>
+                <RadioGroup
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                  className="grid grid-cols-1 md:grid-cols-2 gap-4"
+                >
+                  <FormItem>
+                    <FormControl>
+                      <RadioGroupItem value="cpf" id="cpf" className="sr-only peer" />
+                    </FormControl>
+                    <FormLabel
+                      htmlFor="cpf"
+                      className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+                    >
+                      <User className="mb-3 h-6 w-6" />
+                      Pessoa Física (Autônomo)
+                    </FormLabel>
+                  </FormItem>
+                  <FormItem>
+                    <FormControl>
+                      <RadioGroupItem value="cnpj" id="cnpj" className="sr-only peer" />
+                    </FormControl>
+                    <FormLabel
+                      htmlFor="cnpj"
+                      className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+                    >
+                      <Building className="mb-3 h-6 w-6" />
+                      Pessoa Jurídica (MEI/Empresa)
+                    </FormLabel>
+                  </FormItem>
                 </RadioGroup>
-                </FormControl>
-                <FormMessage />
+              </FormControl>
+              <FormMessage />
             </FormItem>
-            )}
+          )}
         />
     </div>
 );
