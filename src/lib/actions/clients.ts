@@ -4,10 +4,10 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
-import type { Cliente } from '@/lib/types';
-import { format } from 'date-fns';
+import type { Cliente, Profile } from '@/lib/types';
+import { format } from 'date-fns'
 import { sendClientWebhook } from './webhook';
-import { addOrUpdateContact } from '../brevo';
+import { addOrUpdateContact, sendTransactionalEmail } from '../brevo';
 
 const AVATARS_CLIENT_MALE = [
     'https://pouynmrblzvwlhrfyins.supabase.co/storage/v1/object/public/icons/AvatarClient/client-avatar-3.png',
@@ -34,7 +34,7 @@ export async function createFullClient(formData: any) {
     .eq('id', user.id)
     .single();
 
-  if (profileError) {
+  if (profileError || !providerProfile) {
       return { data: null, error: { message: 'Não foi possível buscar os dados da contratada.' } };
   }
 
@@ -204,6 +204,27 @@ export async function updateClientFinancials(id: string, financials: {
       return { error: { message: 'O dia de pagamento fornecido não é um número válido.' } };
   }
 
+  const { data: client, error: clientError } = await supabase
+    .from('clientes')
+    .select('*')
+    .eq('id', id)
+    .single();
+
+  if (clientError || !client) {
+    return { error: { message: 'Cliente não encontrado.' } };
+  }
+
+  const { data: providerProfile, error: profileError } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', user.id)
+    .single();
+    
+  if (profileError || !providerProfile) {
+    return { error: { message: 'Perfil da contratada não encontrado.' } };
+  }
+
+
   const { error } = await supabase
     .from('clientes')
     .update({
@@ -222,17 +243,39 @@ export async function updateClientFinancials(id: string, financials: {
     return { error: { message: `Não foi possível atualizar as configurações financeiras: ${error.message}` } };
   }
   
-  if (financials.send_charge_now && parsedValue) {
-      const { error: chargeError } = await supabase.from('cobrancas').insert({
+  if (financials.send_charge_now && parsedValue && client.email) {
+      const dueDate = new Date();
+      const { data: chargeData, error: chargeError } = await supabase.from('cobrancas').insert({
           user_id: user.id,
           cliente_id: id,
-          due_date: new Date().toISOString().split('T')[0], // Hoje
+          due_date: dueDate.toISOString().split('T')[0],
           value: parsedValue,
           status: 'pendente',
-      });
+      }).select().single();
+
       if (chargeError) {
           console.error('Supabase error creating immediate charge:', chargeError);
           return { error: { message: `Configurações salvas, mas não foi possível gerar a cobrança imediata: ${chargeError.message}`}};
+      }
+      
+      // Enviar e-mail de cobrança imediata
+      const portalUrl = new URL(`/portal/${id}`, process.env.NEXT_PUBLIC_SITE_URL).toString();
+      try {
+          await sendTransactionalEmail({
+              toEmail: client.email,
+              templateId: 63,
+              params: {
+                  CLIENTE_NOME: client.full_name || client.company_name,
+                  CONTRATADA_NOME: providerProfile.full_name || providerProfile.company_name,
+                  COBRANCA_VALOR: parsedValue.toFixed(2),
+                  COBRANCA_VENCIMENTO: format(dueDate, 'dd/MM/yyyy'),
+                  LINK_PORTAL: portalUrl,
+              },
+              userId: user.id,
+          });
+      } catch (emailError: any) {
+         console.error('Falha ao enviar e-mail de cobrança imediata:', emailError.message);
+         // Não retorna erro, apenas loga. A cobrança foi criada com sucesso.
       }
   }
 

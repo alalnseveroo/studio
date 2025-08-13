@@ -17,6 +17,12 @@ if (BREVO_API_KEY) {
     console.warn("Chave da API da Brevo não encontrada. O envio de e-mails não funcionará.");
 }
 
+interface EmailParams {
+  toEmail: string;
+  templateId: number;
+  params: { [key: string]: any };
+  userId: string;
+}
 
 export async function addOrUpdateContact(email: string, attributes: { [key: string]: any }) {
     if (!BREVO_API_KEY) throw new Error("A chave da API da Brevo não está configurada.");
@@ -51,45 +57,43 @@ export async function addOrUpdateContact(email: string, attributes: { [key: stri
  * Envia um e-mail transacional usando um template da Brevo.
  * @param toEmail - O e-mail do destinatário.
  * @param templateId - O ID do template transacional na Brevo.
- * @param params - Parâmetros para preencher o template. Ex: { NOME_CLIENTE: '...', PINSECRET: '...' }
+ * @param params - Parâmetros para preencher o template.
  * @param userId - O ID do usuário logado (contratada) para buscar o nome do remetente.
  */
-export async function sendTransactionalEmail(
-    toEmail: string, 
-    templateId: number, 
-    params: { [key: string]: any },
-    userId: string
-) {
+export async function sendTransactionalEmail({ toEmail, templateId, params, userId }: EmailParams) {
     if (!BREVO_API_KEY) throw new Error("A chave da API da Brevo não está configurada.");
 
     const supabase = createClient();
-    const { data: providerProfile, error: profileError } = await supabase
-        .from('profiles')
-        .select('full_name, company_name')
-        .eq('id', userId)
-        .single();
-        
-    if (profileError) {
-        console.error("Erro ao buscar perfil da contratada:", profileError);
-        throw new Error("Não foi possível buscar os dados da contratada para o envio do e-mail.");
+    let providerName = 'Sua Assistente Virtual'; // Valor padrão
+    
+    // O nome da contratada já deve vir nos params, mas buscamos como fallback.
+    if (!params.CONTRATADA_NOME) {
+        const { data: providerProfile, error: profileError } = await supabase
+            .from('profiles')
+            .select('full_name, company_name')
+            .eq('id', userId)
+            .single();
+            
+        if (profileError) {
+            console.error("Erro ao buscar perfil da contratada:", profileError);
+            throw new Error("Não foi possível buscar os dados da contratada para o envio do e-mail.");
+        }
+        providerName = providerProfile?.full_name || providerProfile?.company_name || 'Sua Assistente Virtual';
+    } else {
+        providerName = params.CONTRATADA_NOME;
     }
     
-    const providerName = providerProfile?.full_name || providerProfile?.company_name || 'Sua Assistente Virtual';
-    
-    // Adiciona o NOME_CONTRATADA aos parâmetros antes de atualizar o contato e enviar o e-mail
-    const allParams = {
-        ...params,
-        NOME_CONTRATADA: providerName
-    };
+    // Garante que o nome da contratada está nos parâmetros.
+    const finalParams = { ...params, CONTRATADA_NOME: providerName };
 
     // Garante que o contato e seus atributos estão atualizados antes de enviar o e-mail
-    await addOrUpdateContact(toEmail, allParams);
+    await addOrUpdateContact(toEmail, finalParams);
 
     let sendSmtpEmail = new Brevo.SendSmtpEmail();
     
     sendSmtpEmail.templateId = templateId;
     sendSmtpEmail.to = [{ email: toEmail }];
-    sendSmtpEmail.params = allParams;
+    sendSmtpEmail.params = finalParams;
 
     try {
         await apiInstance.sendTransacEmail(sendSmtpEmail);

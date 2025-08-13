@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Loader2, Send, FileWarning, UserPlus, FilePlus, Link2, MoreVertical, BadgeCheck, Upload } from 'lucide-react'
 import { getCharges, markChargeAsPaid } from '@/lib/actions/cobrancas'
-import type { Cobranca } from '@/lib/types'
+import type { Cobranca, Profile } from '@/lib/types'
 import { format, isPast } from 'date-fns'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { useToast } from '@/hooks/use-toast'
@@ -24,12 +24,15 @@ import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { UploadInvoiceModal } from '@/components/upload-invoice-modal'
+import { getProfile } from '@/lib/actions/profile'
+
 
 export default function CobrancasPage() {
   const [charges, setCharges] = useState<Cobranca[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isSending, setIsSending] = useState<string | null>(null);
   const [selectedChargeForInvoice, setSelectedChargeForInvoice] = useState<Cobranca | null>(null)
+  const [providerProfile, setProviderProfile] = useState<Profile | null>(null)
   const { toast } = useToast()
 
   const getStatusInfo = (status: string, dueDate: string) => {
@@ -44,19 +47,23 @@ export default function CobrancasPage() {
 
   const fetchData = async () => {
       setIsLoading(true)
-      const { data, error } = await getCharges();
+      const [{ data: chargesData, error: chargesError }, { data: profileData }] = await Promise.all([
+        getCharges(),
+        getProfile()
+      ]);
 
-      if (error || !data) {
+      if (chargesError || !chargesData) {
         toast({
             variant: 'destructive',
             title: 'Erro ao buscar dados',
-            description: error?.message || 'Não foi possível carregar as cobranças.'
+            description: chargesError?.message || 'Não foi possível carregar as cobranças.'
         })
         setIsLoading(false)
         return
       }
       
-      setCharges(data);
+      setCharges(chargesData);
+      setProviderProfile(profileData as Profile | null);
       setIsLoading(false)
     }
 
@@ -66,34 +73,33 @@ export default function CobrancasPage() {
 
   const handleSendReminder = async (charge: Cobranca) => {
       setIsSending(charge.id);
-      const clientName = charge.clientes?.full_name || charge.clientes?.company_name;
-      const clientEmail = charge.clientes?.email;
       
-      if (!clientEmail) {
-          toast({ variant: 'destructive', title: "E-mail não encontrado", description: `O cliente ${clientName} não possui um e-mail cadastrado.` });
+      if (!charge.clientes?.email || !providerProfile) {
+          toast({ variant: 'destructive', title: "Dados Incompletos", description: `Não foi possível enviar o lembrete. Verifique o e-mail do cliente e o perfil da contratada.` });
           setIsSending(null);
           return;
       }
       
       const portalUrl = new URL(`/portal/${charge.cliente_id}`, process.env.NEXT_PUBLIC_SITE_URL).toString();
-      const BREVO_TEMPLATE_ID = 61; // ID Fixo para cobrança
+      const BREVO_TEMPLATE_ID = 63; // Lembrete Manual / Cobrança imediata
 
       try {
-        await sendTransactionalEmail(
-            clientEmail,
-            BREVO_TEMPLATE_ID,
-            {
-                NOME_CLIENTE: clientName,
-                VALOR_COBRANCA: (charge.value || 0).toFixed(2),
-                DATA_VENCIMENTO: format(new Date(charge.due_date), 'dd/MM/yyyy'),
-                LINK_PORTAL: portalUrl,
-            },
-            charge.user_id 
-        );
+        await sendTransactionalEmail({
+          toEmail: charge.clientes.email,
+          templateId: BREVO_TEMPLATE_ID,
+          params: {
+              CLIENTE_NOME: charge.clientes.full_name || charge.clientes.company_name,
+              CONTRATADA_NOME: providerProfile.full_name || providerProfile.company_name,
+              COBRANCA_VALOR: (charge.value || 0).toFixed(2),
+              COBRANCA_VENCIMENTO: format(new Date(charge.due_date), 'dd/MM/yyyy'),
+              LINK_PORTAL: portalUrl,
+          },
+          userId: charge.user_id 
+        });
         
         toast({
             title: "E-mail de Cobrança Enviado!",
-            description: `A cobrança foi enviada para ${clientName}.`
+            description: `A cobrança foi enviada para ${charge.clientes.full_name || charge.clientes.company_name}.`
         });
 
       } catch (error: any) {
