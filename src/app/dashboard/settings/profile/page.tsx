@@ -21,7 +21,7 @@ import { Switch } from '@/components/ui/switch'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { CheckCircle, AlertTriangle, Loader2, ArrowLeft } from 'lucide-react'
+import { CheckCircle, AlertTriangle, Loader2, ArrowLeft, PartyPopper } from 'lucide-react'
 import SignatureCanvas from 'react-signature-canvas'
 import { saveProfile, getProfile } from '@/lib/actions/profile'
 import { useToast } from '@/hooks/use-toast'
@@ -193,6 +193,14 @@ export default function ProfilePage() {
         </Button>
         <h1 className="text-lg font-semibold md:text-2xl">Perfil da Contratada</h1>
       </div>
+       
+        <Alert variant="default" className="border-blue-200 bg-blue-50 text-blue-800">
+          <PartyPopper className="h-4 w-4 !text-blue-600" />
+          <AlertTitle>Bem-vindo(a) à Assistei!</AlertTitle>
+          <AlertDescription>
+            Como presente de boas-vindas, você recebeu <strong>1 crédito</strong> para cadastrar seu primeiro cliente gratuitamente. Complete seu perfil para começar a usar.
+          </AlertDescription>
+        </Alert>
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
