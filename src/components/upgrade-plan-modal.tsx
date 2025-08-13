@@ -1,10 +1,10 @@
 
-
 'use client'
 
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card'
+import { useState } from 'react'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { CheckCircle, Zap, ArrowLeft } from 'lucide-react'
+import { CheckCircle, Zap, ArrowLeft, Check } from 'lucide-react'
 import Image from 'next/image'
 import {
   Dialog,
@@ -14,32 +14,62 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
+import { RadioGroup, RadioGroupItem } from './ui/radio-group'
+import { Label } from './ui/label'
 
-const PlanCard = ({ title, description, price, features, buttonText, isFeatured }: { title: string, description: string, price: string, features: string[], buttonText: string, isFeatured?: boolean }) => {
+const PlanCard = ({ 
+    planId,
+    title,
+    description,
+    price,
+    priceSuffix,
+    bodyText,
+    features,
+    selectedPlan,
+    onSelect,
+    isFeatured
+}: { 
+    planId: string,
+    title: string, 
+    description: string, 
+    price: string, 
+    priceSuffix: string,
+    bodyText: string,
+    features: string[], 
+    selectedPlan: string,
+    onSelect: (plan: string) => void,
+    isFeatured?: boolean
+}) => {
+    const isSelected = selectedPlan === planId;
     return (
-        <Card className={isFeatured ? 'border-primary shadow-lg' : ''}>
-            <CardHeader>
-                <CardTitle className="text-xl">{title}</CardTitle>
-                <CardDescription>{description}</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-                 <div className="text-2xl font-bold">{price}</div>
-                <div className="space-y-2 pt-2">
-                    {features.map((feature, index) => (
-                        <div key={index} className="flex items-center gap-2 text-xs">
-                            <CheckCircle className="h-4 w-4 text-green-500"/>
-                            <span>{feature}</span>
-                        </div>
-                    ))}
-                </div>
-            </CardContent>
-            <CardFooter>
-                 <Button className="w-full" variant={isFeatured ? 'default' : 'outline'}>
-                    {isFeatured && <Zap className="mr-2 h-4 w-4" />}
-                    {buttonText}
-                 </Button>
-            </CardFooter>
-        </Card>
+        <label
+            htmlFor={planId}
+            className={cn(
+                "block cursor-pointer rounded-xl border-2 p-5 transition-all",
+                isSelected ? "border-primary shadow-lg" : "border-border"
+            )}
+        >
+            <div className="flex items-center justify-between">
+                <h3 className="font-bold text-lg">{title}</h3>
+                <RadioGroup>
+                    <RadioGroupItem value={planId} id={planId} checked={isSelected} onClick={() => onSelect(planId)} />
+                </RadioGroup>
+            </div>
+            <p className="text-sm text-muted-foreground mt-1">{description}</p>
+            <div className="mt-4">
+                <span className="text-3xl font-bold">{price}</span>
+                <span className="text-sm text-muted-foreground">{priceSuffix}</span>
+            </div>
+            <p className="text-sm text-muted-foreground mt-2">{bodyText}</p>
+             <div className="space-y-2.5 pt-4">
+                {features.map((feature, index) => (
+                    <div key={index} className="flex items-start gap-2 text-sm">
+                        <Check className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0"/>
+                        <span>{feature}</span>
+                    </div>
+                ))}
+            </div>
+        </label>
     )
 }
 
@@ -49,6 +79,8 @@ interface UpgradePlanModalProps {
 }
 
 export function UpgradePlanModal({ isOpen, onClose }: UpgradePlanModalProps) {
+  const [selectedPlan, setSelectedPlan] = useState('professional');
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
         <DialogContent className="h-screen w-screen max-w-full p-0 gap-0">
@@ -79,22 +111,46 @@ export function UpgradePlanModal({ isOpen, onClose }: UpgradePlanModalProps) {
                         />
                     </div>
                 </div>
-                <div className="flex flex-col justify-center p-8 md:p-16 space-y-6 bg-background">
-                    <PlanCard
-                        title="Crédito por Cliente"
-                        description="Ideal para quem está começando. Pague apenas pelos clientes que gerencia ativamente."
-                        price="R$ 10,00"
-                        features={["Todos os benefícios", "Contratos ilimitados", "Cobrança automática", "Portal do cliente"]}
-                        buttonText="Adquirir Crédito"
-                    />
-                    <PlanCard
-                        title="Plano Total"
-                        description="Para quem busca o máximo, sem se preocupar com limites. Fidelize e obtenha o máximo de clientes possível."
-                        price="R$ 49,90/mês"
-                        features={["Tudo ilimitado", "Clientes ilimitados", "Suporte prioritário", "Acesso a novas features"]}
-                        buttonText="Assinar Plano Total"
-                        isFeatured
-                    />
+                <div className="flex flex-col justify-center p-8 md:p-16 bg-background">
+                    <div className="space-y-6 w-full max-w-md mx-auto">
+                        <PlanCard
+                            planId="flexible"
+                            title="Plano Flexível"
+                            description="Ideal para quem está começando ou prefere não ter um custo fixo mensal."
+                            price="R$ 10,00"
+                            priceSuffix="/mês, por cliente ativo"
+                            bodyText="Pague apenas pelos clientes que assinou contrato ou você coloca no piloto automático. Cadastrar contatos na sua base é sempre gratuito."
+                            features={[
+                                "Seu 1º cliente é grátis, sempre!",
+                                "Cobrança automática e notas fiscais",
+                                "Portal do Cliente.",
+                                "Contratos completos",
+                                "Cancele a qualquer momento, sem burocracia."
+                            ]}
+                            selectedPlan={selectedPlan}
+                            onSelect={setSelectedPlan}
+                        />
+                        <PlanCard
+                            planId="professional"
+                            title="Plano Profissional"
+                            description="Perfeito para quem já tem uma carteira de clientes e quer escalar sem limites."
+                            price="R$ 29,90"
+                            priceSuffix="/mês"
+                            bodyText="Tudo ilimitado. A tranquilidade de um custo fixo para crescer o seu negócio sem surpresas."
+                            features={[
+                                "Clientes ILIMITADOS na gestão automática.",
+                                "Contratos e Propostas ILIMITADOS.",
+                                "Acesso a todas as funcionalidades premium.",
+                                "O melhor custo-benefício a partir de 3 clientes."
+                            ]}
+                            selectedPlan={selectedPlan}
+                            onSelect={setSelectedPlan}
+                            isFeatured
+                        />
+                         <Button size="lg" className="w-full text-base py-6">
+                            {selectedPlan === 'flexible' ? 'Continuar com o Plano Flexível' : 'Assinar Plano Profissional'}
+                        </Button>
+                    </div>
                 </div>
             </div>
         </DialogContent>
