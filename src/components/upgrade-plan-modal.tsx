@@ -12,8 +12,8 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  DialogFooter,
 } from '@/components/ui/dialog'
+import { cn } from '@/lib/utils'
 
 const PlanCard = ({ title, description, price, features, buttonText, isFeatured }: { title: string, description: string, price: string, features: string[], buttonText: string, isFeatured?: boolean }) => {
     return (
@@ -52,6 +52,12 @@ export function UpgradePlanModal({ isOpen, onClose }: UpgradePlanModalProps) {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
         <DialogContent className="h-screen w-screen max-w-full p-0 gap-0">
+             <DialogHeader className="sr-only">
+                <DialogTitle>Atualizar Plano</DialogTitle>
+                <DialogDescription>
+                    Selecione um novo plano para continuar adicionando clientes.
+                </DialogDescription>
+            </DialogHeader>
              <div className="grid md:grid-cols-2 h-full">
                 <div className="flex flex-col justify-center items-start p-8 md:p-16 bg-muted/50">
                     <div className="text-left w-full max-w-md">
