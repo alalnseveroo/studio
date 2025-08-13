@@ -3,8 +3,8 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster"
 
 export const metadata: Metadata = {
-  title: 'DASH: Hub de Segurança de Acesso Digital',
-  description: 'Um Hub de Segurança de Acesso Digital com autenticação Supabase.',
+  title: 'Assistei: Organizando o trabalho de profissionais incríveis',
+  description: 'Organizando o trabalho de profissionais incríveis',
 };
 
 export default function RootLayout({

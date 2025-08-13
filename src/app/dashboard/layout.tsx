@@ -1,4 +1,5 @@
 
+
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -103,7 +104,7 @@ function DashboardHeader({
                 <div className={cn("flex items-center gap-6", !isProfileComplete && "relative")}>
                     <Link href="/dashboard" className="flex items-center space-x-2">
                         <Package2 className="h-6 w-6" />
-                        <span className="hidden font-bold sm:inline-block">Virtei</span>
+                        <span className="hidden font-bold sm:inline-block">Assistei</span>
                     </Link>
                     <div className={cn(!isProfileComplete && "pointer-events-none opacity-50")}>
                         <MainNav />

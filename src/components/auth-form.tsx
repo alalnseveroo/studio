@@ -1,3 +1,4 @@
+
 'use client'
 
 import { useState } from 'react'
@@ -65,9 +66,9 @@ export function AuthForm() {
   return (
     <Card className="w-full max-w-sm animate-in fade-in-50 duration-500">
       <CardHeader>
-        <CardTitle className="text-2xl font-headline">Bem-vindo ao DASH</CardTitle>
+        <CardTitle className="text-2xl font-headline">Bem-vindo(a) à Assistei</CardTitle>
         <CardDescription>
-          Digite seu e-mail para entrar ou criar uma conta.
+          Organizando o trabalho de profissionais incríveis
         </CardDescription>
       </CardHeader>
       <CardContent>
