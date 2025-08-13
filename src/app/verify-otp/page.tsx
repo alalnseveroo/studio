@@ -1,3 +1,4 @@
+
 'use client'
 
 import { useSearchParams } from 'next/navigation'
@@ -9,8 +10,8 @@ function VerifyOtpPageContent() {
   const email = searchParams.get('email')
 
   return (
-    <div className="flex min-h-screen w-full items-center justify-center bg-background px-4">
-      <main>
+    <div className="flex min-h-screen w-full items-center justify-center bg-background p-4">
+      <main className="w-full max-w-sm">
         <OtpVerificationForm email={email || ''} />
       </main>
     </div>

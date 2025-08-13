@@ -11,16 +11,8 @@ import {
   FormControl,
   FormField,
   FormItem,
-  FormLabel,
   FormMessage,
 } from '@/components/ui/form'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
 import {
   InputOTP,
   InputOTPGroup,
@@ -30,6 +22,7 @@ import { verifyOtp } from '@/lib/actions/auth'
 import { useToast } from '@/hooks/use-toast'
 import { Loader2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 
 const otpSchema = z.object({
   otp: z.string().min(6, { message: 'O código deve ter 6 dígitos.' }),
@@ -78,61 +71,68 @@ export function OtpVerificationForm({ email }: OtpVerificationFormProps) {
 
   if (!email) {
     return (
-        <Card className="w-full max-w-sm">
-            <CardHeader>
-                <CardTitle>Erro</CardTitle>
-                <CardDescription>E-mail não fornecido. Por favor, retorne à página de login.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <Button onClick={() => router.push('/')} className="w-full">Ir para o Login</Button>
-            </CardContent>
-        </Card>
+        <div className="flex flex-col gap-6">
+            <div className="flex flex-col items-center gap-2">
+                <h1 className="text-xl font-bold">Erro</h1>
+                <p className="text-sm text-muted-foreground">E-mail não fornecido. Por favor, retorne à página de login.</p>
+                <Button onClick={() => router.push('/')} className="mt-4 w-full">Ir para o Login</Button>
+            </div>
+        </div>
     )
   }
   
   return (
-    <Card className="w-full max-w-sm animate-in fade-in-50 duration-500">
-      <CardHeader>
-        <CardTitle className="text-2xl font-headline">Verifique seu Código</CardTitle>
-        <CardDescription>Digite o código de 6 dígitos enviado para <strong>{email}</strong></CardDescription>
-      </CardHeader>
-      <CardContent>
+    <div className="flex flex-col gap-6 animate-in fade-in-50 duration-500">
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleOtpSubmit)} className="space-y-6">
-            <FormField
-              control={form.control}
-              name="otp"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Senha de Uso Único</FormLabel>
-                   <div className="flex justify-center">
-                    <FormControl>
-                        <InputOTP
-                          maxLength={6}
-                          {...field}
-                        >
-                          <InputOTPGroup>
-                            <InputOTPSlot index={0} />
-                            <InputOTPSlot index={1} />
-                            <InputOTPSlot index={2} />
-                            <InputOTPSlot index={3} />
-                            <InputOTPSlot index={4} />
-                            <InputOTPSlot index={5} />
-                          </InputOTPGroup>
-                        </InputOTP>
-                      </FormControl>
-                   </div>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Verificar e Entrar
-            </Button>
-          </form>
+            <form onSubmit={form.handleSubmit(handleOtpSubmit)}>
+                <div className="flex flex-col gap-6">
+                    <div className="flex flex-col items-center gap-2">
+                        <div className="flex items-center justify-center rounded-md">
+                        <Image 
+                            src="https://pouynmrblzvwlhrfyins.supabase.co/storage/v1/object/public/icons/imags/Enter%20Password%202.png"
+                            alt="Verificar Código" 
+                            width={150} 
+                            height={150}
+                            className="size-[150px]"
+                        />
+                        </div>
+                        <h1 className="text-xl font-bold font-headline">Verifique seu Código</h1>
+                        <p className="text-sm text-center text-muted-foreground">
+                            Digite o código de 6 dígitos enviado para <br/><strong>{email}</strong>
+                        </p>
+                    </div>
+                    <div className="flex flex-col gap-4">
+                        <FormField
+                        control={form.control}
+                        name="otp"
+                        render={({ field }) => (
+                            <FormItem>
+                                <div className="flex justify-center">
+                                    <FormControl>
+                                        <InputOTP maxLength={6} {...field}>
+                                        <InputOTPGroup>
+                                            <InputOTPSlot index={0} />
+                                            <InputOTPSlot index={1} />
+                                            <InputOTPSlot index={2} />
+                                            <InputOTPSlot index={3} />
+                                            <InputOTPSlot index={4} />
+                                            <InputOTPSlot index={5} />
+                                        </InputOTPGroup>
+                                        </InputOTP>
+                                    </FormControl>
+                                </div>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                        />
+                        <Button type="submit" className="w-full" disabled={isLoading}>
+                        {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Verificar e Entrar
+                        </Button>
+                    </div>
+                </div>
+            </form>
         </Form>
-      </CardContent>
-    </Card>
+    </div>
   )
 }
