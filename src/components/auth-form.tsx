@@ -57,25 +57,17 @@ export function AuthForm() {
   }
 
   return (
-    <div className="flex flex-col gap-6 animate-in fade-in-50 duration-500">
+    <div className="w-full max-w-sm animate-in fade-in-50 duration-500">
        <Form {...form}>
-        <form onSubmit={form.handleSubmit(handleEmailSubmit)}>
-            <div className="flex flex-col gap-6">
-            <div className="flex flex-col items-center gap-2">
-                <div className="flex items-center justify-center rounded-md">
-                   <Image 
-                     src="https://pouynmrblzvwlhrfyins.supabase.co/storage/v1/object/public/icons/imags/Office%20Working%201.png" 
-                     alt="Assistei Logo" 
-                     width={150} 
-                     height={150}
-                     className="size-[150px]"
-                    />
-                </div>
-                <h1 className="text-xl font-bold font-headline">Bem-vindo(a) à Assistei</h1>
-                <p className="text-sm text-muted-foreground">Organizando o trabalho de profissionais incríveis</p>
+        <form onSubmit={form.handleSubmit(handleEmailSubmit)} className="space-y-6">
+            <div className="space-y-2">
+                <h1 className="text-2xl font-bold font-headline md:text-3xl">Acesse sua conta</h1>
+                <p className="text-muted-foreground">
+                    Organizando o trabalho de profissionais incríveis.
+                </p>
             </div>
-            <div className="flex flex-col gap-4">
-                <FormField
+            
+            <FormField
                 control={form.control}
                 name="email"
                 render={({ field }) => (
@@ -87,26 +79,28 @@ export function AuthForm() {
                                     placeholder="Coloque seu e-mail" 
                                     {...field} 
                                     type="email" 
-                                    className="pl-9"
+                                    className="pl-9 h-11"
                                 />
                            </FormControl>
                         </div>
                         <FormMessage />
                     </FormItem>
                 )}
-                />
-                <Button type="submit" className="w-full" disabled={isLoading}>
+            />
+
+            <div className="flex justify-end">
+                <Button type="submit" disabled={isLoading}>
                     {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Enviar Código
                 </Button>
             </div>
+
+            <div className="text-balance text-left text-xs text-muted-foreground [&_a]:underline [&_a]:underline-offset-4 hover:[&_a]:text-primary">
+                Ao continuar, você concorda com nossos <a href="#">Termos de Serviço</a>{" "}
+                e <a href="#">Política de Privacidade</a>.
             </div>
         </form>
        </Form>
-      <div className="text-balance text-center text-xs text-muted-foreground [&_a]:underline [&_a]:underline-offset-4 hover:[&_a]:text-primary">
-        Ao continuar, você concorda com nossos <a href="#">Termos de Serviço</a>{" "}
-        e <a href="#">Política de Privacidade</a>.
-      </div>
     </div>
   )
 }
