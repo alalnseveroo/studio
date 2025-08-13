@@ -92,7 +92,7 @@ export default async function DashboardPage() {
     const recentContracts = contracts?.slice(0, 5) || [];
     const recentCharges = charges?.slice(0, 5) || [];
     
-    const showFreeTierAlert = profile?.plan_type === 'free_tier' && !profile?.is_completed;
+    const showFreeTierAlert = !profile || (profile.plan_type === 'free_tier' && !profile.is_completed);
 
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 sm:gap-6 sm:p-10">
