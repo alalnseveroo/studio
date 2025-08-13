@@ -106,7 +106,7 @@ export function UpgradePlanModal({ isOpen, onClose }: UpgradePlanModalProps) {
                     </div>
                     <div className="mt-8 flex justify-center w-full">
                         <Image 
-                            src="https://pouynmrblzvwlhrfyins.supabase.co/storage/v1/object/public/icons/imags/Untitled%20folder/pie-and-charts.png"
+                            src="https://pouynmrblzvwlhrfyins.supabase.co/storage/v1/object/public/icons/imags/Untitled%20folder/STARTUP%2011.png"
                             alt="Gráficos e planilhas"
                             width={300}
                             height={300}
@@ -133,7 +133,7 @@ export function UpgradePlanModal({ isOpen, onClose }: UpgradePlanModalProps) {
                                 ]}
                                 selectedPlan={selectedPlan}
                                 onSelect={setSelectedPlan}
-                                className="bg-[#ede9fe]"
+                                className="bg-[#faf5ff]"
                             />
                             <PlanCard
                                 planId="professional"
@@ -151,7 +151,7 @@ export function UpgradePlanModal({ isOpen, onClose }: UpgradePlanModalProps) {
                                 selectedPlan={selectedPlan}
                                 onSelect={setSelectedPlan}
                                 isFeatured
-                                className="bg-[#dcfce7]"
+                                className="bg-[#f0fdf4]"
                             />
                         </div>
                         <div className="mt-6 flex justify-end">
