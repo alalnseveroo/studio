@@ -16,14 +16,15 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { CheckCircle, AlertTriangle, Loader2, ArrowLeft, ArrowRight, User, Building, MapPin, PencilLine, PartyPopper, Search } from 'lucide-react'
+import { CheckCircle, Loader2, ArrowLeft, ArrowRight, User, Building, MapPin, PencilLine, PartyPopper, Search } from 'lucide-react'
 import SignatureCanvas from 'react-signature-canvas'
 import { saveProfile, getProfile } from '@/lib/actions/profile'
 import { useToast } from '@/hooks/use-toast'
 import type { Profile } from '@/lib/types'
 import Link from 'next/link'
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
+
 
 const STEPS = {
   TYPE: 1,
@@ -40,9 +41,6 @@ const profileSchema = z.object({
   // PF Fields
   fullName: z.string().min(3, 'O nome completo é obrigatório.'),
   nationality: z.string().min(3, 'A nacionalidade é obrigatória.'),
-  civilStatus: z.string().min(3, 'O estado civil é obrigatório.'),
-  profession: z.string().min(3, 'A profissão é obrigatória.'),
-  rg: z.string().min(5, 'O RG é obrigatório.'),
   cpf: z.string().min(11, 'O CPF é obrigatório.'),
   
   // PJ Fields
@@ -88,9 +86,6 @@ export default function ProfilePage() {
       sex: undefined,
       fullName: '',
       nationality: '',
-      civilStatus: '',
-      profession: '',
-      rg: '',
       cpf: '',
       companyName: '',
       cnpj: '',
@@ -113,7 +108,6 @@ export default function ProfilePage() {
         if(data.is_completed) {
             setIsSaved(true)
         } else {
-            // Se já tem dados mas não completou, pula para o passo que falta
             const parsed = profileSchema.safeParse(data);
             if (parsed.success) {
                 setCurrentStep(STEPS.SIGNATURE);
@@ -123,9 +117,6 @@ export default function ProfilePage() {
                 sex: data.sex,
                 fullName: data.full_name || '',
                 nationality: data.nationality || '',
-                civilStatus: data.civil_status || '',
-                profession: data.profession || '',
-                rg: data.rg || '',
                 cpf: data.cpf || '',
                 companyName: data.company_name || '',
                 cnpj: data.cnpj || '',
@@ -151,7 +142,7 @@ export default function ProfilePage() {
   
   const stepFields: Record<number, (keyof ProfileFormData)[]> = {
     [STEPS.TYPE]: ['personType'],
-    [STEPS.PERSONAL]: ['sex', 'fullName', 'nationality', 'civilStatus', 'profession', 'rg', 'cpf'],
+    [STEPS.PERSONAL]: ['sex', 'fullName', 'nationality', 'cpf'],
     [STEPS.COMPANY]: ['companyName', 'cnpj'],
     [STEPS.ADDRESS]: ['cep', 'street', 'number', 'neighborhood', 'city', 'state'],
     [STEPS.SIGNATURE]: ['signature'],
@@ -170,7 +161,7 @@ export default function ProfilePage() {
     const isValid = await form.trigger(fieldsToValidate);
 
     if (isValid) {
-      if (currentStep === STEPS.SIGNATURE) {
+      if (currentStep === getStepForPersonType(STEPS.SIGNATURE)) {
         await onSubmit(form.getValues());
       } else {
         setCurrentStep(prev => getStepForPersonType(prev + 1));
@@ -197,7 +188,6 @@ export default function ProfilePage() {
         return;
     }
     
-    // Constrói o endereço completo
     const address = `${values.street}, ${values.number}${values.complement ? `, ${values.complement}` : ''} - ${values.neighborhood}, ${values.city} - ${values.state}, CEP: ${values.cep}`;
 
     const data = { ...values, signature: signatureData, address, is_completed: true };
@@ -254,11 +244,13 @@ export default function ProfilePage() {
 
       <Form {...form}>
         <form className="space-y-8">
-            {currentStep === STEPS.TYPE && <TypeStep form={form} />}
-            {currentStep === STEPS.PERSONAL && <PersonalStep form={form} />}
-            {personType === 'cnpj' && currentStep === STEPS.COMPANY && <CompanyStep form={form} />}
-            {currentStep === getStepForPersonType(STEPS.ADDRESS) && <AddressStep form={form} />}
-            {currentStep === getStepForPersonType(STEPS.SIGNATURE) && <SignatureStep form={form} sigCanvas={sigCanvas} />}
+            <div className="space-y-6 rounded-lg border p-6">
+              {currentStep === STEPS.TYPE && <TypeStep form={form} />}
+              {currentStep === STEPS.PERSONAL && <PersonalStep form={form} />}
+              {personType === 'cnpj' && currentStep === STEPS.COMPANY && <CompanyStep form={form} />}
+              {currentStep === getStepForPersonType(STEPS.ADDRESS) && <AddressStep form={form} />}
+              {currentStep === getStepForPersonType(STEPS.SIGNATURE) && <SignatureStep form={form} sigCanvas={sigCanvas} />}
+            </div>
 
             <div className="flex justify-between items-center pt-4">
                 <Button type="button" variant="outline" onClick={handleBack} disabled={currentStep === STEPS.TYPE || isLoading}>
@@ -277,23 +269,21 @@ export default function ProfilePage() {
 
 // Step Components
 
-const StepCard = ({ icon: Icon, title, description, children }: { icon: React.ElementType, title: string, description: string, children: React.ReactNode }) => (
-    <Card>
-        <CardHeader className="flex flex-row items-start gap-4 space-y-0">
-            <div className="p-3 bg-muted rounded-full">
-                <Icon className="h-6 w-6 text-primary" />
-            </div>
-            <div className="flex-1">
-                <CardTitle>{title}</CardTitle>
-                <CardDescription>{description}</CardDescription>
-            </div>
-        </CardHeader>
-        <CardContent>{children}</CardContent>
-    </Card>
+const StepHeader = ({ icon: Icon, title, description }: { icon: React.ElementType, title: string, description: string }) => (
+    <div className="flex flex-row items-start gap-4 space-y-0 mb-6">
+        <div className="p-3 bg-muted rounded-full">
+            <Icon className="h-6 w-6 text-primary" />
+        </div>
+        <div className="flex-1">
+            <h2 className="text-lg font-semibold">{title}</h2>
+            <p className="text-sm text-muted-foreground">{description}</p>
+        </div>
+    </div>
 );
 
 const TypeStep = ({ form }: { form: any }) => (
-    <StepCard icon={User} title="Tipo de Perfil" description="Como você irá prestar os serviços?">
+    <div>
+        <StepHeader icon={User} title="Tipo de Perfil" description="Como você irá prestar os serviços?" />
          <FormField
             control={form.control}
             name="personType"
@@ -306,7 +296,7 @@ const TypeStep = ({ form }: { form: any }) => (
                             <RadioGroupItem value="cpf" id="cpf" className="sr-only peer" />
                         </FormControl>
                         <FormLabel htmlFor="cpf" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
-                            <Building className="mb-3 h-6 w-6" />
+                            <User className="mb-3 h-6 w-6" />
                             Pessoa Física (Autônomo)
                         </FormLabel>
                     </FormItem>
@@ -315,7 +305,7 @@ const TypeStep = ({ form }: { form: any }) => (
                             <RadioGroupItem value="cnpj" id="cnpj" className="sr-only peer" />
                         </FormControl>
                          <FormLabel htmlFor="cnpj" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
-                            <User className="mb-3 h-6 w-6" />
+                            <Building className="mb-3 h-6 w-6" />
                             Pessoa Jurídica (MEI/Empresa)
                         </FormLabel>
                     </FormItem>
@@ -325,11 +315,12 @@ const TypeStep = ({ form }: { form: any }) => (
             </FormItem>
             )}
         />
-    </StepCard>
+    </div>
 );
 
 const PersonalStep = ({ form }: { form: any }) => (
-    <StepCard icon={User} title="Dados Pessoais" description="Estas informações aparecerão no contrato.">
+    <div>
+        <StepHeader icon={User} title="Dados Pessoais" description="Estas informações aparecerão no contrato." />
         <div className="space-y-4">
              <FormField control={form.control} name="fullName" render={({ field }) => (
                 <FormItem><FormLabel>Nome Completo</FormLabel><FormControl><Input placeholder="Seu nome completo" {...field} /></FormControl><FormMessage /></FormItem>
@@ -337,17 +328,6 @@ const PersonalStep = ({ form }: { form: any }) => (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField control={form.control} name="nationality" render={({ field }) => (
                     <FormItem><FormLabel>Nacionalidade</FormLabel><FormControl><Input placeholder="Brasileira" {...field} /></FormControl><FormMessage /></FormItem>
-                )} />
-                <FormField control={form.control} name="civilStatus" render={({ field }) => (
-                    <FormItem><FormLabel>Estado Civil</FormLabel><FormControl><Input placeholder="Solteiro(a)" {...field} /></FormControl><FormMessage /></FormItem>
-                )} />
-            </div>
-            <FormField control={form.control} name="profession" render={({ field }) => (
-                <FormItem><FormLabel>Profissão</FormLabel><FormControl><Input placeholder="Assistente Virtual" {...field} /></FormControl><FormMessage /></FormItem>
-            )} />
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField control={form.control} name="rg" render={({ field }) => (
-                    <FormItem><FormLabel>RG</FormLabel><FormControl><Input placeholder="00.000.000-0" {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField control={form.control} name="cpf" render={({ field }) => (
                     <FormItem><FormLabel>CPF</FormLabel><FormControl><Input placeholder="000.000.000-00" {...field} /></FormControl><FormMessage /></FormItem>
@@ -376,7 +356,7 @@ const PersonalStep = ({ form }: { form: any }) => (
                 )}
             />
         </div>
-    </StepCard>
+    </div>
 );
 
 const CompanyStep = ({ form }: { form: any }) => {
@@ -411,7 +391,8 @@ const CompanyStep = ({ form }: { form: any }) => {
     };
 
     return (
-        <StepCard icon={Building} title="Dados da Empresa" description="Preencha os dados do seu CNPJ.">
+        <div>
+            <StepHeader icon={Building} title="Dados da Empresa" description="Preencha os dados do seu CNPJ." />
             <div className="space-y-4">
                  <FormField control={form.control} name="cnpj" render={({ field }) => (
                     <FormItem>
@@ -429,7 +410,7 @@ const CompanyStep = ({ form }: { form: any }) => {
                     <FormItem><FormLabel>Nome da Empresa (Razão Social)</FormLabel><FormControl><Input placeholder="Minha Empresa LTDA" {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
             </div>
-        </StepCard>
+        </div>
     );
 };
 
@@ -463,7 +444,8 @@ const AddressStep = ({ form }: { form: any }) => {
     };
 
     return (
-        <StepCard icon={MapPin} title="Endereço" description="Seu endereço profissional ou residencial.">
+        <div>
+            <StepHeader icon={MapPin} title="Endereço" description="Seu endereço profissional ou residencial." />
             <div className="space-y-4">
                  <FormField control={form.control} name="cep" render={({ field }) => (
                     <FormItem>
@@ -500,12 +482,13 @@ const AddressStep = ({ form }: { form: any }) => {
                     )} />
                 </div>
             </div>
-        </StepCard>
+        </div>
     );
 }
 
 const SignatureStep = ({ form, sigCanvas }: { form: any, sigCanvas: React.RefObject<SignatureCanvas> }) => (
-    <StepCard icon={PencilLine} title="Assinatura Digital" description="Desenhe sua assinatura. Ela será usada nos contratos.">
+    <div>
+        <StepHeader icon={PencilLine} title="Assinatura Digital" description="Desenhe sua assinatura. Ela será usada nos contratos." />
          <FormField
             control={form.control}
             name="signature"
@@ -528,5 +511,5 @@ const SignatureStep = ({ form, sigCanvas }: { form: any, sigCanvas: React.RefObj
         <Button type="button" variant="outline" size="sm" onClick={() => sigCanvas.current?.clear()} className="mt-2">
             Limpar
         </Button>
-    </StepCard>
+    </div>
 );

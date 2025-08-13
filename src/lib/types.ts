@@ -60,9 +60,9 @@ export type Profile = {
   cnpj?: string;
   full_name?: string;
   nationality?: string;
-  civil_status?: string;
-  profession?: string;
-  rg?: string;
+  civil_status?: string | null;
+  profession?: string | null;
+  rg?: string | null;
   cpf?: string;
   address?: string;
   signature?: string;
