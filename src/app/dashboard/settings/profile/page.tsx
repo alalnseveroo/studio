@@ -163,21 +163,21 @@ export default function ProfilePage() {
     return (
       <div className="flex flex-1 flex-col gap-4 p-4 sm:gap-6 sm:p-10">
         <div className="flex items-center gap-4">
-           <Button asChild variant="outline" size="icon" className="h-7 w-7">
-              <Link href="/dashboard">
-              <ArrowLeft className="h-4 w-4" />
-              <span className="sr-only">Voltar</span>
-              </Link>
-            </Button>
             <h1 className="text-lg font-semibold md:text-2xl">Perfil da Contratada</h1>
         </div>
         <Alert variant="default" className="bg-green-50 border-green-200">
             <CheckCircle className="h-4 w-4 !text-green-600" />
             <AlertTitle className="text-green-800">Perfil Completo!</AlertTitle>
             <AlertDescription className="text-green-700">
-                Seus dados foram salvos. Agora você já pode gerar e assinar contratos.
+                Seus dados foram salvos. O sistema está liberado, agora você já pode gerar e assinar contratos.
             </AlertDescription>
         </Alert>
+        <Button asChild className="mt-4">
+            <Link href="/dashboard">
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Voltar para o Dashboard
+            </Link>
+        </Button>
       </div>
     )
   }
@@ -185,12 +185,6 @@ export default function ProfilePage() {
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 sm:gap-6 sm:p-10">
       <div className="flex items-center gap-4">
-        <Button asChild variant="outline" size="icon" className="h-7 w-7">
-            <Link href="/dashboard">
-            <ArrowLeft className="h-4 w-4" />
-            <span className="sr-only">Voltar</span>
-            </Link>
-        </Button>
         <h1 className="text-lg font-semibold md:text-2xl">Perfil da Contratada</h1>
       </div>
        
