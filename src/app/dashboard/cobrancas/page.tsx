@@ -256,7 +256,7 @@ export default function CobrancasPage() {
                                                 Marcar como pago
                                             </DropdownMenuItem>
                                         )}
-                                        <DropdownMenuItem onSelect={() => handleSendReminder(charge)}>
+                                        <DropdownMenuItem onSelect={() => handleSendReminder(charge)} disabled={!providerProfile}>
                                             <Send className="mr-2 h-4 w-4" />
                                             Enviar lembrete
                                         </DropdownMenuItem>
