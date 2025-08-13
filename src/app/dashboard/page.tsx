@@ -9,7 +9,6 @@ import {
   BadgeCent,
   AlertTriangle,
   ClipboardList,
-  Gift
 } from 'lucide-react'
 
 import {
@@ -34,7 +33,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { getClients } from '@/lib/actions/clients'
 import { getContracts } from '@/lib/actions/contratos'
 import { getCharges } from '@/lib/actions/cobrancas'
@@ -92,28 +90,13 @@ export default async function DashboardPage() {
     const recentContracts = contracts?.slice(0, 5) || [];
     const recentCharges = charges?.slice(0, 5) || [];
     
-    const isProfileComplete = !!profile?.is_completed;
-    const showFreeTierAlert = profile?.plan_type === 'free_tier' && !isProfileComplete;
+    const isProfileComplete = profile?.is_completed ?? false;
 
   return (
     <div className="flex flex-1 flex-col gap-4 sm:gap-6">
       <div className="flex items-center">
         <h1 className="text-lg font-semibold md:text-2xl">Dashboard</h1>
       </div>
-      
-       {showFreeTierAlert && (
-          <Alert variant="default" className="bg-green-50 border-green-200">
-            <Gift className="h-4 w-4 text-green-600" />
-            <AlertTitle className="text-green-800">Você recebeu 1 crédito de presente!</AlertTitle>
-            <AlertDescription className="text-green-700">
-                Isso quer dizer que pode usar o fluxo completo para seu primeiro cliente. Para começar,{' '}
-                <Link href="/dashboard/settings/profile" className="font-bold underline hover:text-green-800">
-                    clique aqui para configurar seu perfil
-                </Link>
-                .
-            </AlertDescription>
-        </Alert>
-       )}
       
       <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
         <Card>
