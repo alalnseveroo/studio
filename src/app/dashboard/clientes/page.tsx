@@ -161,6 +161,7 @@ export default function ClientesPage() {
 
   const handleClientAdded = (newClient: Cliente) => {
     setClients((prevClients) => [newClient, ...prevClients]);
+    setIsSheetOpen(false);
     setNewlyCreatedClient(newClient);
     setShowSuccessModal(true);
   };
