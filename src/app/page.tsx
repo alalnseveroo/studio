@@ -1,3 +1,4 @@
+
 import { AuthForm } from '@/components/auth-form';
 import Image from 'next/image';
 
@@ -20,9 +21,9 @@ export default function LoginPage() {
             </div>
        </div>
 
-        <div className="absolute bottom-0 left-0 w-full p-4">
-            <div className="w-full border-t border-gray-200 mb-2"></div>
-            <p className="text-center text-[10px] text-muted-foreground">
+        <div className="absolute bottom-0 left-0 w-full px-8 pb-4">
+            <div className="w-full border-t border-gray-200"></div>
+            <p className="mt-2 text-[10px] text-muted-foreground">
                 Ao continuar, você concorda com nossos{' '}
                 <a href="#" className="underline underline-offset-4 hover:text-primary">
                     Termos de Serviço
