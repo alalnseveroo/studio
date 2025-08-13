@@ -7,6 +7,7 @@ import { getClientById } from '@/lib/actions/clients'
 import { getContractsForClientPortal } from '@/lib/actions/contratos'
 import { getChargesForClientPortal } from '@/lib/actions/cobrancas'
 import { getProfile } from '@/lib/actions/profile'
+import { createClient } from '@/lib/supabase/client'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { AlertCircle, User, FileText, Check, Clock, Verified, Briefcase, Mail, Download, CreditCard, Lock } from 'lucide-react'
 import {
@@ -78,7 +79,7 @@ export default function ClientPortalPage() {
 
   const fetchData = useCallback(async () => {
     if (!clientId) return
-    setIsLoading(true)
+    if (!isLoading) setIsLoading(true); // Show loader only on subsequent fetches
     setError(null)
     
     try {
@@ -113,13 +114,43 @@ export default function ClientPortalPage() {
     } finally {
         setIsLoading(false)
     }
-  }, [clientId])
+  }, [clientId, isLoading])
 
   useEffect(() => {
     fetchData()
-  }, [fetchData])
+  }, [clientId]) // Initial fetch
 
-  if (isLoading) {
+  useEffect(() => {
+    if (!clientId) return;
+
+    const supabase = createClient();
+    const channels = supabase
+      .channel(`portal-${clientId}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'contratos', filter: `cliente_id=eq.${clientId}` },
+        (payload) => {
+          console.log('Realtime update on contratos:', payload)
+          fetchData()
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'cobrancas', filter: `cliente_id=eq.${clientId}` },
+        (payload) => {
+          console.log('Realtime update on cobrancas:', payload)
+          fetchData()
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channels);
+    }
+  }, [clientId, fetchData]);
+
+
+  if (isLoading && !client) {
     return <div className="flex min-h-screen items-center justify-center"><p>Carregando...</p></div>
   }
 
@@ -360,5 +391,3 @@ export default function ClientPortalPage() {
     </>
   )
 }
-
-    
