@@ -2,9 +2,8 @@
 'use client'
 
 import { useState } from 'react'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { CheckCircle, Zap, ArrowLeft, Check } from 'lucide-react'
+import { Check, ArrowLeft } from 'lucide-react'
 import Image from 'next/image'
 import {
   Dialog,
@@ -15,7 +14,6 @@ import {
 } from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
 import { RadioGroup, RadioGroupItem } from './ui/radio-group'
-import { Label } from './ui/label'
 
 const PlanCard = ({ 
     planId,
@@ -122,42 +120,43 @@ export function UpgradePlanModal({ isOpen, onClose }: UpgradePlanModalProps) {
                             <PlanCard
                                 planId="flexible"
                                 title="Plano Flexível"
-                                description="Ideal para quem está começando."
+                                description="Ideal para quem está começando ou prefere não ter um custo fixo mensal."
                                 price="R$ 10,00"
-                                priceSuffix="/mês, por cliente"
-                                bodyText="Pague apenas pelos clientes que você gerencia. Cadastrar contatos é sempre gratuito."
+                                priceSuffix="/mês, por cliente ativo"
+                                bodyText="Pague apenas pelos clientes que assinou contrato ou você coloca no piloto automático. Cadastrar contatos na sua base é sempre gratuito."
                                 features={[
                                     "Seu 1º cliente é grátis, sempre!",
-                                    "Cobrança automática",
-                                    "Portal do Cliente",
-                                    "Contratos e Propostas"
+                                    "Cobrança automática e notas fiscais",
+                                    "Portal do Cliente.",
+                                    "Contratos completo",
+                                    "Cancele a qualquer momento, sem burocracia.",
                                 ]}
                                 selectedPlan={selectedPlan}
                                 onSelect={setSelectedPlan}
-                                className="bg-[#ddd6fe]"
+                                className="bg-[#ede9fe]"
                             />
                             <PlanCard
                                 planId="professional"
                                 title="Plano Profissional"
-                                description="Para quem quer escalar sem limites."
+                                description="Perfeito para quem já tem uma carteira de clientes e quer escalar sem limites."
                                 price="R$ 29,90"
                                 priceSuffix="/mês"
-                                bodyText="Tudo ilimitado. Custo fixo para crescer seu negócio sem surpresas."
+                                bodyText="Tudo ilimitado. A tranquilidade de um custo fixo para crescer o seu negócio sem surpresas."
                                 features={[
-                                    "Clientes ILIMITADOS",
-                                    "Contratos ILIMITADOS",
-                                    "Acesso a todas as funcionalidades",
-                                    "Melhor custo-benefício a partir de 3 clientes"
+                                    "Clientes ILIMITADOS na gestão automática.",
+                                    "Contratos e Propostas ILIMITADOS.",
+                                    "Acesso a todas as funcionalidades premium.",
+                                    "O melhor custo-benefício a partir de 3 clientes.",
                                 ]}
                                 selectedPlan={selectedPlan}
                                 onSelect={setSelectedPlan}
                                 isFeatured
-                                className="bg-[#bbf7d0]"
+                                className="bg-[#dcfce7]"
                             />
                         </div>
-                        <div className="mt-6">
-                            <Button size="lg" className="w-full text-base py-6">
-                                {selectedPlan === 'flexible' ? 'Continuar com o Plano Flexível' : 'Assinar Plano Profissional'}
+                        <div className="mt-6 flex justify-end">
+                            <Button size="lg" className="text-base py-6">
+                                Continuar
                             </Button>
                         </div>
                     </div>
