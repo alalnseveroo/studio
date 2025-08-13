@@ -12,7 +12,6 @@ import {
   Form,
   FormControl,
   FormField,
-  FormItem,
   FormMessage,
 } from '@/components/ui/form'
 import { signInWithOtp } from '@/lib/actions/auth'
@@ -94,13 +93,24 @@ export function AuthForm() {
                     Enviar Código
                 </Button>
             </div>
-
-            <div className="text-balance text-left text-xs text-muted-foreground [&_a]:underline [&_a]:underline-offset-4 hover:[&_a]:text-primary">
-                Ao continuar, você concorda com nossos <a href="#">Termos de Serviço</a>{" "}
-                e <a href="#">Política de Privacidade</a>.
-            </div>
         </form>
        </Form>
+        <div className="relative mt-6">
+            <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+            </div>
+        </div>
+        <p className="mt-6 text-center text-xs text-muted-foreground">
+            Ao continuar, você concorda com nossos{' '}
+            <a href="#" className="underline underline-offset-4 hover:text-primary">
+                Termos de Serviço
+            </a>{' '}
+            e{' '}
+            <a href="#" className="underline underline-offset-4 hover:text-primary">
+                Política de Privacidade
+            </a>
+            .
+        </p>
     </div>
   )
 }
