@@ -13,12 +13,11 @@ import {
   FormControl,
   FormField,
   FormItem,
-  FormLabel,
   FormMessage,
 } from '@/components/ui/form'
 import { signInWithOtp } from '@/lib/actions/auth'
 import { useToast } from '@/hooks/use-toast'
-import { Loader2 } from 'lucide-react'
+import { Loader2, Mail } from 'lucide-react'
 import Image from 'next/image'
 
 const emailSchema = z.object({
@@ -63,13 +62,13 @@ export function AuthForm() {
         <form onSubmit={form.handleSubmit(handleEmailSubmit)}>
             <div className="flex flex-col gap-6">
             <div className="flex flex-col items-center gap-2">
-                <div className="flex h-12 w-12 items-center justify-center rounded-md">
+                <div className="flex items-center justify-center rounded-md">
                    <Image 
                      src="https://pouynmrblzvwlhrfyins.supabase.co/storage/v1/object/public/icons/imags/Office%20Working%201.png" 
                      alt="Assistei Logo" 
-                     width={48} 
-                     height={48}
-                     className="size-12"
+                     width={150} 
+                     height={150}
+                     className="size-[150px]"
                     />
                 </div>
                 <h1 className="text-xl font-bold font-headline">Bem-vindo(a) à Assistei</h1>
@@ -81,11 +80,18 @@ export function AuthForm() {
                 name="email"
                 render={({ field }) => (
                     <FormItem>
-                    <FormLabel>E-mail</FormLabel>
-                    <FormControl>
-                        <Input placeholder="voce@exemplo.com" {...field} type="email" />
-                    </FormControl>
-                    <FormMessage />
+                        <div className="relative">
+                           <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                           <FormControl>
+                                <Input 
+                                    placeholder="Coloque seu e-mail" 
+                                    {...field} 
+                                    type="email" 
+                                    className="pl-9"
+                                />
+                           </FormControl>
+                        </div>
+                        <FormMessage />
                     </FormItem>
                 )}
                 />

@@ -1,3 +1,4 @@
+
 'use client'
 
 import { useState } from 'react'
@@ -5,7 +6,6 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import {
   Form,
   FormControl,
@@ -21,13 +21,18 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import {
+  InputOTP,
+  InputOTPGroup,
+  InputOTPSlot,
+} from "@/components/ui/input-otp"
 import { verifyOtp } from '@/lib/actions/auth'
 import { useToast } from '@/hooks/use-toast'
 import { Loader2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
 const otpSchema = z.object({
-  otp: z.string().min(6, { message: 'O OTP deve ter 6 dígitos.' }).max(6, { message: 'O OTP deve ter 6 dígitos.' }),
+  otp: z.string().min(6, { message: 'O código deve ter 6 dígitos.' }),
 })
 
 interface OtpVerificationFormProps {
@@ -93,16 +98,30 @@ export function OtpVerificationForm({ email }: OtpVerificationFormProps) {
       </CardHeader>
       <CardContent>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleOtpSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(handleOtpSubmit)} className="space-y-6">
             <FormField
               control={form.control}
               name="otp"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Senha de Uso Único</FormLabel>
-                  <FormControl>
-                    <Input placeholder="123456" {...field} inputMode="numeric" autoComplete="one-time-code" />
-                  </FormControl>
+                   <div className="flex justify-center">
+                    <FormControl>
+                        <InputOTP
+                          maxLength={6}
+                          {...field}
+                        >
+                          <InputOTPGroup>
+                            <InputOTPSlot index={0} />
+                            <InputOTPSlot index={1} />
+                            <InputOTPSlot index={2} />
+                            <InputOTPSlot index={3} />
+                            <InputOTPSlot index={4} />
+                            <InputOTPSlot index={5} />
+                          </InputOTPGroup>
+                        </InputOTP>
+                      </FormControl>
+                   </div>
                   <FormMessage />
                 </FormItem>
               )}
