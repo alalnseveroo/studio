@@ -92,6 +92,7 @@ export default async function DashboardPage() {
     const recentContracts = contracts?.slice(0, 5) || [];
     const recentCharges = charges?.slice(0, 5) || [];
     
+    // Mostra o alerta se não houver perfil ou se o perfil do plano gratuito estiver incompleto.
     const showFreeTierAlert = !profile || (profile.plan_type === 'free_tier' && !profile.is_completed);
 
   return (

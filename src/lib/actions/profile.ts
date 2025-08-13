@@ -83,17 +83,22 @@ export async function getProfile(userId?: string) {
         .select('*')
         .eq('id', targetUserId)
         .single();
-
-    if (error && error.code !== 'PGRST116') { // Ignore 'exact-one' error for new users
+        
+    // Se houver um erro e não for o de 'nenhum resultado encontrado', retorne o erro.
+    if (error && error.code !== 'PGRST116') {
         console.error('Error fetching profile:', error);
         return { data: null, error: { message: 'Erro ao buscar perfil.' } };
     }
+
+    // Se não houver dados de perfil (usuário novo), retorne nulo.
+    if (!profileData) {
+        return { data: null, error: null };
+    }
     
-    if (!email && user && user.id === targetUserId) {
-        email = user.email;
+    // Se o perfil foi encontrado, adicione o e-mail do usuário autenticado a ele.
+    if (!profileData.email && user && user.id === targetUserId) {
+        profileData.email = user.email;
     }
 
-    const profileWithEmail = profileData ? { ...profileData, email } : { id: targetUserId, email };
-
-    return { data: profileWithEmail, error: null };
+    return { data: profileData, error: null };
 }
