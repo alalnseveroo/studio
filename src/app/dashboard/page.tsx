@@ -1,4 +1,5 @@
 
+
 import Link from 'next/link'
 import {
   ArrowUpRight,
@@ -7,7 +8,8 @@ import {
   DollarSign,
   BadgeCent,
   AlertTriangle,
-  ClipboardList
+  ClipboardList,
+  Gift
 } from 'lucide-react'
 
 import {
@@ -32,11 +34,14 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { getClients } from '@/lib/actions/clients'
 import { getContracts } from '@/lib/actions/contratos'
 import { getCharges } from '@/lib/actions/cobrancas'
+import { getProfile } from '@/lib/actions/profile'
 import { format, isPast } from 'date-fns'
 import { cn } from '@/lib/utils'
+import type { Profile } from '@/lib/types'
 
 const getStatusClass = (status: string) => {
     switch (status) {
@@ -72,10 +77,11 @@ const getChargeStatusInfo = (status: string, dueDate: string) => {
 
 
 export default async function DashboardPage() {
-    const [{ data: clients }, { data: contracts }, { data: charges }] = await Promise.all([
+    const [{ data: clients }, { data: contracts }, { data: charges }, { data: profile }] = await Promise.all([
         getClients(),
         getContracts(),
-        getCharges()
+        getCharges(),
+        getProfile() as Promise<{ data: Profile | null }>
     ]);
 
     const totalRevenue = charges?.filter(c => c.status === 'pago').reduce((sum, c) => sum + (c.value || 0), 0) || 0;
@@ -85,12 +91,25 @@ export default async function DashboardPage() {
 
     const recentContracts = contracts?.slice(0, 5) || [];
     const recentCharges = charges?.slice(0, 5) || [];
+    
+    const showFreeTierAlert = profile?.plan_type === 'free_tier';
 
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 sm:gap-6 sm:p-6">
       <div className="flex items-center">
         <h1 className="text-lg font-semibold md:text-2xl">Dashboard</h1>
       </div>
+      
+       {showFreeTierAlert && (
+          <Alert variant="default" className="bg-green-50 border-green-200">
+            <Gift className="h-4 w-4 text-green-600" />
+            <AlertTitle className="text-green-800">Você recebeu 1 crédito de presente</AlertTitle>
+            <AlertDescription className="text-green-700">
+                Isso quer dizer que pode usar o fluxo completo para seu primeiro cliente, incluindo cobranças automáticas, contratos e portal do cliente, para sempre.
+            </AlertDescription>
+        </Alert>
+       )}
+      
       <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">

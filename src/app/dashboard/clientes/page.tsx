@@ -35,8 +35,9 @@ import {
 import { Checkbox } from "@/components/ui/checkbox"
 import { AddClientSheet } from '@/components/add-client-sheet'
 import { getClients, deleteClient, deleteMultipleClients } from '@/lib/actions/clients'
-import type { Cliente, Proposta } from '@/lib/types'
+import type { Cliente, Proposta, Profile } from '@/lib/types'
 import { getProposals } from '@/lib/actions/propostas'
+import { getProfile } from '@/lib/actions/profile'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import Link from 'next/link'
 import { PlusCircle, Loader2, FilePen, Trash2, Check, FileText, CreditCard } from 'lucide-react'
@@ -44,6 +45,8 @@ import { cn } from '@/lib/utils'
 import { useToast } from '@/hooks/use-toast'
 import { CreateContractModal } from '@/components/create-contract-modal'
 import { ConfigureBillingModal } from '@/components/configure-billing-modal'
+import { UpgradePlanModal } from '@/components/upgrade-plan-modal'
+
 
 const ITEMS_PER_PAGE = 10;
 
@@ -65,8 +68,12 @@ export default function ClientesPage() {
   const [isSheetOpen, setIsSheetOpen] = useState(false)
   const [isContractModalOpen, setIsContractModalOpen] = useState(false)
   const [isBillingModalOpen, setIsBillingModalOpen] = useState(false)
+  const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false)
+  
   const [clients, setClients] = useState<Cliente[]>([])
   const [proposals, setProposals] = useState<Proposta[]>([])
+  const [profile, setProfile] = useState<Profile | null>(null);
+
   const [isLoading, setIsLoading] = useState(true)
   const [currentPage, setCurrentPage] = useState(1)
   const [selectedClients, setSelectedClients] = useState<string[]>([])
@@ -78,20 +85,33 @@ export default function ClientesPage() {
 
   const { toast } = useToast()
 
-  const fetchClientsAndProposals = async () => {
+  const fetchInitialData = async () => {
     setIsLoading(true)
-    const [{ data: clientData }, { data: proposalData }] = await Promise.all([
+    const [{ data: clientData }, { data: proposalData }, { data: profileData }] = await Promise.all([
       getClients(),
       getProposals(),
+      getProfile()
     ]);
     setClients(clientData || [])
     setProposals(proposalData || [])
+    setProfile(profileData as Profile | null);
     setIsLoading(false)
   }
 
   useEffect(() => {
-    fetchClientsAndProposals()
+    fetchInitialData()
   }, [])
+
+  const handleAddClientClick = () => {
+    const clientCount = clients.length;
+    const creditLimit = profile?.credits ?? 1;
+
+    if (profile?.plan_type === 'free_tier' && clientCount >= creditLimit) {
+      setIsUpgradeModalOpen(true);
+    } else {
+      setIsSheetOpen(true);
+    }
+  };
   
   const handleDeleteClient = async () => {
     if (!clientToDelete) return
@@ -109,7 +129,7 @@ export default function ClientesPage() {
         title: 'Cliente Excluído!',
         description: 'O cliente foi removido com sucesso.',
       })
-      await fetchClientsAndProposals()
+      await fetchInitialData()
       setSelectedClients([])
     }
     setClientToDelete(null)
@@ -131,7 +151,7 @@ export default function ClientesPage() {
         title: 'Clientes Excluídos!',
         description: `${selectedClients.length} clientes foram removidos com sucesso.`,
       })
-      await fetchClientsAndProposals()
+      await fetchInitialData()
       setSelectedClients([])
     }
     setIsBulkDeleteConfirmOpen(false)
@@ -139,10 +159,9 @@ export default function ClientesPage() {
 
 
   const handleClientAdded = (newClient: Cliente) => {
-    // setIsSheetOpen(false); // A folha se fecha
     setClients((prevClients) => [newClient, ...prevClients]);
-    setNewlyCreatedClient(newClient); // Guarda o cliente novo
-    setShowSuccessModal(true); // Abre o modal de sucesso
+    setNewlyCreatedClient(newClient);
+    setShowSuccessModal(true);
   };
   
   const handleSuccessAction = (action: 'contract' | 'billing') => {
@@ -214,7 +233,7 @@ export default function ClientesPage() {
                     </span>
                 </Button>
             )}
-            <Button size="sm" className="h-8 gap-1" onClick={() => setIsSheetOpen(true)}>
+            <Button size="sm" className="h-8 gap-1" onClick={handleAddClientClick}>
               <PlusCircle className="h-3.5 w-3.5" />
               <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
                 Adicionar Cliente
@@ -236,7 +255,7 @@ export default function ClientesPage() {
               <p className="text-sm text-muted-foreground">
                 Comece a adicionar clientes para vê-los aqui.
               </p>
-               <Button className="mt-4" onClick={() => setIsSheetOpen(true)}>Adicionar Cliente</Button>
+               <Button className="mt-4" onClick={handleAddClientClick}>Adicionar Cliente</Button>
             </div>
           </div>
         ) : (
@@ -386,6 +405,11 @@ export default function ClientesPage() {
         onClose={() => setIsSheetOpen(false)}
         onSuccess={handleClientAdded}
       />
+
+       <UpgradePlanModal
+        isOpen={isUpgradeModalOpen}
+        onClose={() => setIsUpgradeModalOpen(false)}
+      />
       
       <CreateContractModal
           isOpen={isContractModalOpen}
@@ -397,7 +421,7 @@ export default function ClientesPage() {
           proposals={proposals}
           onClientListChange={setClients}
           selectedClientId={newlyCreatedClient?.id}
-          onContractAdded={() => fetchClientsAndProposals()} 
+          onContractAdded={() => fetchInitialData()} 
       />
 
        <ConfigureBillingModal
@@ -408,7 +432,7 @@ export default function ClientesPage() {
         }}
         clientId={newlyCreatedClient?.id}
         proposals={proposals}
-        onBillingConfigured={() => fetchClientsAndProposals()}
+        onBillingConfigured={() => fetchInitialData()}
       />
 
 
@@ -482,5 +506,3 @@ export default function ClientesPage() {
     </>
   )
 }
-
-    

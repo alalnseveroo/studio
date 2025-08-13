@@ -67,6 +67,8 @@ export type Profile = {
   signature?: string;
   is_completed?: boolean;
   email?: string;
+  plan_type: 'free_tier' | 'per_client' | 'total_plan';
+  credits: number;
 };
 
 export type Contrato = {
@@ -106,6 +108,7 @@ export type Cobranca = {
     status: 'pendente' | 'pago' | 'atrasado';
     paid_at: string | null;
     invoice_url: string | null;
+    updated_at: string | null;
     clientes: Cliente; // Join com clientes
 }
     
@@ -114,3 +117,4 @@ export type Cobranca = {
 
     
 
+    
