@@ -93,7 +93,7 @@ export function OtpVerificationForm({ email }: OtpVerificationFormProps) {
                             Digite o código de 6 dígitos enviado para <strong>{email}</strong>
                         </p>
                     </div>
-                    <div className="flex flex-col gap-4">
+                    <div className="space-y-4">
                         <FormField
                         control={form.control}
                         name="otp"
