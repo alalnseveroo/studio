@@ -3,8 +3,8 @@
 
 import type { Cliente, Profile } from "../types";
 
-const CLIENT_WEBHOOK_URL = 'https://n8n-grupoteaser-n8n.2mbu8a.easypanel.host/webhook-test/c5665123-8b7c-473b-91b7-fa5547ca13f2';
-const PROFILE_WEBHOOK_URL = 'https://n8n-grupoteaser-n8n.2mbu8a.easypanel.host/webhook-test/cfa45a7b-be79-4062-b351-ebd1a3fb8f90';
+const CLIENT_WEBHOOK_URL = 'https://n8n-grupoteaser-n8n.2mbu8a.easypanel.host/webhook/c5665123-8b7c-473b-91b7-fa5547ca13f2';
+const PROFILE_WEBHOOK_URL = 'https://n8n-grupoteaser-n8n.2mbu8a.easypanel.host/webhook/cfa45a7b-be79-4062-b351-ebd1a3fb8f90';
 
 interface EnrichedCliente extends Cliente {
     portal_url?: string;
