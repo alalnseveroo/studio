@@ -19,6 +19,22 @@ export default function LoginPage() {
                 />
             </div>
        </div>
+
+        <div className="absolute bottom-0 left-0 w-full p-4">
+            <div className="w-full border-t border-gray-200 mb-4"></div>
+            <p className="text-center text-xs text-muted-foreground">
+                Ao continuar, você concorda com nossos{' '}
+                <a href="#" className="underline underline-offset-4 hover:text-primary">
+                    Termos de Serviço
+                </a>{' '}
+                e{' '}
+                <a href="#" className="underline underline-offset-4 hover:text-primary">
+                    Política de Privacidade
+                </a>
+                .
+            </p>
+        </div>
+
     </div>
   );
 }

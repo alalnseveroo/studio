@@ -96,22 +96,6 @@ export function AuthForm() {
             </div>
         </form>
        </Form>
-        <div className="relative mt-6">
-            <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t" />
-            </div>
-        </div>
-        <p className="mt-6 text-center text-xs text-muted-foreground">
-            Ao continuar, você concorda com nossos{' '}
-            <a href="#" className="underline underline-offset-4 hover:text-primary">
-                Termos de Serviço
-            </a>{' '}
-            e{' '}
-            <a href="#" className="underline underline-offset-4 hover:text-primary">
-                Política de Privacidade
-            </a>
-            .
-        </p>
     </div>
   )
 }
