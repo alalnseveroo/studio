@@ -4,16 +4,44 @@
 import { useSearchParams } from 'next/navigation'
 import { Suspense } from 'react'
 import { OtpVerificationForm } from '@/components/otp-verification-form'
+import Image from 'next/image'
 
 function VerifyOtpPageContent() {
   const searchParams = useSearchParams()
   const email = searchParams.get('email')
 
   return (
-    <div className="flex min-h-screen w-full items-center justify-center bg-background p-4">
-      <main className="w-full max-w-sm">
-        <OtpVerificationForm email={email || ''} />
-      </main>
+    <div className="relative flex min-h-screen w-full items-center justify-center bg-background">
+       <div className="grid w-full max-w-5xl grid-cols-1 items-center gap-8 px-4 md:grid-cols-2 md:px-8">
+            <div className="flex flex-col items-center justify-center">
+                <OtpVerificationForm email={email || ''} />
+            </div>
+            <div className="hidden md:flex items-center justify-center">
+                 <Image 
+                    src="https://pouynmrblzvwlhrfyins.supabase.co/storage/v1/object/public/icons/imags/Untitled%20folder/Enter%20Password%203%20(1).png"
+                    alt="Verificar Código" 
+                    width={400} 
+                    height={400}
+                    className="size-[400px]"
+                    priority
+                />
+            </div>
+       </div>
+
+        <div className="absolute bottom-0 left-0 w-full px-8 pb-4">
+            <div className="w-full border-t border-gray-200"></div>
+            <p className="mt-2 text-[10px] text-muted-foreground">
+                Ao continuar, você concorda com nossos{' '}
+                <a href="#" className="underline underline-offset-4 hover:text-primary">
+                    Termos de Serviço
+                </a>{' '}
+                e{' '}
+                <a href="#" className="underline underline-offset-4 hover:text-primary">
+                    Política de Privacidade
+                </a>
+                .
+            </p>
+        </div>
     </div>
   )
 }

@@ -17,6 +17,7 @@ import {
   InputOTP,
   InputOTPGroup,
   InputOTPSlot,
+  InputOTPSeparator,
 } from "@/components/ui/input-otp"
 import { verifyOtp } from '@/lib/actions/auth'
 import { useToast } from '@/hooks/use-toast'
@@ -82,23 +83,14 @@ export function OtpVerificationForm({ email }: OtpVerificationFormProps) {
   }
   
   return (
-    <div className="flex flex-col gap-6 animate-in fade-in-50 duration-500">
+    <div className="w-full max-w-sm animate-in fade-in-50 duration-500">
         <Form {...form}>
             <form onSubmit={form.handleSubmit(handleOtpSubmit)}>
                 <div className="flex flex-col gap-6">
-                    <div className="flex flex-col items-center gap-2">
-                        <div className="flex items-center justify-center rounded-md">
-                        <Image 
-                            src="https://pouynmrblzvwlhrfyins.supabase.co/storage/v1/object/public/icons/imags/Enter%20Password%202.png"
-                            alt="Verificar Código" 
-                            width={150} 
-                            height={150}
-                            className="size-[150px]"
-                        />
-                        </div>
-                        <h1 className="text-xl font-bold font-headline">Verifique seu Código</h1>
-                        <p className="text-sm text-center text-muted-foreground">
-                            Digite o código de 6 dígitos enviado para <br/><strong>{email}</strong>
+                    <div className="flex flex-col items-start gap-2">
+                        <h1 className="text-2xl font-bold font-headline md:text-3xl">Verifique seu Código</h1>
+                        <p className="text-sm text-muted-foreground">
+                            Digite o código de 6 dígitos enviado para <strong>{email}</strong>
                         </p>
                     </div>
                     <div className="flex flex-col gap-4">
@@ -107,28 +99,31 @@ export function OtpVerificationForm({ email }: OtpVerificationFormProps) {
                         name="otp"
                         render={({ field }) => (
                             <FormItem>
-                                <div className="flex justify-center">
-                                    <FormControl>
-                                        <InputOTP maxLength={6} {...field}>
-                                        <InputOTPGroup>
-                                            <InputOTPSlot index={0} />
-                                            <InputOTPSlot index={1} />
-                                            <InputOTPSlot index={2} />
-                                            <InputOTPSlot index={3} />
-                                            <InputOTPSlot index={4} />
-                                            <InputOTPSlot index={5} />
-                                        </InputOTPGroup>
-                                        </InputOTP>
-                                    </FormControl>
-                                </div>
+                                <FormControl>
+                                    <InputOTP maxLength={6} {...field}>
+                                    <InputOTPGroup>
+                                        <InputOTPSlot index={0} />
+                                        <InputOTPSlot index={1} />
+                                        <InputOTPSlot index={2} />
+                                    </InputOTPGroup>
+                                    <InputOTPSeparator />
+                                    <InputOTPGroup>
+                                        <InputOTPSlot index={3} />
+                                        <InputOTPSlot index={4} />
+                                        <InputOTPSlot index={5} />
+                                    </InputOTPGroup>
+                                    </InputOTP>
+                                </FormControl>
                                 <FormMessage />
                             </FormItem>
                         )}
                         />
-                        <Button type="submit" className="w-full" disabled={isLoading}>
-                        {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Verificar e Entrar
-                        </Button>
+                        <div className="flex justify-end">
+                            <Button type="submit" disabled={isLoading}>
+                                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Verificar e Entrar
+                            </Button>
+                        </div>
                     </div>
                 </div>
             </form>
