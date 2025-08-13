@@ -73,23 +73,41 @@ export async function createFullClient(formData: any) {
     return { data: null, error: { message: `Não foi possível adicionar o cliente: ${error.message}` } }
   }
   
-  try {
     if (data) {
-        const portalUrl = new URL(`/portal/${data.id}`, process.env.NEXT_PUBLIC_SITE_URL).toString();
-        const providerName = providerProfile.full_name || providerProfile.company_name;
+        try {
+            const portalUrl = new URL(`/portal/${data.id}`, process.env.NEXT_PUBLIC_SITE_URL).toString();
+            const providerName = providerProfile.full_name || providerProfile.company_name;
 
-        // Enriquecer os dados com a URL do portal e o nome da contratada
-        const dataWithContext = { 
-            ...data, 
-            portal_url: portalUrl,
-            provider_name: providerName 
-        };
+            // Enriquecer os dados com a URL do portal e o nome da contratada
+            const dataWithContext = { 
+                ...data, 
+                portal_url: portalUrl,
+                provider_name: providerName 
+            };
 
-        await sendClientWebhook('create', dataWithContext);
+            await sendClientWebhook('create', dataWithContext);
+
+            // Agendar e-mail após 2 minutos
+            setTimeout(async () => {
+                try {
+                    await sendTransactionalEmail({
+                        toEmail: user.email!,
+                        templateId: 62,
+                        params: { 
+                            CLIENTE_NOME: data.full_name || data.company_name,
+                            CONTRATADA_NOME: providerName,
+                         },
+                        userId: user.id
+                    });
+                } catch (emailError: any) {
+                    console.error('Falha ao enviar e-mail agendado de criação de cliente:', emailError.message);
+                }
+            }, 120000); // 2 minutos
+
+        } catch (webhookError: any) {
+            console.warn(`Falha ao enviar webhook de criação de cliente: ${webhookError.message}`);
+        }
     }
-  } catch (webhookError: any) {
-    console.warn(`Falha ao enviar webhook de criação de cliente: ${webhookError.message}`);
-  }
 
   revalidatePath('/dashboard/clientes')
   return { data, error: null }

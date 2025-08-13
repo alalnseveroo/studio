@@ -5,6 +5,7 @@
 import { createClient } from '@/lib/supabase/server'
 import type { ProfileFormData } from '@/app/dashboard/settings/profile/page';
 import { sendProfileWebhook } from './webhook';
+import { sendTransactionalEmail } from '../brevo';
 
 const AVATAR_USER_MALE = 'https://pouynmrblzvwlhrfyins.supabase.co/storage/v1/object/public/icons/AvatarUser/avatar-assist-homem.png';
 const AVATAR_USER_FEMALE = 'https://pouynmrblzvwlhrfyins.supabase.co/storage/v1/object/public/icons/AvatarUser/avatar-assist-muler.png';
@@ -45,12 +46,28 @@ export async function saveProfile(formData: ProfileFormData & { is_completed: bo
     return { error: { message: `Não foi possível salvar o perfil: ${error.message}` } }
   }
   
-  try {
-      if(data) {
+    if(data) {
+      try {
           await sendProfileWebhook('update', data);
+      } catch (webhookError: any) {
+          console.warn(`Falha ao enviar webhook de atualização de perfil: ${webhookError.message}`);
       }
-  } catch (webhookError: any) {
-      console.warn(`Falha ao enviar webhook de atualização de perfil: ${webhookError.message}`);
+
+      // Agendar e-mail após 1 minuto
+      setTimeout(async () => {
+        try {
+          await sendTransactionalEmail({
+            toEmail: user.email!,
+            templateId: 65,
+            params: {
+              CONTRATADA_NOME: data.full_name || data.company_name
+            },
+            userId: user.id
+          })
+        } catch (emailError: any) {
+          console.error('Falha ao enviar e-mail agendado de perfil completo:', emailError.message);
+        }
+      }, 60000); // 1 minuto
   }
 
   return { error: null }

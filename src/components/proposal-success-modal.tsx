@@ -85,10 +85,15 @@ export function ProposalSuccessModal({ isOpen, onClose, onCreateAnother, proposa
     onClose()
     setIsContractModalOpen(true)
   }
+  
+  const handleModalClose = () => {
+      onClose();
+      router.push('/dashboard/clientes');
+  }
 
   return (
     <>
-      <Dialog open={isOpen} onOpenChange={onClose}>
+      <Dialog open={isOpen} onOpenChange={(open) => { if (!open) handleModalClose(); }}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader className="items-center text-center">
             <Image
@@ -127,7 +132,7 @@ export function ProposalSuccessModal({ isOpen, onClose, onCreateAnother, proposa
           </div>
           
           <DialogFooter>
-             <Button variant="ghost" onClick={onClose}>Fechar</Button>
+             <Button variant="ghost" onClick={handleModalClose}>Fechar</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
