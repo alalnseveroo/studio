@@ -1,23 +1,17 @@
 
-'use client'
-
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
 import {
   Bell,
-  CircleUser,
+  Inbox,
   Home,
   Users,
-  Settings,
   FileText,
   FileSignature,
   Package2,
   LogOut,
-  ChevronsUpDown,
   DollarSign,
-  Inbox,
+  Settings
 } from 'lucide-react'
-import { useState, useEffect } from 'react'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -28,48 +22,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-
 import { signOut } from '@/lib/actions/auth'
 import { getProfile } from '@/lib/actions/profile'
 import type { Profile } from '@/lib/types'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { cn } from '@/lib/utils'
+import { MainNav } from './_components/main-nav'
 
-const navItems = [
-    { href: '/dashboard', label: 'Dashboard', icon: Home, exact: true },
-    { href: '/dashboard/clientes', label: 'Clientes', icon: Users },
-    { href: '/dashboard/propostas', label: 'Propostas', icon: FileText },
-    { href: '/dashboard/contratos', label: 'Contratos', icon: FileSignature },
-    { href: '/dashboard/cobrancas', label: 'Cobranças', icon: DollarSign },
-]
-
-function MainNav() {
-    const pathname = usePathname()
-    
-    const isActive = (href: string, exact: boolean = false) => {
-        if (exact) {
-            return pathname === href
-        }
-        return pathname.startsWith(href)
-    }
-
-    return (
-        <nav className="hidden md:flex items-center space-x-6 text-sm font-medium">
-            {navItems.map((item) => (
-                <Link
-                    key={item.href}
-                    href={item.href}
-                    className={cn(
-                        "transition-colors hover:text-primary",
-                        isActive(item.href, item.exact) ? "text-primary" : "text-muted-foreground"
-                    )}
-                >
-                    {item.label}
-                </Link>
-            ))}
-        </nav>
-    )
-}
 
 function UserNav({ user }: { user: (Profile & { email: string })}) {
     const displayName = user.full_name || user.company_name || 'Usuário';
@@ -120,18 +78,7 @@ function UserNav({ user }: { user: (Profile & { email: string })}) {
     )
 }
 
-function DashboardHeader() {
-    const [userProfile, setUserProfile] = useState<(Profile & { email: string }) | null>(null)
-    useEffect(() => {
-        async function loadProfile() {
-            const { data } = await getProfile();
-            if (data) {
-                setUserProfile(data as Profile & { email: string });
-            }
-        }
-        loadProfile();
-     }, [])
-
+function DashboardHeader({ userProfile }: { userProfile: (Profile & { email: string }) | null }) {
      return (
         <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
             <div className="container flex h-16 items-center justify-between">
@@ -159,14 +106,16 @@ function DashboardHeader() {
 }
 
 
-export default function DashboardLayout({
+export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  const { data: userProfile } = await getProfile();
+
   return (
     <div className="flex min-h-screen flex-col">
-        <DashboardHeader />
+        <DashboardHeader userProfile={userProfile as Profile & { email: string } | null} />
         <main className="flex-1 container py-6">{children}</main>
     </div>
   )
