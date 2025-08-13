@@ -168,12 +168,12 @@ export default function ClienteEditPage() {
     
     return {
       cep: cepMatch ? cepMatch[1].replace(/\D/g, '') : '',
-      street: streetMatch ? streetMatch[1] : '',
-      number: numberMatch ? numberMatch[1] : '',
-      complement: complementMatch ? complementMatch[1] : '',
-      neighborhood: neighborhoodMatch ? neighborhoodMatch[1] : '',
-      city: cityMatch ? cityMatch[1] : '',
-      state: stateMatch ? stateMatch[1] : '',
+      street: streetMatch ? streetMatch[1].trim() : '',
+      number: numberMatch ? numberMatch[1].trim().split(' ')[0] : '',
+      complement: complementMatch ? complementMatch[1].trim() : '',
+      neighborhood: neighborhoodMatch ? neighborhoodMatch[1].trim() : '',
+      city: cityMatch ? cityMatch[1].trim() : '',
+      state: stateMatch ? stateMatch[1].trim() : '',
     };
   };
 
@@ -227,21 +227,8 @@ export default function ClienteEditPage() {
       };
       
       methods.reset(defaultValues as ClientFormData);
-     
-      const isInfoIncomplete = !clientInfoSchema.safeParse(defaultValues).success;
-      const isAddressIncomplete = !addressSchema.safeParse(defaultValues).success;
-
-      if (isInfoIncomplete) {
-        setEditingStep('info');
-        setActiveTab('info');
-      } else if (isAddressIncomplete) {
-        setEditingStep('address');
-        setActiveTab('address');
-      } else {
-        setEditingStep(null);
-        setActiveTab('info');
-      }
-
+      setActiveTab('info');
+      setEditingStep(null);
     }
     setIsLoading(false);
   }, [clientId, toast, methods]);
@@ -901,3 +888,6 @@ function ChargeHistory({ charges, onMarkAsPaid }: { charges: Cobranca[], onMarkA
 
     
 
+
+
+    
