@@ -1,5 +1,4 @@
 
-
 'use client'
 
 import { useState } from 'react'
@@ -33,6 +32,8 @@ import { createProposal } from '@/lib/actions/propostas'
 import { ALL_SERVICES } from '@/lib/constants'
 import { Loader2, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
+import { ProposalSuccessModal } from '@/components/proposal-success-modal'
+import type { Proposta, Cliente } from '@/lib/types'
 
 const proposalSchema = z.object({
   name: z.string().min(3, { message: 'O nome da proposta deve ter pelo menos 3 caracteres.' }),
@@ -64,6 +65,9 @@ type ProposalFormData = z.infer<typeof proposalSchema>;
 
 export default function NovaPropostaPage() {
   const [isLoading, setIsLoading] = useState(false)
+  const [showSuccessModal, setShowSuccessModal] = useState(false)
+  const [newlyCreatedProposal, setNewlyCreatedProposal] = useState<Proposta | null>(null)
+  
   const { toast } = useToast()
   const router = useRouter()
 
@@ -91,7 +95,7 @@ export default function NovaPropostaPage() {
   const onSubmit = async (values: ProposalFormData) => {
     setIsLoading(true)
     
-    const { error } = await createProposal(values)
+    const { data, error } = await createProposal(values)
 
     setIsLoading(false)
 
@@ -101,16 +105,29 @@ export default function NovaPropostaPage() {
         title: 'Erro ao Criar Proposta',
         description: error.message,
       })
-    } else {
+    } else if (data) {
       toast({
         title: 'Proposta Criada!',
         description: 'Sua nova proposta de serviço foi salva com sucesso.',
       })
-      router.push('/dashboard/propostas')
+      setNewlyCreatedProposal(data)
+      setShowSuccessModal(true)
     }
+  }
+  
+  const handleCreateAnother = () => {
+    setShowSuccessModal(false);
+    setNewlyCreatedProposal(null);
+    form.reset();
+  }
+  
+  const handleCloseModals = () => {
+    setShowSuccessModal(false);
+    setNewlyCreatedProposal(null);
   }
 
   return (
+    <>
     <div className="flex flex-1 flex-col gap-4 p-4 sm:gap-6 sm:p-10">
        <div className="flex items-center gap-4">
         <Button asChild variant="outline" size="icon" className="h-7 w-7">
@@ -404,7 +421,15 @@ export default function NovaPropostaPage() {
         </form>
       </Form>
     </div>
+    
+    {newlyCreatedProposal && (
+        <ProposalSuccessModal
+            isOpen={showSuccessModal}
+            onClose={handleCloseModals}
+            onCreateAnother={handleCreateAnother}
+            proposal={newlyCreatedProposal}
+        />
+    )}
+    </>
   )
 }
-
-    

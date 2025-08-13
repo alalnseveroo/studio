@@ -51,6 +51,7 @@ interface CreateContractModalProps {
   proposals: Proposta[]
   onClientListChange: (clients: Cliente[]) => void
   selectedClientId?: string | null;
+  selectedProposalId?: string | null;
 }
 
 export function CreateContractModal({ 
@@ -60,7 +61,8 @@ export function CreateContractModal({
     clients, 
     proposals,
     onClientListChange,
-    selectedClientId
+    selectedClientId,
+    selectedProposalId
 }: CreateContractModalProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [isAddClientSheetOpen, setIsAddClientSheetOpen] = useState(false)
@@ -75,7 +77,10 @@ export function CreateContractModal({
     if (selectedClientId) {
       form.setValue('clienteId', selectedClientId);
     }
-  }, [selectedClientId, form]);
+    if (selectedProposalId) {
+      form.setValue('propostaId', selectedProposalId);
+    }
+  }, [selectedClientId, selectedProposalId, form]);
 
 
   const handleFormSubmit = async (values: z.infer<typeof contractSchema>) => {
@@ -172,7 +177,7 @@ export function CreateContractModal({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Proposta</FormLabel>
-                     <Select onValueChange={field.onChange} defaultValue={field.value}>
+                     <Select onValueChange={field.onChange} value={field.value}>
                        <FormControl>
                           <SelectTrigger>
                               <SelectValue placeholder="Selecione uma proposta" />
@@ -206,8 +211,7 @@ export function CreateContractModal({
         <AddClientSheet
           isOpen={isAddClientSheetOpen}
           onClose={() => setIsAddClientSheetOpen(false)}
-          onClientAdded={handleClientAdded}
-          onSuccessAction={() => { /* This is handled by the parent page now */}}
+          onSuccess={handleClientAdded}
         />
       )}
     </>
