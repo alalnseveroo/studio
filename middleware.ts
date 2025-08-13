@@ -1,6 +1,7 @@
+
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from './src/lib/constants'
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from '@/lib/constants'
 
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({
@@ -44,13 +45,15 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getUser()
 
   const publicPaths = ['/', '/verify-otp']
-  const isPublicPath = publicPaths.includes(request.nextUrl.pathname)
+  // Verifica se o caminho começa com /portal/ para torná-lo público
+  const isPublicPath = publicPaths.includes(request.nextUrl.pathname) || request.nextUrl.pathname.startsWith('/portal/')
 
   if (!user && request.nextUrl.pathname.startsWith('/dashboard')) {
     return NextResponse.redirect(new URL('/', request.url))
   }
 
-  if (user && isPublicPath) {
+  // Se o usuário está logado e tentando acessar uma rota pública que não seja o portal, redireciona para o dashboard
+  if (user && (request.nextUrl.pathname === '/' || request.nextUrl.pathname === '/verify-otp')) {
     return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 
@@ -58,5 +61,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/', '/dashboard', '/verify-otp'],
+  matcher: ['/', '/dashboard/:path*', '/verify-otp', '/portal/:path*'],
 }
