@@ -73,7 +73,7 @@ export async function createFullClient(formData: any) {
     return { data: null, error: { message: `Não foi possível adicionar o cliente: ${error.message}` } }
   }
   
-    if (data) {
+    if (data && data.email) {
         try {
             const portalUrl = new URL(`/portal/${data.id}`, process.env.NEXT_PUBLIC_SITE_URL).toString();
             const providerName = providerProfile.full_name || providerProfile.company_name;
@@ -91,7 +91,7 @@ export async function createFullClient(formData: any) {
             setTimeout(async () => {
                 try {
                     await sendTransactionalEmail({
-                        toEmail: user.email!,
+                        toEmail: data.email!,
                         templateId: 62,
                         params: { 
                             CLIENTE_NOME: data.full_name || data.company_name,
