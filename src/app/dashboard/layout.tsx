@@ -1,5 +1,4 @@
 
-
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -133,25 +132,24 @@ export default function DashboardLayout({
 
   useEffect(() => {
     async function fetchAndSetProfile() {
+      setIsLoadingProfile(true);
       const { data } = await getProfile();
-      setUserProfile(data as Profile & { email: string } | null);
+      const profile = data as Profile & { email: string } | null;
+      setUserProfile(profile);
       setIsLoadingProfile(false);
+
+      if (profile && !profile.is_completed) {
+        if (pathname !== '/dashboard/settings/profile') {
+          router.push('/dashboard/settings/profile');
+        }
+      } else if (!profile) {
+        if (pathname !== '/dashboard/settings/profile') {
+          router.push('/dashboard/settings/profile');
+        }
+      }
     }
     fetchAndSetProfile();
-  }, []);
-
-  useEffect(() => {
-    if (!isLoadingProfile && userProfile && !userProfile.is_completed) {
-        if (pathname !== '/dashboard/settings/profile') {
-            router.push('/dashboard/settings/profile');
-        }
-    } else if (!isLoadingProfile && !userProfile) {
-        // Trata o caso do usuário recém-registrado sem perfil
-        if (pathname !== '/dashboard/settings/profile') {
-            router.push('/dashboard/settings/profile');
-        }
-    }
-  }, [userProfile, isLoadingProfile, pathname, router]);
+  }, [pathname, router]);
 
   return (
     <>
