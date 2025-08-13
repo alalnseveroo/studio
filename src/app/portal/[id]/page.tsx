@@ -7,9 +7,10 @@ import { getClientById } from '@/lib/actions/clients'
 import { getContractsForClientPortal } from '@/lib/actions/contratos'
 import { getChargesForClientPortal } from '@/lib/actions/cobrancas'
 import { getProfile } from '@/lib/actions/profile'
+import { sendPortalOtp } from '@/lib/actions/auth'
 import { createClient } from '@/lib/supabase/client'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { AlertCircle, User, FileText, Check, Clock, Verified, Briefcase, Mail, Download, CreditCard, Lock } from 'lucide-react'
+import { AlertCircle, User, FileText, Check, Clock, Verified, Briefcase, Mail, Download, CreditCard, Lock, Loader2 } from 'lucide-react'
 import {
   AlertDialog,
   AlertDialogContent,
@@ -19,7 +20,7 @@ import {
   AlertDialogFooter,
   AlertDialogCancel,
 } from "@/components/ui/alert-dialog"
-
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp"
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
@@ -32,6 +33,7 @@ import PixQRCode from '@/components/pix-qrcode'
 import { format, isPast } from 'date-fns'
 import { cn } from '@/lib/utils'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { useToast } from '@/hooks/use-toast'
 
 
 interface InfoRowProps {
@@ -66,6 +68,16 @@ export default function ClientPortalPage() {
   const [selectedCharge, setSelectedCharge] = useState<Cobranca | null>(null);
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  
+  // States for invoice download verification
+  const [isEmailVerifiedForDownload, setIsEmailVerifiedForDownload] = useState(false);
+  const [verificationModalOpen, setVerificationModalOpen] = useState(false);
+  const [chargeForDownload, setChargeForDownload] = useState<Cobranca | null>(null);
+  const [otp, setOtp] = useState('');
+  const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
+
+  const { toast } = useToast()
   
   const getStatusInfo = (status: string, dueDate: string) => {
     if (status === 'pago') {
@@ -149,6 +161,69 @@ export default function ClientPortalPage() {
       supabase.removeChannel(channels);
     }
   }, [clientId, fetchData]);
+  
+  const handleDownloadClick = (charge: Cobranca) => {
+    if (isEmailVerifiedForDownload && charge.invoice_url) {
+        window.open(charge.invoice_url, '_blank');
+    } else {
+        setChargeForDownload(charge);
+        setVerificationModalOpen(true);
+        setOtpSent(false);
+        setOtp('');
+    }
+  };
+
+  const handleSendVerificationCode = async () => {
+    if (!chargeForDownload) return;
+    setIsVerifyingOtp(true);
+    const { success, error, message } = await sendPortalOtp(chargeForDownload.id);
+    setIsVerifyingOtp(false);
+    if (error) {
+        toast({ variant: 'destructive', title: 'Erro', description: error.message });
+    } else if (success) {
+        toast({ title: 'Código Enviado!', description: message });
+        setOtpSent(true);
+    }
+  };
+  
+  const handleVerifyOtpAndDownload = async () => {
+      if (!chargeForDownload || !chargeForDownload.invoice_url || otp.length < 6) return;
+      
+      const supabase = createClient();
+      setIsVerifyingOtp(true);
+      const { data, error } = await supabase
+        .from('cobrancas')
+        .select('download_otp, download_otp_expires_at')
+        .eq('id', chargeForDownload.id)
+        .single();
+      
+      if (error || !data) {
+           toast({ variant: 'destructive', title: 'Erro', description: 'Não foi possível verificar o código.' });
+           setIsVerifyingOtp(false);
+           return;
+      }
+
+      if (data.download_otp !== otp) {
+          toast({ variant: 'destructive', title: 'Código Inválido', description: 'O código inserido está incorreto.' });
+          setIsVerifyingOtp(false);
+          return;
+      }
+      
+       if (data.download_otp_expires_at && new Date() > new Date(data.download_otp_expires_at)) {
+          toast({ variant: 'destructive', title: 'Código Expirado', description: 'Por favor, solicite um novo código.' });
+          setIsVerifyingOtp(false);
+          setOtpSent(false);
+          setOtp('');
+          return;
+      }
+
+      setIsVerifyingOtp(false);
+      setVerificationModalOpen(false);
+      setIsEmailVerifiedForDownload(true);
+      toast({ title: 'Verificado!', description: 'Seu e-mail foi validado com sucesso.' });
+      window.open(chargeForDownload.invoice_url, '_blank');
+  };
+
 
 
   if (isLoading && !client) {
@@ -328,11 +403,9 @@ export default function ClientPortalPage() {
                                             </TableCell>
                                             <TableCell className="text-right space-x-2">
                                                 {isInvoiceAvailable ? (
-                                                     <Button asChild variant="outline" size="sm">
-                                                        <Link href={charge.invoice_url!} target="_blank" rel="noopener noreferrer">
-                                                            <Download className="mr-2 h-4 w-4" />
-                                                            Nota Fiscal
-                                                        </Link>
+                                                     <Button variant="outline" size="sm" onClick={() => handleDownloadClick(charge)}>
+                                                        <Download className="mr-2 h-4 w-4" />
+                                                        Nota Fiscal
                                                      </Button>
                                                 ) : (
                                                     <Button variant="outline" size="sm" disabled>
@@ -386,6 +459,50 @@ export default function ClientPortalPage() {
                 )}
             <AlertDialogFooter>
                 <AlertDialogCancel>Fechar</AlertDialogCancel>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
+    
+     <AlertDialog open={verificationModalOpen} onOpenChange={setVerificationModalOpen}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>Verificação de E-mail</AlertDialogTitle>
+                <AlertDialogDescription>
+                    Para baixar a nota fiscal, precisamos confirmar seu acesso ao e-mail cadastrado.
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <div className="py-4 space-y-4">
+                {!otpSent ? (
+                    <p className="text-sm text-center text-muted-foreground">Clique no botão abaixo para receber um código de 6 dígitos no seu e-mail.</p>
+                ) : (
+                    <div className="flex flex-col items-center gap-4">
+                        <p className="text-sm text-center">Digite o código que enviamos para <strong>{client?.email}</strong>.</p>
+                         <InputOTP maxLength={6} value={otp} onChange={(value) => setOtp(value)}>
+                            <InputOTPGroup>
+                                <InputOTPSlot index={0} />
+                                <InputOTPSlot index={1} />
+                                <InputOTPSlot index={2} />
+                                <InputOTPSlot index={3} />
+                                <InputOTPSlot index={4} />
+                                <InputOTPSlot index={5} />
+                            </InputOTPGroup>
+                        </InputOTP>
+                    </div>
+                )}
+            </div>
+            <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                 {!otpSent ? (
+                    <Button onClick={handleSendVerificationCode} disabled={isVerifyingOtp}>
+                        {isVerifyingOtp && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Enviar Código
+                    </Button>
+                 ) : (
+                    <Button onClick={handleVerifyOtpAndDownload} disabled={isVerifyingOtp || otp.length < 6}>
+                        {isVerifyingOtp && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Verificar e Baixar
+                    </Button>
+                 )}
             </AlertDialogFooter>
         </AlertDialogContent>
     </AlertDialog>

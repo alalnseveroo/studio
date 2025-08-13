@@ -112,6 +112,8 @@ export type Cobranca = {
     paid_at: string | null;
     invoice_url: string | null;
     updated_at: string | null;
+    download_otp: string | null;
+    download_otp_expires_at: string | null;
     clientes: Cliente; // Join com clientes
 }
     

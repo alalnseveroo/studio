@@ -79,17 +79,70 @@ export async function sendClientVerificationCode(contractId: string) {
   
   try {
     const BREVO_TEMPLATE_ID = 58; 
-    await sendTransactionalEmail(
-        clientEmail, 
-        BREVO_TEMPLATE_ID, 
-        { 
+    await sendTransactionalEmail({
+        toEmail: clientEmail,
+        templateId: BREVO_TEMPLATE_ID,
+        params: { 
             PINSECRET: code,
             NOME_CLIENTE: clientName,
         },
-        contract.user_id
-    );
+        userId: contract.user_id
+    });
 
     return { success: true, message: `Um e-mail com o código de verificação foi enviado para ${clientEmail}.` };
+  } catch (brevoError: any) {
+    console.error("Brevo API Error:", brevoError);
+    return { success: false, error: { message: `Falha ao enviar o e-mail de verificação. Detalhes: ${brevoError.message}` } };
+  }
+}
+
+// Nova função para OTP do portal
+export async function sendPortalOtp(chargeId: string) {
+  const supabase = createClient();
+
+  const { data: charge, error: chargeError } = await supabase
+    .from('cobrancas')
+    .select('id, user_id, clientes (id, email, full_name, company_name)')
+    .eq('id', chargeId)
+    .single();
+
+  if (chargeError || !charge || !charge.clientes?.email) {
+    return { success: false, error: { message: 'Cobrança ou e-mail do cliente não encontrado.' } };
+  }
+
+  const clientEmail = charge.clientes.email;
+  const clientName = charge.clientes.full_name || charge.clientes.company_name;
+  const code = crypto.randomInt(100000, 999999).toString();
+
+  // Salva o OTP no localStorage do navegador do cliente seria inseguro.
+  // A verificação deve ser feita no servidor.
+  // Vamos armazenar o OTP temporariamente na tabela de cobranças.
+  const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutos de validade
+
+  const { error: updateError } = await supabase
+    .from('cobrancas')
+    .update({ 
+        download_otp: code, 
+        download_otp_expires_at: expiresAt.toISOString() 
+    })
+    .eq('id', chargeId);
+
+  if (updateError) {
+    return { success: false, error: { message: 'Falha ao salvar o código de verificação.' } };
+  }
+
+  try {
+    const BREVO_TEMPLATE_ID = 59; // Template para "Download de NF-e"
+    await sendTransactionalEmail({
+        toEmail: clientEmail,
+        templateId: BREVO_TEMPLATE_ID,
+        params: { 
+            CLIENTE_NOME: clientName,
+            PINSECRET: code,
+        },
+        userId: charge.user_id
+    });
+    return { success: true, message: `Um código foi enviado para ${clientEmail}.` };
   } catch (brevoError: any) {
     console.error("Brevo API Error:", brevoError);
     return { success: false, error: { message: `Falha ao enviar o e-mail de verificação. Detalhes: ${brevoError.message}` } };
