@@ -3,7 +3,6 @@
 
 import { createClient } from '@/lib/supabase/server'
 import type { ProfileFormData } from '@/app/dashboard/settings/profile/page';
-import { supabaseAdmin } from '../supabase/admin';
 
 export async function saveProfile(formData: ProfileFormData & { is_completed: boolean }) {
   const supabase = createClient()
@@ -45,16 +44,26 @@ export async function saveProfile(formData: ProfileFormData & { is_completed: bo
 export async function getProfile(userId?: string) {
     const supabase = createClient();
     let targetUserId = userId;
+    let email: string | undefined;
 
-    if (!targetUserId) {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-            return { data: null, error: { message: 'Usuário não autenticado' } };
-        }
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (userId) {
+        // This case is for when an admin might be fetching another user's profile.
+        // For now, we don't have an admin role, so we can't get other users' emails securely on the server
+        // without the admin client, which was causing issues.
+        // We will assume for now we only fetch the logged-in user's profile.
+        targetUserId = userId;
+    } else if (user) {
         targetUserId = user.id;
+        email = user.email;
     }
 
-    const { data, error } = await supabase
+    if (!targetUserId) {
+        return { data: null, error: { message: 'Usuário não autenticado' } };
+    }
+
+    const { data: profileData, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', targetUserId)
@@ -65,17 +74,13 @@ export async function getProfile(userId?: string) {
         return { data: null, error: { message: 'Erro ao buscar perfil.' } };
     }
     
-    const { data: authUser, error: authErr } = await supabaseAdmin.auth.admin.getUserById(targetUserId);
-    
-    if (authErr) {
-        console.error('Error fetching auth user:', authErr);
-        return { data: null, error: { message: 'Erro ao buscar e-mail do usuário.' } };
+    // If we're fetching the logged-in user's profile, we already have the email.
+    if (!email && user && user.id === targetUserId) {
+        email = user.email;
     }
-    
-    const email = authUser?.user?.email;
 
     // Combine profile data with user email
-    const profileWithEmail = data ? { ...data, email } : { id: targetUserId, email };
+    const profileWithEmail = profileData ? { ...profileData, email } : { id: targetUserId, email };
 
     return { data: profileWithEmail, error: null };
 }
