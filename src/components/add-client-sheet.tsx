@@ -1,4 +1,5 @@
 
+
 "use client"
 
 import * as React from "react"
@@ -10,6 +11,7 @@ import { Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import {
   Form,
   FormControl,
@@ -33,6 +35,7 @@ import { useToast } from "@/hooks/use-toast"
 
 const clientSchema = z.object({
   personType: z.enum(['cpf', 'cnpj']),
+  sex: z.enum(['male', 'female'], { required_error: 'Por favor, selecione o sexo.'}),
   // Common fields
   email: z.string().email({ message: "E-mail inválido."}),
   address: z.string().min(10, { message: "O endereço completo é obrigatório."}),
@@ -149,6 +152,37 @@ export function AddClientSheet({ isOpen, onClose, onSuccess }: AddClientSheetPro
                      <FormField control={form.control} name="email" render={({ field }) => (
                         <FormItem><FormLabel>E-mail de Contato Principal</FormLabel><FormControl><Input type="email" placeholder="contato@empresa.com" {...field} /></FormControl><FormMessage /></FormItem>
                     )}/>
+
+                    <FormField
+                        control={form.control}
+                        name="sex"
+                        render={({ field }) => (
+                            <FormItem className="space-y-3">
+                            <FormLabel>Sexo</FormLabel>
+                            <FormControl>
+                                <RadioGroup
+                                onValueChange={field.onChange}
+                                defaultValue={field.value}
+                                className="flex space-x-4"
+                                >
+                                <FormItem className="flex items-center space-x-2 space-y-0">
+                                    <FormControl>
+                                    <RadioGroupItem value="female" />
+                                    </FormControl>
+                                    <FormLabel className="font-normal">Feminino</FormLabel>
+                                </FormItem>
+                                <FormItem className="flex items-center space-x-2 space-y-0">
+                                    <FormControl>
+                                    <RadioGroupItem value="male" />
+                                    </FormControl>
+                                    <FormLabel className="font-normal">Masculino</FormLabel>
+                                </FormItem>
+                                </RadioGroup>
+                            </FormControl>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                    />
                     
                     {personType === 'cpf' ? (
                         <div className="space-y-4">

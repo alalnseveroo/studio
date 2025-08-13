@@ -17,6 +17,7 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Switch } from '@/components/ui/switch'
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { CheckCircle, AlertTriangle, Loader2, ArrowLeft } from 'lucide-react'
@@ -28,6 +29,7 @@ import Link from 'next/link'
 
 const profileSchema = z.object({
   personType: z.enum(['cpf', 'cnpj']),
+  sex: z.enum(['male', 'female'], { required_error: 'Por favor, selecione o sexo.' }),
   // PJ Fields
   companyName: z.string().optional(),
   cnpj: z.string().optional(),
@@ -86,6 +88,7 @@ export default function ProfilePage() {
         }
         form.reset({
           personType: data.person_type || 'cpf',
+          sex: data.sex,
           companyName: data.company_name || '',
           cnpj: data.cnpj || '',
           fullName: data.full_name || '',
@@ -195,7 +198,7 @@ export default function ProfilePage() {
             <CardHeader>
               <CardTitle>Tipo de Contratação</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
               <FormField
                 control={form.control}
                 name="personType"
@@ -222,6 +225,39 @@ export default function ProfilePage() {
                   </FormItem>
                 )}
               />
+               <FormField
+                  control={form.control}
+                  name="sex"
+                  render={({ field }) => (
+                    <FormItem className="space-y-3 rounded-lg border p-4">
+                      <FormLabel className="text-base">Sexo</FormLabel>
+                       <FormDescription>
+                        Esta informação será usada para definir seu avatar na plataforma.
+                      </FormDescription>
+                      <FormControl>
+                        <RadioGroup
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                          className="flex space-x-4 pt-2"
+                        >
+                          <FormItem className="flex items-center space-x-2 space-y-0">
+                            <FormControl>
+                              <RadioGroupItem value="female" />
+                            </FormControl>
+                            <FormLabel className="font-normal">Feminino</FormLabel>
+                          </FormItem>
+                          <FormItem className="flex items-center space-x-2 space-y-0">
+                            <FormControl>
+                              <RadioGroupItem value="male" />
+                            </FormControl>
+                            <FormLabel className="font-normal">Masculino</FormLabel>
+                          </FormItem>
+                        </RadioGroup>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
             </CardContent>
           </Card>
           

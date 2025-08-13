@@ -1,4 +1,5 @@
 
+
 import Link from 'next/link'
 import {
   Bell,
@@ -42,7 +43,7 @@ function UserNav({ user }: { user: (Profile & { email: string })}) {
                 >
                     <div className="rounded-full border-2 border-primary p-0.5">
                         <Avatar className="size-8">
-                           <AvatarImage src={undefined} alt="Avatar" />
+                           <AvatarImage src={user.avatar_url || ''} alt="Avatar" />
                            <AvatarFallback>{fallback}</AvatarFallback>
                         </Avatar>
                     </div>
@@ -116,7 +117,7 @@ export default async function DashboardLayout({
   return (
     <div className="flex min-h-screen flex-col">
         <DashboardHeader userProfile={userProfile as Profile & { email: string } | null} />
-        <main className="flex-1 p-4 sm:p-6">{children}</main>
+        <main className="flex-1">{children}</main>
     </div>
   )
 }

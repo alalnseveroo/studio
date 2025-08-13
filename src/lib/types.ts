@@ -22,6 +22,7 @@ export type Cliente = {
   address: string | null;
   created_at: string;
   updated_at: string;
+  sex: 'male' | 'female';
   
   billing_status: 'active' | 'inactive';
   proposal_id: string | null;
@@ -69,6 +70,8 @@ export type Profile = {
   email?: string;
   plan_type: 'free_tier' | 'per_client' | 'total_plan';
   credits: number;
+  sex: 'male' | 'female';
+  avatar_url: string | null;
 };
 
 export type Contrato = {

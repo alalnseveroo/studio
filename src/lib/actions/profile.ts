@@ -1,8 +1,13 @@
 
+
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
 import type { ProfileFormData } from '@/app/dashboard/settings/profile/page';
+
+const AVATAR_USER_MALE = 'https://pouynmrblzvwlhrfyins.supabase.co/storage/v1/object/public/icons/AvatarUser/avatar-assist-homem.png';
+const AVATAR_USER_FEMALE = 'https://pouynmrblzvwlhrfyins.supabase.co/storage/v1/object/public/icons/AvatarUser/avatar-assist-muler.png';
+
 
 export async function saveProfile(formData: ProfileFormData & { is_completed: boolean }) {
   const supabase = createClient()
@@ -12,6 +17,8 @@ export async function saveProfile(formData: ProfileFormData & { is_completed: bo
   if (!user) {
     return { error: { message: 'Usuário não autenticado.' } }
   }
+
+  const avatarUrl = formData.sex === 'male' ? AVATAR_USER_MALE : AVATAR_USER_FEMALE;
 
   const profileData = {
     id: user.id,
@@ -26,6 +33,8 @@ export async function saveProfile(formData: ProfileFormData & { is_completed: bo
     cpf: formData.cpf,
     address: formData.address,
     signature: formData.signature,
+    sex: formData.sex,
+    avatar_url: avatarUrl,
     updated_at: new Date().toISOString(),
     is_completed: formData.is_completed,
   };

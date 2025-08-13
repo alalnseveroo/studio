@@ -1,4 +1,5 @@
 
+
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
@@ -8,10 +9,14 @@ import { format } from 'date-fns';
 import { sendClientWebhook } from './webhook';
 import { addOrUpdateContact } from '../brevo';
 
-const AVATAR_URLS = [
-    'https://ktgckactmaqioszffuyx.supabase.co/storage/v1/object/public/icons/Ellipse%201.png',
-    'https://ktgckactmaqioszffuyx.supabase.co/storage/v1/object/public/icons/Ellipse%202.png',
-    'https://ktgckactmaqioszffuyx.supabase.co/storage/v1/object/public/icons/Ellipse%203.png'
+const AVATARS_CLIENT_MALE = [
+    'https://pouynmrblzvwlhrfyins.supabase.co/storage/v1/object/public/icons/AvatarClient/client-avatar-3.png',
+    'https://pouynmrblzvwlhrfyins.supabase.co/storage/v1/object/public/icons/AvatarClient/client-avatar-4.png'
+];
+
+const AVATARS_CLIENT_FEMALE = [
+    'https://pouynmrblzvwlhrfyins.supabase.co/storage/v1/object/public/icons/AvatarClient/client-avatar-1.png',
+    'https://pouynmrblzvwlhrfyins.supabase.co/storage/v1/object/public/icons/AvatarClient/client-avatar-2.png'
 ];
 
 export async function createFullClient(formData: any) {
@@ -34,7 +39,13 @@ export async function createFullClient(formData: any) {
   }
 
   const clientId = `CL#${Math.floor(100000 + Math.random() * 900000)}`;
-  const avatarUrl = AVATAR_URLS[Math.floor(Math.random() * AVATAR_URLS.length)];
+  
+  let avatarUrl = '';
+  if (formData.sex === 'male') {
+    avatarUrl = AVATARS_CLIENT_MALE[Math.floor(Math.random() * AVATARS_CLIENT_MALE.length)];
+  } else {
+    avatarUrl = AVATARS_CLIENT_FEMALE[Math.floor(Math.random() * AVATARS_CLIENT_FEMALE.length)];
+  }
   
   const clientData = {
     user_id: user.id,
@@ -44,6 +55,7 @@ export async function createFullClient(formData: any) {
     phone: formData.phone,
     address: formData.address,
     person_type: formData.personType,
+    sex: formData.sex,
     full_name: formData.personType === 'cpf' ? formData.fullName : null,
     cpf: formData.personType === 'cpf' ? formData.cpf : null,
     company_name: formData.personType === 'cnpj' ? formData.companyName : null,
