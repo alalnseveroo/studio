@@ -5,9 +5,10 @@ import type { Cliente } from "../types";
 
 const WEBHOOK_URL = 'https://n8n-grupoteaser-n8n.2mbu8a.easypanel.host/webhook-test/c5665123-8b7c-473b-91b7-fa5547ca13f2';
 
-// A interface agora inclui o campo opcional portal_url
+// A interface agora inclui campos opcionais
 interface EnrichedCliente extends Cliente {
     portal_url?: string;
+    provider_name?: string | null;
 }
 
 export async function sendClientWebhook(action: 'create' | 'update', clientData: EnrichedCliente) {

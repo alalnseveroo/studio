@@ -22,6 +22,17 @@ export async function createFullClient(formData: any) {
     return { data: null, error: { message: 'Usuário não autenticado.' } }
   }
 
+  // Buscar o perfil da contratada (usuário)
+  const { data: providerProfile, error: profileError } = await supabase
+    .from('profiles')
+    .select('full_name, company_name')
+    .eq('id', user.id)
+    .single();
+
+  if (profileError) {
+      return { data: null, error: { message: 'Não foi possível buscar os dados da contratada.' } };
+  }
+
   const clientId = `CL#${Math.floor(100000 + Math.random() * 900000)}`;
   const avatarUrl = AVATAR_URLS[Math.floor(Math.random() * AVATAR_URLS.length)];
   
@@ -53,8 +64,16 @@ export async function createFullClient(formData: any) {
   try {
     if (data) {
         const portalUrl = new URL(`/portal/${data.id}`, process.env.NEXT_PUBLIC_SITE_URL).toString();
-        const dataWithPortalUrl = { ...data, portal_url: portalUrl };
-        await sendClientWebhook('create', dataWithPortalUrl);
+        const providerName = providerProfile.full_name || providerProfile.company_name;
+
+        // Enriquecer os dados com a URL do portal e o nome da contratada
+        const dataWithContext = { 
+            ...data, 
+            portal_url: portalUrl,
+            provider_name: providerName 
+        };
+
+        await sendClientWebhook('create', dataWithContext);
     }
   } catch (webhookError: any) {
     console.warn(`Falha ao enviar webhook de criação de cliente: ${webhookError.message}`);
@@ -262,5 +281,3 @@ export async function deleteMultipleClients(ids: string[]) {
   revalidatePath('/dashboard/clientes');
   return { error: null };
 }
-
-    
