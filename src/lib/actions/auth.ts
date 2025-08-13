@@ -13,7 +13,6 @@ export async function signInWithOtp(email: string) {
     email,
     options: {
       shouldCreateUser: true,
-      emailRedirectTo: new URL('/verify-otp', process.env.NEXT_PUBLIC_SITE_URL).toString(),
     },
   })
 
@@ -52,7 +51,7 @@ export async function sendClientVerificationCode(contractId: string) {
   
   const { data: contract, error: contractError } = await supabase
     .from('contratos')
-    .select('id, user_id, cliente_id, clientes (email, full_name, company_name)')
+    .select('id, user_id, clientes (email, full_name, company_name)')
     .eq('id', contractId)
     .single();
 
