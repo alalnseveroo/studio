@@ -9,7 +9,8 @@ import {
   Inbox,
   LogOut,
   Settings,
-  MessageSquare
+  MessageSquare,
+  User,
 } from 'lucide-react'
 import {
   AlertDialog,
@@ -76,6 +77,12 @@ function UserNav({ user }: { user: (Profile & { email: string })}) {
                      <Link href="/dashboard/settings/profile">
                         <Settings className="mr-2 h-4 w-4" />
                         <span>Configurações</span>
+                    </Link>
+                </DropdownMenuItem>
+                 <DropdownMenuItem asChild>
+                     <Link href="/dashboard/settings/public-profile">
+                        <User className="mr-2 h-4 w-4" />
+                        <span>Perfil Público</span>
                     </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
