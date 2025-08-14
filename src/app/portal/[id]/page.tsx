@@ -10,7 +10,7 @@ import { getProfile } from '@/lib/actions/profile'
 import { sendPortalOtp } from '@/lib/actions/auth'
 import { createClient } from '@/lib/supabase/client'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { AlertCircle, User, FileText, Check, Clock, Verified, Briefcase, Mail, Download, CreditCard, Lock, Loader2 } from 'lucide-react'
+import { AlertCircle, User, FileText, Check, Clock, Verified, Briefcase, Mail, Download, CreditCard, Lock, Loader2, DollarSign, Calendar, CheckCircle } from 'lucide-react'
 import {
   AlertDialog,
   AlertDialogContent,
@@ -24,7 +24,7 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
-import type { Cliente, Contrato, Profile, Cobranca } from '@/lib/types'
+import type { Cliente, Contrato, Profile, Cobranca, Proposta } from '@/lib/types'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Separator } from '@/components/ui/separator'
@@ -54,6 +54,16 @@ const InfoRow: React.FC<InfoRowProps> = ({ icon: Icon, label, value, isVerified 
       </div>
     </div>
   </div>
+);
+
+const ProposalDetailItem = ({ icon: Icon, label, value }: { icon: React.ElementType, label: string, value: React.ReactNode }) => (
+    <div className="flex items-start">
+        <Icon className="h-5 w-5 text-muted-foreground mt-1 mr-4 flex-shrink-0" />
+        <div className="flex-1">
+            <p className="font-semibold text-sm">{label}</p>
+            <p className="text-sm text-muted-foreground">{value}</p>
+        </div>
+    </div>
 );
 
 
@@ -248,6 +258,8 @@ export default function ClientPortalPage() {
   const fallbackLetter = displayName.charAt(0).toUpperCase()
   const providerName = provider?.full_name || provider?.company_name || 'Assistente Virtual'
   const providerFallbackLetter = providerName.charAt(0).toUpperCase();
+  
+  const activeProposal = contracts.length > 0 ? contracts[0].propostas : null;
 
 
   const getStatusVariant = (status: string) => {
@@ -338,8 +350,66 @@ export default function ClientPortalPage() {
             </TabsContent>
             
             <TabsContent value="proposta" className="mt-6 space-y-6">
-                 <h2 className="text-xl font-bold">Proposta</h2>
-                 <p className="text-sm text-muted-foreground">Detalhes da proposta de serviço serão exibidos aqui.</p>
+                 <h2 className="text-xl font-bold">Proposta de Serviço</h2>
+                {activeProposal ? (
+                  <div className="grid gap-6 md:grid-cols-2">
+                    <Card>
+                        <CardHeader>
+                            <CardContent className="space-y-6 pt-6">
+                                <div>
+                                    <h3 className="font-semibold mb-4 text-base">Serviços Incluídos</h3>
+                                    <div className="space-y-3">
+                                        {activeProposal.services.map((service, index) => (
+                                            <div key={index} className="flex items-center gap-3 text-sm">
+                                                <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
+                                                <span>{service}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </CardHeader>
+                    </Card>
+                     <Card>
+                        <CardHeader>
+                            <CardContent className="space-y-4 pt-6">
+                                <h3 className="font-semibold mb-4 text-base">Detalhes Financeiros</h3>
+                                 <ProposalDetailItem 
+                                    icon={DollarSign} 
+                                    label="Tipo de Remuneração" 
+                                    value={
+                                        activeProposal.payment_type === 'fixed' ? 'Valor Fixo Mensal' :
+                                        activeProposal.payment_type === 'hourly' ? 'Valor por Hora' : 'Valor por Projeto'
+                                    }
+                                />
+                                <ProposalDetailItem 
+                                    icon={DollarSign} 
+                                    label="Valor" 
+                                    value={`R$ ${activeProposal.value?.toFixed(2) || '0.00'}`} 
+                                />
+                                 <ProposalDetailItem 
+                                    icon={Calendar} 
+                                    label="Dia do Vencimento" 
+                                    value={`Todo dia ${activeProposal.payment_day}`}
+                                />
+                                 <ProposalDetailItem 
+                                    icon={FileText} 
+                                    label="Método de Pagamento" 
+                                    value={activeProposal.payment_method || 'Não definido'}
+                                />
+                            </CardContent>
+                        </CardHeader>
+                    </Card>
+                  </div>
+                ) : (
+                    <Alert variant="default">
+                        <FileText className="h-4 w-4" />
+                        <AlertTitle>Nenhuma Proposta Ativa</AlertTitle>
+                        <AlertDescription>
+                           Não há uma proposta de serviço vinculada a um contrato ativo no momento.
+                        </AlertDescription>
+                    </Alert>
+                )}
             </TabsContent>
 
             <TabsContent value="contratos" className="mt-6 space-y-6">
@@ -509,3 +579,5 @@ export default function ClientPortalPage() {
     </>
   )
 }
+
+    
