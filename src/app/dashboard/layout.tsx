@@ -8,7 +8,8 @@ import {
   Bell,
   Inbox,
   LogOut,
-  Settings
+  Settings,
+  MessageSquare
 } from 'lucide-react'
 import {
   AlertDialog,
@@ -29,14 +30,17 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuGroup,
 } from '@/components/ui/dropdown-menu'
 import { signOut } from '@/lib/actions/auth'
 import { getProfile } from '@/lib/actions/profile'
-import type { Profile } from '@/lib/types'
+import { getClients } from '@/lib/actions/clients'
+import type { Profile, Cliente } from '@/lib/types'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { MainNav } from './_components/main-nav'
 import { useRouter, usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
+import { ChatModal } from '@/components/chat-modal'
 
 
 function UserNav({ user }: { user: (Profile & { email: string })}) {
@@ -90,8 +94,12 @@ function UserNav({ user }: { user: (Profile & { email: string })}) {
 
 function DashboardHeader({ 
     userProfile, 
+    clients,
+    onClientSelect
 } : { 
     userProfile: (Profile & { email: string }) | null,
+    clients: Cliente[],
+    onClientSelect: (client: Cliente) => void;
 }) {
      return (
         <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -112,10 +120,35 @@ function DashboardHeader({
                         <Bell className="h-5 w-5" />
                         <span className="sr-only">Notificações</span>
                     </Button>
-                    <Button variant="ghost" size="icon">
-                        <Inbox className="h-5 w-5" />
-                        <span className="sr-only">Caixa de Entrada</span>
-                    </Button>
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                                <Inbox className="h-5 w-5" />
+                                <span className="sr-only">Caixa de Entrada</span>
+                            </Button>
+                        </DropdownMenuTrigger>
+                         <DropdownMenuContent align="end" className="w-64">
+                            <DropdownMenuLabel>Conversas</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                             <DropdownMenuGroup>
+                                {clients.length > 0 ? (
+                                    clients.map(client => (
+                                        <DropdownMenuItem key={client.id} onSelect={() => onClientSelect(client)}>
+                                            <Avatar className="h-6 w-6 mr-2">
+                                                <AvatarImage src={client.avatar_url || ''} />
+                                                <AvatarFallback>{(client.full_name || client.company_name || 'C').charAt(0)}</AvatarFallback>
+                                            </Avatar>
+                                            <span>{client.full_name || client.company_name}</span>
+                                        </DropdownMenuItem>
+                                    ))
+                                ) : (
+                                    <DropdownMenuItem disabled>
+                                        Nenhum cliente encontrado.
+                                    </DropdownMenuItem>
+                                )}
+                             </DropdownMenuGroup>
+                         </DropdownMenuContent>
+                    </DropdownMenu>
                     {userProfile ? <UserNav user={userProfile} /> : <div className="size-10 rounded-full bg-muted animate-pulse" />}
                 </div>
             </div>
@@ -130,16 +163,24 @@ export default function DashboardLayout({
   children: React.ReactNode
 }) {
   const [userProfile, setUserProfile] = useState<(Profile & { email: string }) | null>(null)
+  const [clients, setClients] = useState<Cliente[]>([]);
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
+  const [selectedChatClient, setSelectedChatClient] = useState<Cliente | null>(null);
+  
   const router = useRouter();
   const pathname = usePathname();
 
   useEffect(() => {
-    async function fetchAndSetProfile() {
+    async function fetchInitialData() {
       setIsLoadingProfile(true);
-      const { data } = await getProfile();
-      const profile = data as Profile & { email: string } | null;
+      const [{ data: profileData }, { data: clientData }] = await Promise.all([
+        getProfile(),
+        getClients()
+      ]);
+
+      const profile = profileData as Profile & { email: string } | null;
       setUserProfile(profile);
+      setClients(clientData || []);
       setIsLoadingProfile(false);
 
       if (profile && !profile.is_completed) {
@@ -152,7 +193,7 @@ export default function DashboardLayout({
         }
       }
     }
-    fetchAndSetProfile();
+    fetchInitialData();
   }, [pathname, router]);
 
   return (
@@ -160,9 +201,18 @@ export default function DashboardLayout({
         <div className="flex min-h-screen flex-col">
             <DashboardHeader 
                 userProfile={userProfile} 
+                clients={clients}
+                onClientSelect={(client) => setSelectedChatClient(client)}
             />
             <main className="flex-1 p-4 sm:p-10">{children}</main>
         </div>
+        
+        {selectedChatClient && (
+            <ChatModal 
+                client={selectedChatClient} 
+                onClose={() => setSelectedChatClient(null)} 
+            />
+        )}
     </>
   )
 }
