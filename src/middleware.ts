@@ -34,7 +34,7 @@ export async function middleware(request: NextRequest) {
               headers: request.headers,
             },
           })
-          response.cookies.set({ name, value: '', ...options })
+          response.cookies.set({ name, value, ...options })
         },
       },
     }
@@ -45,14 +45,21 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getUser()
 
   const publicPaths = ['/', '/verify-otp']
-  // Verifica se o caminho começa com /portal/ para torná-lo público
-  const isPublicPath = publicPaths.includes(request.nextUrl.pathname) || request.nextUrl.pathname.startsWith('/portal/')
+  // Verifica se o caminho começa com /portal/ ou /assistente/ para torná-lo público
+  const isPublicPath = publicPaths.includes(request.nextUrl.pathname) || 
+                       request.nextUrl.pathname.startsWith('/portal/') ||
+                       request.nextUrl.pathname.startsWith('/assistente/');
 
+
+  if (!user && !isPublicPath) {
+    return NextResponse.redirect(new URL('/', request.url))
+  }
+  
   if (!user && request.nextUrl.pathname.startsWith('/dashboard')) {
     return NextResponse.redirect(new URL('/', request.url))
   }
 
-  // Se o usuário está logado e tentando acessar uma rota pública que não seja o portal, redireciona para o dashboard
+  // Se o usuário está logado e tentando acessar uma rota pública que não seja o portal/assistente, redireciona para o dashboard
   if (user && (request.nextUrl.pathname === '/' || request.nextUrl.pathname === '/verify-otp')) {
     return NextResponse.redirect(new URL('/dashboard', request.url))
   }
@@ -61,5 +68,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/', '/dashboard/:path*', '/verify-otp', '/portal/:path*'],
+  matcher: ['/', '/dashboard/:path*', '/verify-otp', '/portal/:path*', '/assistente/:path*'],
 }
