@@ -43,6 +43,7 @@ const profileSchema = z.object({
   fullName: z.string().min(3, 'O nome completo é obrigatório.'),
   nationality: z.string().min(3, 'A nacionalidade é obrigatória.'),
   cpf: z.string().min(11, 'O CPF é obrigatório.'),
+  phone: z.string().min(10, 'O telefone é obrigatório.'),
   
   // PJ Fields
   companyName: z.string().optional(),
@@ -88,6 +89,7 @@ export default function ProfilePage() {
       fullName: '',
       nationality: '',
       cpf: '',
+      phone: '',
       companyName: '',
       cnpj: '',
       cep: '',
@@ -119,6 +121,7 @@ export default function ProfilePage() {
                 fullName: data.full_name || '',
                 nationality: data.nationality || '',
                 cpf: data.cpf || '',
+                phone: data.phone || '',
                 companyName: data.company_name || '',
                 cnpj: data.cnpj || '',
                 cep: data.address?.match(/CEP: ([\d-]+)/)?.[1].replace(/\D/g, '') || '',
@@ -143,7 +146,7 @@ export default function ProfilePage() {
   
   const stepFields: Record<number, (keyof ProfileFormData)[]> = {
     [STEPS.TYPE]: ['personType'],
-    [STEPS.PERSONAL]: ['sex', 'fullName', 'nationality', 'cpf'],
+    [STEPS.PERSONAL]: ['sex', 'fullName', 'nationality', 'cpf', 'phone'],
     [STEPS.COMPANY]: ['companyName', 'cnpj'],
     [STEPS.ADDRESS]: ['cep', 'street', 'number', 'neighborhood', 'city', 'state'],
     [STEPS.SIGNATURE]: ['signature'],
@@ -352,6 +355,9 @@ const PersonalStep = ({ form }: { form: any }) => (
                     <FormItem><FormLabel>CPF</FormLabel><FormControl><Input placeholder="000.000.000-00" {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
             </div>
+             <FormField control={form.control} name="phone" render={({ field }) => (
+                <FormItem><FormLabel>Telefone (com DDD)</FormLabel><FormControl><Input placeholder="(11) 99999-9999" {...field} /></FormControl><FormMessage /></FormItem>
+            )} />
              <FormField
                 control={form.control}
                 name="sex"

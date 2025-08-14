@@ -72,6 +72,7 @@ export type Profile = {
   credits: number;
   sex: 'male' | 'female';
   avatar_url: string | null;
+  phone?: string | null;
 };
 
 export type Contrato = {
