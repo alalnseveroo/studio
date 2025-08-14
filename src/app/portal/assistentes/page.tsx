@@ -1,3 +1,4 @@
+
 "use client"
 
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
@@ -22,10 +23,13 @@ import {
   Globe,
 } from "lucide-react"
 import { useState } from "react"
+import { AnimatePresence } from "framer-motion"
+import { PublicChatModal } from "@/components/public-chat-modal"
 
 const assistentes = [
   {
     id: 1,
+    userId: "user-1-id",
     nome: "Ana Carolina Silva",
     titulo: "Especialista em Gestão Médica",
     foto: "/placeholder.svg?height=80&width=80",
@@ -60,6 +64,7 @@ const assistentes = [
   },
   {
     id: 2,
+    userId: "user-2-id",
     nome: "Mariana Santos",
     titulo: "E-commerce & Marketing Digital",
     foto: "/placeholder.svg?height=80&width=80",
@@ -94,6 +99,7 @@ const assistentes = [
   },
   {
     id: 3,
+    userId: "user-3-id",
     nome: "Juliana Oliveira",
     titulo: "Gestão Administrativa & Financeira",
     foto: "/placeholder.svg?height=80&width=80",
@@ -135,6 +141,7 @@ const assistentes = [
   },
   {
     id: 4,
+    userId: "user-4-id",
     nome: "Camila Rodriguez",
     titulo: "Assistente Jurídica & Compliance",
     foto: "/placeholder.svg?height=80&width=80",
@@ -163,6 +170,7 @@ const assistentes = [
   },
   {
     id: 5,
+    userId: "user-5-id",
     nome: "Fernanda Costa",
     titulo: "Recursos Humanos & Recrutamento",
     foto: "/placeholder.svg?height=80&width=80",
@@ -193,6 +201,7 @@ const assistentes = [
   },
   {
     id: 6,
+    userId: "user-6-id",
     nome: "Beatriz Almeida",
     titulo: "Consultórios Odontológicos",
     foto: "/placeholder.svg?height=80&width=80",
@@ -235,7 +244,8 @@ const assistentes = [
 ]
 
 export default function HomePage() {
-  const [hoveredCard, setHoveredCard] = useState<number | null>(null)
+  const [hoveredCard, setHoveredCard] = useState<number | null>(null);
+  const [selectedAssistant, setSelectedAssistant] = useState<typeof assistentes[0] | null>(null);
 
   return (
     <div className="min-h-screen bg-white">
@@ -457,7 +467,10 @@ export default function HomePage() {
               </CardHeader>
 
               <CardContent className="pt-0">
-                <Button className="w-full bg-gray-100 hover:bg-gray-200 text-black font-medium py-2 px-4 rounded-lg transition-all duration-200 flex items-center justify-center text-sm border border-gray-200">
+                <Button 
+                  onClick={() => setSelectedAssistant(assistente)}
+                  className="w-full bg-gray-100 hover:bg-gray-200 text-black font-medium py-2 px-4 rounded-lg transition-all duration-200 flex items-center justify-center text-sm border border-gray-200"
+                >
                   <MessageSquare className="w-4 h-4 mr-2" />
                   Abrir conversa
                 </Button>
@@ -465,7 +478,17 @@ export default function HomePage() {
             </Card>
           ))}
         </div>
+        <AnimatePresence>
+            {selectedAssistant && (
+                <PublicChatModal 
+                    assistant={selectedAssistant}
+                    onClose={() => setSelectedAssistant(null)}
+                />
+            )}
+        </AnimatePresence>
       </main>
     </div>
   )
 }
+
+    
