@@ -23,9 +23,20 @@ import {
   Database,
   BarChart3,
   Globe,
+  type LucideIcon,
 } from "lucide-react"
 import { AnimatePresence } from "framer-motion"
 import { PublicChatModal } from "@/components/public-chat-modal"
+
+const iconMap: { [key: string]: LucideIcon } = {
+  Calendar,
+  FileSpreadsheet,
+  Mail,
+  Database,
+  BarChart3,
+  Globe,
+  Briefcase,
+};
 
 export default function AssistantProfilePage() {
   const params = useParams()
@@ -162,14 +173,14 @@ export default function AssistantProfilePage() {
                     <h4 className="font-semibold text-black text-lg">Ferramentas Utilizadas</h4>
                     <div className="flex flex-wrap gap-2">
                       {assistente.ferramentas?.map((ferramenta, index) => {
-                        const IconComponent = ferramenta.icone
+                        const IconComponent = iconMap[ferramenta.icone];
                         return (
                           <Badge
                             key={index}
                             variant="outline"
                             className="text-base border-gray-300 text-gray-700 bg-gray-50 flex items-center gap-2 py-1 px-3"
                           >
-                            <IconComponent className="w-4 h-4" />
+                            {IconComponent && <IconComponent className="w-4 h-4" />}
                             {ferramenta.nome}
                           </Badge>
                         )

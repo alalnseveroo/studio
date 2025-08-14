@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState } from "react";
@@ -17,6 +18,13 @@ import {
   Award,
   Briefcase,
   MessageSquare,
+  FileSpreadsheet,
+  Calendar,
+  Mail,
+  Database,
+  BarChart3,
+  Globe,
+  type LucideIcon,
 } from "lucide-react";
 import { PublicChatModal } from "@/components/public-chat-modal";
 import type { assistentes as AssistantsArrayType } from '@/lib/assistants-data';
@@ -24,6 +32,16 @@ import type { assistentes as AssistantsArrayType } from '@/lib/assistants-data';
 interface AssistantListProps {
   assistants: typeof AssistantsArrayType;
 }
+
+const iconMap: { [key: string]: LucideIcon } = {
+  Calendar,
+  FileSpreadsheet,
+  Mail,
+  Database,
+  BarChart3,
+  Globe,
+  Briefcase,
+};
 
 export function AssistantList({ assistants }: AssistantListProps) {
   const [hoveredCard, setHoveredCard] = useState<number | null>(null);
@@ -169,14 +187,14 @@ export function AssistantList({ assistants }: AssistantListProps) {
                       <h4 className="font-medium text-black">Ferramentas Utilizadas</h4>
                       <div className="flex flex-wrap gap-2">
                         {assistente.ferramentas?.map((ferramenta, index) => {
-                          const IconComponent = ferramenta.icone
+                           const IconComponent = iconMap[ferramenta.icone];
                           return (
                             <Badge
                               key={index}
                               variant="outline"
                               className="text-xs border-gray-300 text-gray-700 bg-gray-50 flex items-center gap-1"
                             >
-                              <IconComponent className="w-3 h-3" />
+                              {IconComponent && <IconComponent className="w-3 h-3" />}
                               {ferramenta.nome}
                             </Badge>
                           )

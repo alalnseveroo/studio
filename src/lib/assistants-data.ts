@@ -1,5 +1,6 @@
 
 import {
+  type LucideIcon,
   Calendar,
   FileSpreadsheet,
   Mail,
@@ -35,10 +36,10 @@ export const assistentes = [
       "Controle de estoque médico",
     ],
     ferramentas: [
-      { nome: "Google Agenda", icone: Calendar },
-      { nome: "Excel", icone: FileSpreadsheet },
-      { nome: "Gmail", icone: Mail },
-      { nome: "Sistema Médico", icone: Database },
+      { nome: "Google Agenda", icone: "Calendar" },
+      { nome: "Excel", icone: "FileSpreadsheet" },
+      { nome: "Gmail", icone: "Mail" },
+      { nome: "Sistema Médico", icone: "Database" },
     ],
     depoimentos: [
       { cliente: "Dr. Carlos Mendes", texto: "Ana revolucionou meu consultório. Organização impecável!" },
@@ -71,10 +72,10 @@ export const assistentes = [
       "Criação de conteúdo",
     ],
     ferramentas: [
-      { nome: "Google Analytics", icone: BarChart3 },
-      { nome: "Facebook Ads", icone: Globe },
-      { nome: "Planilhas", icone: FileSpreadsheet },
-      { nome: "Canva", icone: Briefcase },
+      { nome: "Google Analytics", icone: "BarChart3" },
+      { nome: "Facebook Ads", icone: "Globe" },
+      { nome: "Planilhas", icone: "FileSpreadsheet" },
+      { nome: "Canva", icone: "Briefcase" },
     ],
     depoimentos: [
       { cliente: "João Silva", texto: "Mariana aumentou nossas vendas em 150% em 6 meses!" },
@@ -107,10 +108,10 @@ export const assistentes = [
       "Análise de dados",
     ],
     ferramentas: [
-      { nome: "Excel", icone: FileSpreadsheet },
-      { nome: "Google Sheets", icone: Database },
-      { nome: "Outlook", icone: Mail },
-      { nome: "ERP", icone: Briefcase },
+      { nome: "Excel", icone: "FileSpreadsheet" },
+      { nome: "Google Sheets", icone: "Database" },
+      { nome: "Outlook", icone: "Mail" },
+      { nome: "ERP", icone: "Briefcase" },
     ],
     depoimentos: [
       {
@@ -144,10 +145,10 @@ export const assistentes = [
       "Assistente jurídica especializada em processos legais. Garanto segurança e conformidade para seus negócios.",
     servicos: ["Assistência jurídica", "Compliance", "Documentação", "Análise de riscos", "Regulamentações"],
     ferramentas: [
-      { nome: "Word", icone: FileSpreadsheet },
-      { nome: "Outlook", icone: Mail },
-      { nome: "Sistema Jurídico", icone: Database },
-      { nome: "Google Docs", icone: Briefcase },
+      { nome: "Word", icone: "FileSpreadsheet" },
+      { nome: "Outlook", icone: "Mail" },
+      { nome: "Sistema Jurídico", icone: "Database" },
+      { nome: "Google Docs", icone: "Briefcase" },
     ],
     depoimentos: [
       { cliente: "Advogado João", texto: "Camila é uma mão na roda. Nosso compliance ficou muito mais robusto!" },
@@ -173,10 +174,10 @@ export const assistentes = [
     apresentacao: "Especializada em recursos humanos e recrutamento. Auxilio na contratação e gestão de talentos.",
     servicos: ["Recrutamento", "Gestão de pessoas", "Treinamentos", "Análise de desempenho", "Planejamento de RH"],
     ferramentas: [
-      { nome: "LinkedIn", icone: Globe },
-      { nome: "Excel", icone: FileSpreadsheet },
-      { nome: "Google Forms", icone: Briefcase },
-      { nome: "Sistema RH", icone: Database },
+      { nome: "LinkedIn", icone: "Globe" },
+      { nome: "Excel", icone: "FileSpreadsheet" },
+      { nome: "Google Forms", icone: "Briefcase" },
+      { nome: "Sistema RH", icone: "Database" },
     ],
     depoimentos: [
       {
@@ -212,10 +213,10 @@ export const assistentes = [
       "Controle de estoque odontológico",
     ],
     ferramentas: [
-      { nome: "Google Agenda", icone: Calendar },
-      { nome: "Excel", icone: FileSpreadsheet },
-      { nome: "Gmail", icone: Mail },
-      { nome: "Sistema Odontológico", icone: Database },
+      { nome: "Google Agenda", icone: "Calendar" },
+      { nome: "Excel", icone: "FileSpreadsheet" },
+      { nome: "Gmail", icone: "Mail" },
+      { nome: "Sistema Odontológico", icone: "Database" },
     ],
     depoimentos: [
       {
