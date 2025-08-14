@@ -20,7 +20,7 @@ import {
 } from '@/components/ui/form'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Loader2, User, Building, Search, CheckCircle, Edit, ArrowLeft, DollarSign, FileText, BarChart, Info, Calendar, BadgeCheck, XCircle, MoreVertical } from 'lucide-react'
+import { Loader2, User, Building, Search, CheckCircle, Edit, ArrowLeft, DollarSign, FileText, BarChart, Info, Calendar, BadgeCheck, XCircle, MoreVertical, MessageSquare } from 'lucide-react'
 import { getClientById, updateClientProfile, updateClientFinancials } from '@/lib/actions/clients'
 import { getProposals } from '@/lib/actions/propostas'
 import { getChargesByClientId, markChargeAsPaid } from '@/lib/actions/cobrancas'
@@ -34,6 +34,7 @@ import { format, isPast } from 'date-fns'
 import { cn } from '@/lib/utils'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
+import { ChatInterface } from '@/components/chat-interface'
 
 
 const clientInfoSchema = z.object({
@@ -113,7 +114,7 @@ const combinedSchema = z.object({
 
 
 type ClientFormData = z.infer<typeof combinedSchema>;
-type StepName = 'info' | 'address' | 'financial';
+type StepName = 'info' | 'address' | 'financial' | 'chat';
 
 export default function ClienteEditPage() {
   const params = useParams();
@@ -227,7 +228,6 @@ export default function ClienteEditPage() {
       };
       
       methods.reset(defaultValues as ClientFormData);
-      setActiveTab('info');
       setEditingStep(null);
     }
     setIsLoading(false);
@@ -238,6 +238,7 @@ export default function ClienteEditPage() {
   }, [fetchClientData]);
 
   const handleSaveStep = async (step: StepName) => {
+    if (step === 'chat') return; // Chat tab has no save action
     let schema;
     let fieldNames: (keyof ClientFormData)[];
     switch(step) {
@@ -290,7 +291,7 @@ export default function ClienteEditPage() {
     } else {
       toast({ variant: 'default', title: 'Salvo!', description: 'As informações foram atualizadas.', className: 'bg-green-100 border-green-200 text-green-800' });
       setEditingStep(null);
-      await fetchClientData(); // Refetch to update client state and form values
+      await fetchClientData();
       
       if (step === 'info') setActiveTab('address');
       if (step === 'address') setActiveTab('financial');
@@ -345,7 +346,7 @@ export default function ClienteEditPage() {
         </div>
 
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as StepName)} className="w-full">
-          <TabsList className="grid w-full grid-cols-3 bg-gray-100">
+          <TabsList className="grid w-full grid-cols-4 bg-gray-100">
              <TabsTrigger value="info" disabled={editingStep !== null && editingStep !== 'info'}>
                 {isInfoComplete && editingStep !== 'info' && <CheckCircle className="mr-2 h-4 w-4 text-green-500" />}
                 Informações
@@ -357,6 +358,10 @@ export default function ClienteEditPage() {
              <TabsTrigger value="financial" disabled={!isInfoComplete || !isAddressComplete || (editingStep !== null && editingStep !== 'financial')}>
                  {isFinancialComplete && editingStep !== 'financial' && <CheckCircle className="mr-2 h-4 w-4 text-green-500" />}
                  Financeiro
+             </TabsTrigger>
+             <TabsTrigger value="chat" disabled={editingStep !== null}>
+                 <MessageSquare className="mr-2 h-4 w-4" />
+                 Chat
              </TabsTrigger>
           </TabsList>
           
@@ -376,6 +381,17 @@ export default function ClienteEditPage() {
                 charges={charges}
                 onMarkAsPaid={handleMarkAsPaid}
             />
+          </TabsContent>
+           <TabsContent value="chat">
+              <Card>
+                <CardHeader>
+                    <CardTitle>Chat com Cliente</CardTitle>
+                    <CardDescription>Converse em tempo real com {client.full_name || client.company_name}.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <ChatInterface clientId={client.id} isUser={true} />
+                </CardContent>
+              </Card>
           </TabsContent>
         </Tabs>
       </div>

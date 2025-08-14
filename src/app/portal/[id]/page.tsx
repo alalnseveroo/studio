@@ -1,4 +1,5 @@
 
+
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
@@ -10,7 +11,7 @@ import { getProfile } from '@/lib/actions/profile'
 import { sendPortalOtp } from '@/lib/actions/auth'
 import { createClient } from '@/lib/supabase/client'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { AlertCircle, User, FileText, Check, Clock, Verified, Briefcase, Mail, Download, CreditCard, Lock, Loader2, DollarSign, Calendar, CheckCircle } from 'lucide-react'
+import { AlertCircle, User, FileText, Check, Clock, Verified, Briefcase, Mail, Download, CreditCard, Lock, Loader2, DollarSign, Calendar, CheckCircle, MessageSquare } from 'lucide-react'
 import {
   AlertDialog,
   AlertDialogContent,
@@ -34,6 +35,7 @@ import { format, isPast } from 'date-fns'
 import { cn } from '@/lib/utils'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { useToast } from '@/hooks/use-toast'
+import { ChatInterface } from '@/components/chat-interface'
 
 
 interface InfoRowProps {
@@ -163,6 +165,14 @@ export default function ClientPortalPage() {
         (payload) => {
           console.log('Realtime update on cobrancas:', payload)
           fetchData()
+        }
+      )
+       .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'chat_messages', filter: `client_id=eq.${clientId}` },
+        () => {
+          // A interface de chat já tem seu próprio listener,
+          // mas uma revalidação geral pode ser útil se outras partes do portal dependerem disso.
         }
       )
       .subscribe()
@@ -331,6 +341,7 @@ export default function ClientPortalPage() {
                 <TabsTrigger value="proposta">Proposta</TabsTrigger>
                 <TabsTrigger value="contratos">Contratos</TabsTrigger>
                 <TabsTrigger value="pagamentos">Pagamentos e notas</TabsTrigger>
+                <TabsTrigger value="chat">Chat</TabsTrigger>
             </TabsList>
             
             <TabsContent value="dados" className="mt-6 space-y-6">
@@ -506,6 +517,10 @@ export default function ClientPortalPage() {
                         </AlertDescription>
                     </Alert>
                 )}
+            </TabsContent>
+            <TabsContent value="chat" className="mt-6">
+                 <h2 className="text-xl font-bold mb-6">Fale com {providerName}</h2>
+                 <ChatInterface clientId={clientId} isUser={false} />
             </TabsContent>
         </Tabs>
       </main>
