@@ -580,5 +580,3 @@ const SignatureStep = ({ form, sigCanvas }: { form: any, sigCanvas: React.RefObj
         </Button>
     </div>
 );
-
-    
