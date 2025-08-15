@@ -2,6 +2,7 @@
 'use client'
 
 import { useState, useRef, useEffect, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
@@ -28,6 +29,7 @@ import { cn } from '@/lib/utils'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from '@/components/ui/command'
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter } from '@/components/ui/alert-dialog'
+import { triggerConfetti } from '@/components/upgrade-plan-modal'
 
 const STEPS = {
   TYPE: 1,
@@ -142,6 +144,7 @@ export default function ProfilePage() {
   const [currentStep, setCurrentStep] = useState(STEPS.TYPE);
   const sigCanvas = useRef<SignatureCanvas>(null);
   const { toast } = useToast()
+  const router = useRouter();
 
   const form = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
@@ -272,6 +275,11 @@ export default function ProfilePage() {
   if (isLoading) {
     return <div className="flex flex-1 items-center justify-center p-6"><Loader2 className="h-8 w-8 animate-spin" /></div>
   }
+  
+  const handleRescueClick = () => {
+    triggerConfetti();
+    router.push('/dashboard/clientes');
+  }
 
   if (isSaved) {
     return (
@@ -299,8 +307,8 @@ export default function ProfilePage() {
                 </div>
             </AlertDialogHeader>
             <AlertDialogFooter className="justify-center mt-6">
-                <Button asChild className="bg-green-600 hover:bg-green-700 text-lg py-6 px-8">
-                  <Link href="/dashboard/clientes">Resgatar agora</Link>
+                <Button onClick={handleRescueClick} className="bg-green-600 hover:bg-green-700 text-lg py-6 px-8">
+                  Resgatar agora
                 </Button>
             </AlertDialogFooter>
         </AlertDialogContent>
@@ -459,7 +467,7 @@ function ValidatedInput({ field, fieldState, placeholder }: { field: any, fieldS
                     className={cn(
                         'pr-10', // Add padding to the right to make space for the icon
                         fieldState.error && 'border-red-500 focus-visible:ring-red-500',
-                        fieldState.isDirty && !fieldState.error && 'border-green-500 focus-visible:ring-green-500'
+                        fieldState.isDirty && !fieldState.error && 'border-green-500'
                     )}
                 />
             </FormControl>
@@ -677,5 +685,3 @@ const SignatureStep = ({ form, sigCanvas }: { form: any, sigCanvas: React.RefObj
         </Button>
     </div>
 );
-
-    
