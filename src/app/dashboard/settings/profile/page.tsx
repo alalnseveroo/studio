@@ -17,7 +17,7 @@ import {
 } from '@/components/ui/form'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { CheckCircle, Loader2, ArrowLeft, ArrowRight, User, Building, MapPin, PencilLine, PartyPopper, Search, Info, Check, ChevronsUpDown } from 'lucide-react'
+import { CheckCircle, Loader2, ArrowLeft, ArrowRight, User, Building, MapPin, PencilLine, PartyPopper, Search, Info, Check, ChevronsUpDown, XCircle } from 'lucide-react'
 import SignatureCanvas from 'react-signature-canvas'
 import { saveProfile, getProfile } from '@/lib/actions/profile'
 import { useToast } from '@/hooks/use-toast'
@@ -27,7 +27,7 @@ import Image from 'next/image'
 import { cn } from '@/lib/utils'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from '@/components/ui/command'
-
+import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter } from '@/components/ui/alert-dialog'
 
 const STEPS = {
   TYPE: 1,
@@ -265,7 +265,6 @@ export default function ProfilePage() {
     if (error) {
       toast({ variant: 'destructive', title: 'Erro ao Salvar Perfil', description: error.message });
     } else {
-      toast({ title: 'Perfil Salvo!', description: 'Seus dados foram salvos e agora você pode usar o sistema.' });
       setIsSaved(true);
     }
   }
@@ -276,27 +275,36 @@ export default function ProfilePage() {
 
   if (isSaved) {
     return (
-      <div className="flex flex-1 flex-col items-center justify-center gap-4 p-4 text-center">
-        <Image 
-            src="https://pouynmrblzvwlhrfyins.supabase.co/storage/v1/object/public/icons/imags/Untitled%20folder/Zero%20Tasks%203.png" 
-            alt="Proposta de Serviço" 
-            width={150} 
-            height={150} 
-            className="size-[150px]"
-        />
-        <h1 className="text-2xl font-bold">Incrível. Agora seu perfil pode criar sua primeira Proposta de Serviço!</h1>
-        <p className="max-w-xl text-muted-foreground">
-            Como funciona? Você cria uma proposta com valores, serviços e prazos pré-definidos uma única vez e pode usar quantas vezes quiser. Esse é o segundo passo para automatizar cobranças e fechar contratos.
-            <br/><br/>
-            Vamos começar!
-        </p>
-        <Button asChild className="mt-4">
-          <Link href="/dashboard/propostas/nova">
-            Criar minha primeira Proposta de Serviço
-            <ArrowRight className="ml-2 h-4 w-4" />
-          </Link>
-        </Button>
-      </div>
+       <AlertDialog open={isSaved} onOpenChange={setIsSaved}>
+        <AlertDialogContent className="sm:max-w-2xl text-center p-8">
+            <AlertDialogHeader className="items-center">
+                <div className="flex flex-col md:flex-row items-center gap-6">
+                    <Image 
+                        src="https://pouynmrblzvwlhrfyins.supabase.co/storage/v1/object/public/icons/imags/Untitled%20folder/STARTUP%207.png" 
+                        alt="Sucesso" 
+                        width={150} 
+                        height={150}
+                        className="size-[150px]"
+                    />
+                    <div className="text-center md:text-left">
+                        <AlertDialogTitle className="text-2xl font-bold">Parabéns! Agora é sucesso na certa.</AlertDialogTitle>
+                        <AlertDialogDescription className="mt-4 text-base text-muted-foreground">
+                            E para celebrar, temos um presente: <strong>adicionamos 1 Crédito de Boas-vindas à sua conta!</strong>
+                            <br/><br/>
+                            Use-o para gerir seu <strong>primeiro cliente de graça, para sempre.</strong> Isso inclui cobrança automática, contratos e portal do cliente, sem nenhum custo de gestão.
+                            <br/><br/>
+                            Pronta para colocar seu primeiro cliente no piloto automático?
+                        </AlertDialogDescription>
+                    </div>
+                </div>
+            </AlertDialogHeader>
+            <AlertDialogFooter className="justify-center mt-6">
+                <Button asChild className="bg-green-600 hover:bg-green-700 text-lg py-6 px-8">
+                  <Link href="/dashboard/clientes">Resgatar agora</Link>
+                </Button>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+       </AlertDialog>
     );
   }
 
@@ -441,12 +449,40 @@ const StepHeader = ({ icon: Icon, title, description }: { icon: React.ElementTyp
 );
 
 
+function ValidatedInput({ field, fieldState, placeholder }: { field: any, fieldState: any, placeholder: string }) {
+    return (
+        <div className="relative w-full">
+            <FormControl>
+                <Input
+                    placeholder={placeholder}
+                    {...field}
+                    className={cn(
+                        'pr-10', // Add padding to the right to make space for the icon
+                        fieldState.error && 'border-red-500 focus-visible:ring-red-500',
+                        fieldState.isDirty && !fieldState.error && 'border-green-500 focus-visible:ring-green-500'
+                    )}
+                />
+            </FormControl>
+            {fieldState.isDirty && !fieldState.error && (
+                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                    <CheckCircle className="h-5 w-5 text-green-500" />
+                </div>
+            )}
+            {fieldState.error && (
+                 <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                    <XCircle className="h-5 w-5 text-red-500" />
+                </div>
+            )}
+        </div>
+    );
+}
+
 const PersonalStep = ({ form }: { form: any }) => (
     <div>
         <StepHeader icon={User} title="Dados Pessoais" description="Estas informações aparecerão no contrato." />
         <div className="space-y-4">
              <FormField control={form.control} name="fullName" render={({ field, fieldState }) => (
-                <FormItem><FormLabel>Nome Completo</FormLabel><FormControl><Input placeholder="Seu nome completo" {...field} className={cn(fieldState.error && 'border-red-500', fieldState.isDirty && !fieldState.error && 'border-green-500')} /></FormControl><FormMessage /></FormItem>
+                <FormItem><FormLabel>Nome Completo</FormLabel><ValidatedInput field={field} fieldState={fieldState} placeholder="Seu nome completo" /><FormMessage /></FormItem>
             )} />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField control={form.control} name="nationality" render={({ field }) => (
@@ -455,11 +491,11 @@ const PersonalStep = ({ form }: { form: any }) => (
                     </FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField control={form.control} name="cpf" render={({ field, fieldState }) => (
-                    <FormItem><FormLabel>CPF</FormLabel><FormControl><Input placeholder="000.000.000-00" {...field} className={cn(fieldState.error && 'border-red-500', fieldState.isDirty && !fieldState.error && 'border-green-500')} /></FormControl><FormMessage /></FormItem>
+                    <FormItem><FormLabel>CPF</FormLabel><ValidatedInput field={field} fieldState={fieldState} placeholder="000.000.000-00" /><FormMessage /></FormItem>
                 )} />
             </div>
              <FormField control={form.control} name="phone" render={({ field, fieldState }) => (
-                <FormItem><FormLabel>Telefone (com DDD)</FormLabel><FormControl><Input placeholder="(11) 99999-9999" {...field} className={cn(fieldState.error && 'border-red-500', fieldState.isDirty && !fieldState.error && 'border-green-500')} /></FormControl><FormMessage /></FormItem>
+                <FormItem><FormLabel>Telefone (com DDD)</FormLabel><ValidatedInput field={field} fieldState={fieldState} placeholder="(11) 99999-9999" /><FormMessage /></FormItem>
             )} />
              <FormField
                 control={form.control}
@@ -526,15 +562,16 @@ const CompanyStep = ({ form }: { form: any }) => {
                     <FormItem>
                         <FormLabel>CNPJ</FormLabel>
                         <div className="flex items-center gap-2">
-                           <FormControl><Input placeholder="00.000.000/0001-00" {...field} className={cn(fieldState.error && 'border-red-500', fieldState.isDirty && !fieldState.error && 'border-green-500')} /></FormControl>
+                           <ValidatedInput field={field} fieldState={fieldState} placeholder="00.000.000/0001-00" />
                            <Button type="button" size="icon" onClick={handleCnpjSearch} disabled={isFetching}>
                                 {isFetching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
                            </Button>
                         </div>
+                        <FormMessage />
                     </FormItem>
                 )} />
                 <FormField control={form.control} name="companyName" render={({ field, fieldState }) => (
-                    <FormItem><FormLabel>Nome da Empresa (Razão Social)</FormLabel><FormControl><Input placeholder="Minha Empresa LTDA" {...field} className={cn(fieldState.error && 'border-red-500', fieldState.isDirty && !fieldState.error && 'border-green-500')} /></FormControl></FormItem>
+                    <FormItem><FormLabel>Nome da Empresa (Razão Social)</FormLabel><ValidatedInput field={field} fieldState={fieldState} placeholder="Minha Empresa LTDA" /><FormMessage /></FormItem>
                 )} />
             </div>
         </div>
@@ -578,33 +615,34 @@ const AddressStep = ({ form }: { form: any }) => {
                     <FormItem>
                         <FormLabel>CEP</FormLabel>
                          <div className="flex items-center gap-2">
-                            <FormControl><Input placeholder="00000-000" {...field} className={cn(fieldState.error && 'border-red-500', fieldState.isDirty && !fieldState.error && 'border-green-500')} /></FormControl>
+                           <ValidatedInput field={field} fieldState={fieldState} placeholder="00000-000" />
                             <Button type="button" size="icon" onClick={handleCepSearch} disabled={isFetching}>
                                 {isFetching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
                            </Button>
                         </div>
+                        <FormMessage />
                     </FormItem>
                 )} />
                 <FormField control={form.control} name="street" render={({ field, fieldState }) => (
-                    <FormItem><FormLabel>Rua / Logradouro</FormLabel><FormControl><Input placeholder="Rua das Flores" {...field} className={cn(fieldState.error && 'border-red-500', fieldState.isDirty && !fieldState.error && 'border-green-500')} /></FormControl></FormItem>
+                    <FormItem><FormLabel>Rua / Logradouro</FormLabel><ValidatedInput field={field} fieldState={fieldState} placeholder="Rua das Flores" /><FormMessage /></FormItem>
                 )} />
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField control={form.control} name="number" render={({ field, fieldState }) => (
-                        <FormItem><FormLabel>Número</FormLabel><FormControl><Input placeholder="123" {...field} className={cn(fieldState.error && 'border-red-500', fieldState.isDirty && !fieldState.error && 'border-green-500')} /></FormControl></FormItem>
+                        <FormItem><FormLabel>Número</FormLabel><ValidatedInput field={field} fieldState={fieldState} placeholder="123" /><FormMessage /></FormItem>
                     )} />
                     <FormField control={form.control} name="complement" render={({ field }) => (
                         <FormItem><FormLabel>Complemento (Opcional)</FormLabel><FormControl><Input placeholder="Apto 45" {...field} /></FormControl></FormItem>
                     )} />
                 </div>
                  <FormField control={form.control} name="neighborhood" render={({ field, fieldState }) => (
-                    <FormItem><FormLabel>Bairro</FormLabel><FormControl><Input placeholder="Centro" {...field} className={cn(fieldState.error && 'border-red-500', fieldState.isDirty && !fieldState.error && 'border-green-500')} /></FormControl></FormItem>
+                    <FormItem><FormLabel>Bairro</FormLabel><ValidatedInput field={field} fieldState={fieldState} placeholder="Centro" /><FormMessage /></FormItem>
                 )} />
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                      <FormField control={form.control} name="city" render={({ field, fieldState }) => (
-                        <FormItem><FormLabel>Cidade</FormLabel><FormControl><Input placeholder="São Paulo" {...field} className={cn(fieldState.error && 'border-red-500', fieldState.isDirty && !fieldState.error && 'border-green-500')} /></FormControl></FormItem>
+                        <FormItem><FormLabel>Cidade</FormLabel><ValidatedInput field={field} fieldState={fieldState} placeholder="São Paulo" /><FormMessage /></FormItem>
                     )} />
                     <FormField control={form.control} name="state" render={({ field, fieldState }) => (
-                        <FormItem><FormLabel>Estado (UF)</FormLabel><FormControl><Input placeholder="SP" {...field} className={cn(fieldState.error && 'border-red-500', fieldState.isDirty && !fieldState.error && 'border-green-500')} /></FormControl></FormItem>
+                        <FormItem><FormLabel>Estado (UF)</FormLabel><ValidatedInput field={field} fieldState={fieldState} placeholder="SP" /><FormMessage /></FormItem>
                     )} />
                 </div>
             </div>
@@ -640,3 +678,4 @@ const SignatureStep = ({ form, sigCanvas }: { form: any, sigCanvas: React.RefObj
     </div>
 );
 
+    
