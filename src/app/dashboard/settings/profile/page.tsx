@@ -268,7 +268,7 @@ export default function ProfilePage() {
   return (
     <div className="flex-1 w-full max-w-6xl mx-auto p-4 sm:p-6">
         <Form {...form}>
-            <form onSubmit={form.handleSubmit(() => setCurrentStep(STEPS.PERSONAL))}>
+            <form>
                 <div className="grid md:grid-cols-2 gap-12 items-center">
                     {/* Left Column */}
                     <div className="hidden md:flex flex-col items-start text-left">
@@ -356,7 +356,7 @@ export default function ProfilePage() {
                                 Atenção: Após avançar, esta escolha não poderá ser alterada. Certifique-se de selecionar a opção correta para suas necessidades.
                             </AlertDescription>
                         </Alert>
-                         <Button type="submit" className="w-full mt-8">
+                         <Button type="button" onClick={() => setCurrentStep(STEPS.PERSONAL)} className="w-full mt-8">
                             Avançar para o Preenchimento <ArrowRight className="ml-2 h-4 w-4" />
                          </Button>
                     </div>
