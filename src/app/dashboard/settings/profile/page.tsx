@@ -17,7 +17,7 @@ import {
 } from '@/components/ui/form'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { CheckCircle, Loader2, ArrowLeft, ArrowRight, User, Building, MapPin, PencilLine, PartyPopper, Search, Info, Check } from 'lucide-react'
+import { CheckCircle, Loader2, ArrowLeft, ArrowRight, User, Building, MapPin, PencilLine, PartyPopper, Search, Info, Check, ChevronsUpDown } from 'lucide-react'
 import SignatureCanvas from 'react-signature-canvas'
 import { saveProfile, getProfile } from '@/lib/actions/profile'
 import { useToast } from '@/hooks/use-toast'
@@ -25,6 +25,8 @@ import type { Profile } from '@/lib/types'
 import Link from 'next/link'
 import Image from 'next/image'
 import { cn } from '@/lib/utils'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from '@/components/ui/command'
 
 
 const STEPS = {
@@ -73,6 +75,67 @@ const profileSchema = z.object({
 
 export type ProfileFormData = z.infer<typeof profileSchema>;
 
+
+const nationalities = [
+  { value: 'Brasileira', label: 'Brasileira' },
+  { value: 'Portuguesa', label: 'Portuguesa' },
+  { value: 'Americana', label: 'Americana' },
+  { value: 'Canadense', label: 'Canadense' },
+  { value: 'Argentina', label: 'Argentina' },
+  { value: 'Espanhola', label: 'Espanhola' },
+  { value: 'Italiana', label: 'Italiana' },
+  { value: 'Outra', label: 'Outra' },
+]
+
+function Combobox({ field, options, placeholder }: { field: any, options: {value: string, label: string}[], placeholder: string }) {
+  const [open, setOpen] = useState(false)
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          className="w-full justify-between"
+        >
+          {field.value
+            ? options.find((option) => option.value.toLowerCase() === field.value.toLowerCase())?.label
+            : placeholder}
+          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-full p-0">
+        <Command>
+          <CommandInput placeholder="Procure uma nacionalidade..." />
+          <CommandEmpty>Nenhuma nacionalidade encontrada.</CommandEmpty>
+          <CommandGroup>
+            {options.map((option) => (
+              <CommandItem
+                key={option.value}
+                value={option.value}
+                onSelect={(currentValue) => {
+                  field.onChange(currentValue === field.value ? "" : currentValue)
+                  setOpen(false)
+                }}
+              >
+                <Check
+                  className={cn(
+                    "mr-2 h-4 w-4",
+                    field.value === option.value ? "opacity-100" : "opacity-0"
+                  )}
+                />
+                {option.label}
+              </CommandItem>
+            ))}
+          </CommandGroup>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  )
+}
+
+
 export default function ProfilePage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSaved, setIsSaved] = useState(false)
@@ -87,7 +150,7 @@ export default function ProfilePage() {
       personType: 'cpf',
       sex: undefined,
       fullName: '',
-      nationality: '',
+      nationality: 'Brasileira',
       cpf: '',
       phone: '',
       companyName: '',
@@ -119,7 +182,7 @@ export default function ProfilePage() {
                 personType: data.person_type || 'cpf',
                 sex: data.sex,
                 fullName: data.full_name || '',
-                nationality: data.nationality || '',
+                nationality: data.nationality || 'Brasileira',
                 cpf: data.cpf || '',
                 phone: data.phone || '',
                 companyName: data.company_name || '',
@@ -384,18 +447,20 @@ const PersonalStep = ({ form }: { form: any }) => (
         <StepHeader icon={User} title="Dados Pessoais" description="Estas informações aparecerão no contrato." />
         <div className="space-y-4">
              <FormField control={form.control} name="fullName" render={({ field, fieldState }) => (
-                <FormItem><FormLabel>Nome Completo</FormLabel><FormControl><Input placeholder="Seu nome completo" {...field} className={cn(fieldState.error && 'border-red-500', fieldState.isDirty && !fieldState.error && 'border-green-500')} /></FormControl></FormItem>
+                <FormItem><FormLabel>Nome Completo</FormLabel><FormControl><Input placeholder="Seu nome completo" {...field} className={cn(fieldState.error && 'border-red-500', fieldState.isDirty && !fieldState.error && 'border-green-500')} /></FormControl><FormMessage /></FormItem>
             )} />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField control={form.control} name="nationality" render={({ field, fieldState }) => (
-                    <FormItem><FormLabel>Nacionalidade</FormLabel><FormControl><Input placeholder="Brasileira" {...field} className={cn(fieldState.error && 'border-red-500', fieldState.isDirty && !fieldState.error && 'border-green-500')} /></FormControl></FormItem>
+                <FormField control={form.control} name="nationality" render={({ field }) => (
+                    <FormItem><FormLabel>Nacionalidade</FormLabel><FormControl>
+                      <Combobox field={field} options={nationalities} placeholder="Selecione a nacionalidade" />
+                    </FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField control={form.control} name="cpf" render={({ field, fieldState }) => (
-                    <FormItem><FormLabel>CPF</FormLabel><FormControl><Input placeholder="000.000.000-00" {...field} className={cn(fieldState.error && 'border-red-500', fieldState.isDirty && !fieldState.error && 'border-green-500')} /></FormControl></FormItem>
+                    <FormItem><FormLabel>CPF</FormLabel><FormControl><Input placeholder="000.000.000-00" {...field} className={cn(fieldState.error && 'border-red-500', fieldState.isDirty && !fieldState.error && 'border-green-500')} /></FormControl><FormMessage /></FormItem>
                 )} />
             </div>
              <FormField control={form.control} name="phone" render={({ field, fieldState }) => (
-                <FormItem><FormLabel>Telefone (com DDD)</FormLabel><FormControl><Input placeholder="(11) 99999-9999" {...field} className={cn(fieldState.error && 'border-red-500', fieldState.isDirty && !fieldState.error && 'border-green-500')} /></FormControl></FormItem>
+                <FormItem><FormLabel>Telefone (com DDD)</FormLabel><FormControl><Input placeholder="(11) 99999-9999" {...field} className={cn(fieldState.error && 'border-red-500', fieldState.isDirty && !fieldState.error && 'border-green-500')} /></FormControl><FormMessage /></FormItem>
             )} />
              <FormField
                 control={form.control}
@@ -500,7 +565,7 @@ const AddressStep = ({ form }: { form: any }) => {
             form.setValue('state', data.uf, { shouldValidate: true });
             toast({ title: 'Sucesso!', description: 'Endereço preenchido.' });
         } catch (error: any) {
-            toast({ variant: 'destructive', title: 'Erro ao buscar CEP', description: error.message });
+             toast({ variant: 'destructive', title: 'Erro ao buscar CEP', description: error.message });
         } finally {
             setIsFetching(false);
         }
