@@ -242,9 +242,9 @@ export default function ProfilePage() {
   return (
     <div className="flex-1 w-full max-w-6xl mx-auto p-4 sm:p-6">
         <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="grid md:grid-cols-2 gap-12 items-center">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="grid md:grid-cols-2 gap-12 items-start">
                 {/* Left Column */}
-                <div className="hidden md:flex flex-col items-start text-left">
+                <div className="hidden md:flex flex-col items-start text-left sticky top-10">
                     <Image 
                         src="https://pouynmrblzvwlhrfyins.supabase.co/storage/v1/object/public/icons/imags/Untitled%20folder/Welcome%202.png" 
                         alt="Boas-vindas"
@@ -383,19 +383,19 @@ const PersonalStep = ({ form }: { form: any }) => (
     <div>
         <StepHeader icon={User} title="Dados Pessoais" description="Estas informações aparecerão no contrato." />
         <div className="space-y-4">
-             <FormField control={form.control} name="fullName" render={({ field }) => (
-                <FormItem><FormLabel>Nome Completo</FormLabel><FormControl><Input placeholder="Seu nome completo" {...field} /></FormControl><FormMessage /></FormItem>
+             <FormField control={form.control} name="fullName" render={({ field, fieldState }) => (
+                <FormItem><FormLabel>Nome Completo</FormLabel><FormControl><Input placeholder="Seu nome completo" {...field} className={cn(fieldState.error && 'border-red-500', fieldState.isDirty && !fieldState.error && 'border-green-500')} /></FormControl></FormItem>
             )} />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField control={form.control} name="nationality" render={({ field }) => (
-                    <FormItem><FormLabel>Nacionalidade</FormLabel><FormControl><Input placeholder="Brasileira" {...field} /></FormControl><FormMessage /></FormItem>
+                <FormField control={form.control} name="nationality" render={({ field, fieldState }) => (
+                    <FormItem><FormLabel>Nacionalidade</FormLabel><FormControl><Input placeholder="Brasileira" {...field} className={cn(fieldState.error && 'border-red-500', fieldState.isDirty && !fieldState.error && 'border-green-500')} /></FormControl></FormItem>
                 )} />
-                <FormField control={form.control} name="cpf" render={({ field }) => (
-                    <FormItem><FormLabel>CPF</FormLabel><FormControl><Input placeholder="000.000.000-00" {...field} /></FormControl><FormMessage /></FormItem>
+                <FormField control={form.control} name="cpf" render={({ field, fieldState }) => (
+                    <FormItem><FormLabel>CPF</FormLabel><FormControl><Input placeholder="000.000.000-00" {...field} className={cn(fieldState.error && 'border-red-500', fieldState.isDirty && !fieldState.error && 'border-green-500')} /></FormControl></FormItem>
                 )} />
             </div>
-             <FormField control={form.control} name="phone" render={({ field }) => (
-                <FormItem><FormLabel>Telefone (com DDD)</FormLabel><FormControl><Input placeholder="(11) 99999-9999" {...field} /></FormControl><FormMessage /></FormItem>
+             <FormField control={form.control} name="phone" render={({ field, fieldState }) => (
+                <FormItem><FormLabel>Telefone (com DDD)</FormLabel><FormControl><Input placeholder="(11) 99999-9999" {...field} className={cn(fieldState.error && 'border-red-500', fieldState.isDirty && !fieldState.error && 'border-green-500')} /></FormControl></FormItem>
             )} />
              <FormField
                 control={form.control}
@@ -458,20 +458,19 @@ const CompanyStep = ({ form }: { form: any }) => {
         <div>
             <StepHeader icon={Building} title="Dados da Empresa" description="Preencha os dados do seu CNPJ." />
             <div className="space-y-4">
-                 <FormField control={form.control} name="cnpj" render={({ field }) => (
+                 <FormField control={form.control} name="cnpj" render={({ field, fieldState }) => (
                     <FormItem>
                         <FormLabel>CNPJ</FormLabel>
                         <div className="flex items-center gap-2">
-                           <FormControl><Input placeholder="00.000.000/0001-00" {...field} /></FormControl>
+                           <FormControl><Input placeholder="00.000.000/0001-00" {...field} className={cn(fieldState.error && 'border-red-500', fieldState.isDirty && !fieldState.error && 'border-green-500')} /></FormControl>
                            <Button type="button" size="icon" onClick={handleCnpjSearch} disabled={isFetching}>
                                 {isFetching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
                            </Button>
                         </div>
-                        <FormMessage />
                     </FormItem>
                 )} />
-                <FormField control={form.control} name="companyName" render={({ field }) => (
-                    <FormItem><FormLabel>Nome da Empresa (Razão Social)</FormLabel><FormControl><Input placeholder="Minha Empresa LTDA" {...field} /></FormControl><FormMessage /></FormItem>
+                <FormField control={form.control} name="companyName" render={({ field, fieldState }) => (
+                    <FormItem><FormLabel>Nome da Empresa (Razão Social)</FormLabel><FormControl><Input placeholder="Minha Empresa LTDA" {...field} className={cn(fieldState.error && 'border-red-500', fieldState.isDirty && !fieldState.error && 'border-green-500')} /></FormControl></FormItem>
                 )} />
             </div>
         </div>
@@ -511,38 +510,37 @@ const AddressStep = ({ form }: { form: any }) => {
         <div>
             <StepHeader icon={MapPin} title="Endereço" description="Seu endereço profissional ou residencial." />
             <div className="space-y-4">
-                 <FormField control={form.control} name="cep" render={({ field }) => (
+                 <FormField control={form.control} name="cep" render={({ field, fieldState }) => (
                     <FormItem>
                         <FormLabel>CEP</FormLabel>
                          <div className="flex items-center gap-2">
-                            <FormControl><Input placeholder="00000-000" {...field} /></FormControl>
+                            <FormControl><Input placeholder="00000-000" {...field} className={cn(fieldState.error && 'border-red-500', fieldState.isDirty && !fieldState.error && 'border-green-500')} /></FormControl>
                             <Button type="button" size="icon" onClick={handleCepSearch} disabled={isFetching}>
                                 {isFetching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
                            </Button>
                         </div>
-                        <FormMessage />
                     </FormItem>
                 )} />
-                <FormField control={form.control} name="street" render={({ field }) => (
-                    <FormItem><FormLabel>Rua / Logradouro</FormLabel><FormControl><Input placeholder="Rua das Flores" {...field} /></FormControl><FormMessage /></FormItem>
+                <FormField control={form.control} name="street" render={({ field, fieldState }) => (
+                    <FormItem><FormLabel>Rua / Logradouro</FormLabel><FormControl><Input placeholder="Rua das Flores" {...field} className={cn(fieldState.error && 'border-red-500', fieldState.isDirty && !fieldState.error && 'border-green-500')} /></FormControl></FormItem>
                 )} />
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField control={form.control} name="number" render={({ field }) => (
-                        <FormItem><FormLabel>Número</FormLabel><FormControl><Input placeholder="123" {...field} /></FormControl><FormMessage /></FormItem>
+                    <FormField control={form.control} name="number" render={({ field, fieldState }) => (
+                        <FormItem><FormLabel>Número</FormLabel><FormControl><Input placeholder="123" {...field} className={cn(fieldState.error && 'border-red-500', fieldState.isDirty && !fieldState.error && 'border-green-500')} /></FormControl></FormItem>
                     )} />
                     <FormField control={form.control} name="complement" render={({ field }) => (
-                        <FormItem><FormLabel>Complemento (Opcional)</FormLabel><FormControl><Input placeholder="Apto 45" {...field} /></FormControl><FormMessage /></FormItem>
+                        <FormItem><FormLabel>Complemento (Opcional)</FormLabel><FormControl><Input placeholder="Apto 45" {...field} /></FormControl></FormItem>
                     )} />
                 </div>
-                 <FormField control={form.control} name="neighborhood" render={({ field }) => (
-                    <FormItem><FormLabel>Bairro</FormLabel><FormControl><Input placeholder="Centro" {...field} /></FormControl><FormMessage /></FormItem>
+                 <FormField control={form.control} name="neighborhood" render={({ field, fieldState }) => (
+                    <FormItem><FormLabel>Bairro</FormLabel><FormControl><Input placeholder="Centro" {...field} className={cn(fieldState.error && 'border-red-500', fieldState.isDirty && !fieldState.error && 'border-green-500')} /></FormControl></FormItem>
                 )} />
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                     <FormField control={form.control} name="city" render={({ field }) => (
-                        <FormItem><FormLabel>Cidade</FormLabel><FormControl><Input placeholder="São Paulo" {...field} /></FormControl><FormMessage /></FormItem>
+                     <FormField control={form.control} name="city" render={({ field, fieldState }) => (
+                        <FormItem><FormLabel>Cidade</FormLabel><FormControl><Input placeholder="São Paulo" {...field} className={cn(fieldState.error && 'border-red-500', fieldState.isDirty && !fieldState.error && 'border-green-500')} /></FormControl></FormItem>
                     )} />
-                    <FormField control={form.control} name="state" render={({ field }) => (
-                        <FormItem><FormLabel>Estado (UF)</FormLabel><FormControl><Input placeholder="SP" {...field} /></FormControl><FormMessage /></FormItem>
+                    <FormField control={form.control} name="state" render={({ field, fieldState }) => (
+                        <FormItem><FormLabel>Estado (UF)</FormLabel><FormControl><Input placeholder="SP" {...field} className={cn(fieldState.error && 'border-red-500', fieldState.isDirty && !fieldState.error && 'border-green-500')} /></FormControl></FormItem>
                     )} />
                 </div>
             </div>
