@@ -19,6 +19,7 @@ import { signInWithOtp } from '@/lib/actions/auth'
 import { useToast } from '@/hooks/use-toast'
 import { Loader2, Mail } from 'lucide-react'
 import Image from 'next/image'
+import { WordRotate } from '@/components/magicui/word-rotate'
 
 const emailSchema = z.object({
   email: z.string().email({ message: 'Por favor, insira um endereço de e-mail válido.' }),
@@ -61,7 +62,13 @@ export function AuthForm() {
        <Form {...form}>
         <form onSubmit={form.handleSubmit(handleEmailSubmit)} className="space-y-6">
             <div className="space-y-2">
-                <h1 className="text-2xl font-bold font-headline md:text-3xl">Acesse sua conta</h1>
+                <div className="flex items-center space-x-2">
+                    <WordRotate
+                        words={["Acesse", "Crie"]}
+                        className="text-2xl font-bold font-headline md:text-3xl"
+                    />
+                    <h1 className="text-2xl font-bold font-headline md:text-3xl">sua conta</h1>
+                </div>
                 <p className="text-muted-foreground">
                     Organizando o trabalho de profissionais incríveis.
                 </p>
