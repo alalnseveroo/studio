@@ -238,128 +238,125 @@ export default function ProfilePage() {
     );
   }
 
-  if (currentStep > STEPS.TYPE) {
-     return (
-        <div className="w-full max-w-2xl mx-auto p-4 sm:p-6">
-        <Form {...form}>
-            <form className="space-y-8">
-                <div className="space-y-6 rounded-lg border p-6">
-                {currentStep === STEPS.PERSONAL && <PersonalStep form={form} />}
-                {personType === 'cnpj' && currentStep === STEPS.COMPANY && <CompanyStep form={form} />}
-                {currentStep === getStepForPersonType(STEPS.ADDRESS) && <AddressStep form={form} />}
-                {currentStep === getStepForPersonType(STEPS.SIGNATURE) && <SignatureStep form={form} sigCanvas={sigCanvas} />}
-                </div>
-
-                <div className="flex justify-between items-center pt-4">
-                    <Button type="button" variant="outline" onClick={handleBack} disabled={isLoading}>
-                        <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
-                    </Button>
-                    <Button type="button" onClick={handleNext} disabled={isLoading}>
-                        {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : (currentStep === getStepForPersonType(STEPS.SIGNATURE) ? 'Salvar Perfil' : 'Avançar')}
-                        {currentStep !== getStepForPersonType(STEPS.SIGNATURE) && <ArrowRight className="ml-2 h-4 w-4" />}
-                    </Button>
-                </div>
-            </form>
-        </Form>
-        </div>
-     )
-  }
 
   return (
     <div className="flex-1 w-full max-w-6xl mx-auto p-4 sm:p-6">
         <Form {...form}>
-            <form>
-                <div className="grid md:grid-cols-2 gap-12 items-center">
-                    {/* Left Column */}
-                    <div className="hidden md:flex flex-col items-start text-left">
-                        <Image 
-                            src="https://pouynmrblzvwlhrfyins.supabase.co/storage/v1/object/public/icons/imags/Untitled%20folder/Welcome%202.png" 
-                            alt="Boas-vindas"
-                            width={350}
-                            height={350}
-                            className="size-[350px] mb-6"
-                        />
-                        <h1 className="text-3xl font-bold">Seja bem-vindo(a) à Crivo!</h1>
-                        <p className="mt-4 text-lg text-muted-foreground">
-                            Para começar, vamos configurar seu perfil. Esta é a etapa mais importante para garantir que seus contratos e cobranças sejam emitidos corretamente.
-                        </p>
-                    </div>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="grid md:grid-cols-2 gap-12 items-center">
+                {/* Left Column */}
+                <div className="hidden md:flex flex-col items-start text-left">
+                    <Image 
+                        src="https://pouynmrblzvwlhrfyins.supabase.co/storage/v1/object/public/icons/imags/Untitled%20folder/Welcome%202.png" 
+                        alt="Boas-vindas"
+                        width={350}
+                        height={350}
+                        className="size-[350px] mb-6"
+                    />
+                    <h1 className="text-3xl font-bold">Seja bem-vindo(a) à Crivo!</h1>
+                    <p className="mt-4 text-lg text-muted-foreground">
+                        Para começar, vamos configurar seu perfil. Esta é a etapa mais importante para garantir que seus contratos e cobranças sejam emitidos corretamente.
+                    </p>
+                </div>
 
-                    {/* Right Column */}
-                    <div className="flex flex-col">
-                         <h2 className="text-xl font-semibold mb-2">Como você irá prestar os serviços?</h2>
-                         <p className="text-muted-foreground mb-6">Escolha o tipo de perfil que melhor representa você ou seu negócio.</p>
-                         <FormField
-                            control={form.control}
-                            name="personType"
-                            render={({ field }) => (
-                                <FormItem className="space-y-4">
-                                <FormControl>
-                                    <RadioGroup
-                                    onValueChange={field.onChange}
-                                    defaultValue={field.value}
-                                    className="grid grid-cols-1 gap-4"
-                                    >
-                                        <FormItem>
-                                            <FormControl>
-                                                <RadioGroupItem value="cpf" id="cpf" className="sr-only peer" />
-                                            </FormControl>
-                                            <FormLabel htmlFor="cpf" className={cn(
-                                                "flex flex-col gap-2 rounded-lg border-2 p-4 cursor-pointer transition-all",
-                                                "peer-data-[state=checked]:border-green-500 peer-data-[state=checked]:shadow-md"
-                                            )}>
-                                                <div className="flex items-center justify-between">
-                                                    <span className="font-bold text-base">Pessoa Física</span>
-                                                    <div className={cn(
-                                                        "w-5 h-5 rounded-full border-2 flex items-center justify-center",
-                                                        field.value === 'cpf' ? "bg-green-500 border-green-500" : "border-muted-foreground"
-                                                    )}>
-                                                       {field.value === 'cpf' && <Check className="w-4 h-4 text-white" />}
+                {/* Right Column */}
+                <div className="flex flex-col">
+                    {currentStep === STEPS.TYPE && (
+                        <div>
+                             <h2 className="text-xl font-semibold mb-2">Como você irá prestar os serviços?</h2>
+                             <p className="text-muted-foreground mb-6">Escolha o tipo de perfil que melhor representa você ou seu negócio.</p>
+                             <FormField
+                                control={form.control}
+                                name="personType"
+                                render={({ field }) => (
+                                    <FormItem className="space-y-4">
+                                    <FormControl>
+                                        <RadioGroup
+                                        onValueChange={field.onChange}
+                                        defaultValue={field.value}
+                                        className="grid grid-cols-1 gap-4"
+                                        >
+                                            <FormItem>
+                                                <FormControl>
+                                                    <RadioGroupItem value="cpf" id="cpf" className="sr-only peer" />
+                                                </FormControl>
+                                                <FormLabel htmlFor="cpf" className={cn(
+                                                    "flex flex-col gap-2 rounded-lg border-2 p-4 cursor-pointer transition-all",
+                                                    "peer-data-[state=checked]:border-green-500 peer-data-[state=checked]:shadow-md"
+                                                )}>
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="font-bold text-base">Pessoa Física</span>
+                                                        <div className={cn(
+                                                            "w-5 h-5 rounded-full border-2 flex items-center justify-center",
+                                                            field.value === 'cpf' ? "bg-green-500 border-green-500" : "border-muted-foreground"
+                                                        )}>
+                                                        {field.value === 'cpf' && <Check className="w-4 h-4 text-white" />}
+                                                        </div>
                                                     </div>
-                                                </div>
-                                                <p className="text-sm font-normal text-muted-foreground">
-                                                  Para quem atua como profissional autônoma. Seus contratos serão emitidos em seu nome e as cobranças PIX estarão vinculadas diretamente ao seu CPF. É o caminho mais simples para quem está começando.
-                                                </p>
-                                            </FormLabel>
-                                        </FormItem>
-                                        <FormItem>
-                                             <FormControl>
-                                                <RadioGroupItem value="cnpj" id="cnpj" className="sr-only peer" />
-                                            </FormControl>
-                                            <FormLabel htmlFor="cnpj" className={cn(
-                                                "flex flex-col gap-2 rounded-lg border-2 p-4 cursor-pointer transition-all",
-                                                "peer-data-[state=checked]:border-green-500 peer-data-[state=checked]:shadow-md"
-                                            )}>
-                                                 <div className="flex items-center justify-between">
-                                                    <span className="font-bold text-base">Pessoa Jurídica</span>
-                                                    <div className={cn(
-                                                        "w-5 h-5 rounded-full border-2 flex items-center justify-center",
-                                                        field.value === 'cnpj' ? "bg-green-500 border-green-500" : "border-muted-foreground"
-                                                    )}>
-                                                       {field.value === 'cnpj' && <Check className="w-4 h-4 text-white" />}
+                                                    <p className="text-sm font-normal text-muted-foreground">
+                                                    Para quem atua como profissional autônoma. Seus contratos serão emitidos em seu nome e as cobranças PIX estarão vinculadas diretamente ao seu CPF. É o caminho mais simples para quem está começando.
+                                                    </p>
+                                                </FormLabel>
+                                            </FormItem>
+                                            <FormItem>
+                                                <FormControl>
+                                                    <RadioGroupItem value="cnpj" id="cnpj" className="sr-only peer" />
+                                                </FormControl>
+                                                <FormLabel htmlFor="cnpj" className={cn(
+                                                    "flex flex-col gap-2 rounded-lg border-2 p-4 cursor-pointer transition-all",
+                                                    "peer-data-[state=checked]:border-green-500 peer-data-[state=checked]:shadow-md"
+                                                )}>
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="font-bold text-base">Pessoa Jurídica</span>
+                                                        <div className={cn(
+                                                            "w-5 h-5 rounded-full border-2 flex items-center justify-center",
+                                                            field.value === 'cnpj' ? "bg-green-500 border-green-500" : "border-muted-foreground"
+                                                        )}>
+                                                        {field.value === 'cnpj' && <Check className="w-4 h-4 text-white" />}
+                                                        </div>
                                                     </div>
-                                                </div>
-                                                <p className="text-sm font-normal text-muted-foreground">
-                                                    Para quem já tem uma empresa formalizada (MEI, etc.). Seus contratos e as cobranças PIX serão vinculados ao seu CNPJ, o que transmite mais profissionalismo e separa suas finanças pessoais das do seu negócio.
-                                                </p>
-                                            </FormLabel>
-                                        </FormItem>
-                                    </RadioGroup>
-                                </FormControl>
-                                <FormMessage />
-                                </FormItem>
-                            )}
-                         />
-                         <Alert variant="default" className="mt-6">
-                            <Info className="h-4 w-4" />
-                            <AlertDescription className="text-xs">
-                                Atenção: Após avançar, esta escolha não poderá ser alterada. Certifique-se de selecionar a opção correta para suas necessidades.
-                            </AlertDescription>
-                        </Alert>
-                         <Button type="button" onClick={() => setCurrentStep(STEPS.PERSONAL)} className="w-full mt-8">
-                            Avançar para o Preenchimento <ArrowRight className="ml-2 h-4 w-4" />
-                         </Button>
-                    </div>
+                                                    <p className="text-sm font-normal text-muted-foreground">
+                                                        Para quem já tem uma empresa formalizada (MEI, etc.). Seus contratos e as cobranças PIX serão vinculados ao seu CNPJ, o que transmite mais profissionalismo e separa suas finanças pessoais das do seu negócio.
+                                                    </p>
+                                                </FormLabel>
+                                            </FormItem>
+                                        </RadioGroup>
+                                    </FormControl>
+                                    <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <Alert variant="default" className="mt-6">
+                                <Info className="h-4 w-4" />
+                                <AlertDescription className="text-xs">
+                                    Atenção: Após avançar, esta escolha não poderá ser alterada. Certifique-se de selecionar a opção correta para suas necessidades.
+                                </AlertDescription>
+                            </Alert>
+                            <Button type="button" onClick={() => setCurrentStep(STEPS.PERSONAL)} className="w-full mt-8">
+                                Avançar para o Preenchimento <ArrowRight className="ml-2 h-4 w-4" />
+                            </Button>
+                        </div>
+                    )}
+
+                    {currentStep > STEPS.TYPE && (
+                        <div className="space-y-8">
+                            <div className="space-y-6">
+                                {currentStep === STEPS.PERSONAL && <PersonalStep form={form} />}
+                                {personType === 'cnpj' && currentStep === STEPS.COMPANY && <CompanyStep form={form} />}
+                                {currentStep === getStepForPersonType(STEPS.ADDRESS) && <AddressStep form={form} />}
+                                {currentStep === getStepForPersonType(STEPS.SIGNATURE) && <SignatureStep form={form} sigCanvas={sigCanvas} />}
+                            </div>
+
+                            <div className="flex justify-between items-center pt-4">
+                                <Button type="button" variant="outline" onClick={handleBack} disabled={isLoading}>
+                                    <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
+                                </Button>
+                                <Button type="button" onClick={handleNext} disabled={isLoading}>
+                                    {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : (currentStep === getStepForPersonType(STEPS.SIGNATURE) ? 'Salvar Perfil' : 'Avançar')}
+                                    {currentStep !== getStepForPersonType(STEPS.SIGNATURE) && <ArrowRight className="ml-2 h-4 w-4" />}
+                                </Button>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </form>
         </Form>
