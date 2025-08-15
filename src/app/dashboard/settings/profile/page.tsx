@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/form'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { CheckCircle, Loader2, ArrowLeft, ArrowRight, User, Building, MapPin, PencilLine, PartyPopper, Search, Info, Check, ChevronsUpDown, XCircle } from 'lucide-react'
+import { CheckCircle, Loader2, ArrowLeft, ArrowRight, User, Building, MapPin, PencilLine, PartyPopper, Search, Info, Check, ChevronsUpDown, XCircle, BadgeCheck } from 'lucide-react'
 import SignatureCanvas from 'react-signature-canvas'
 import { saveProfile, getProfile } from '@/lib/actions/profile'
 import { useToast } from '@/hooks/use-toast'
@@ -142,6 +142,7 @@ export default function ProfilePage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSaved, setIsSaved] = useState(false)
   const [currentStep, setCurrentStep] = useState(STEPS.TYPE);
+  const [isRescuing, setIsRescuing] = useState(false);
   const sigCanvas = useRef<SignatureCanvas>(null);
   const { toast } = useToast()
   const router = useRouter();
@@ -208,7 +209,6 @@ export default function ProfilePage() {
   }, [form]);
 
   const personType = form.watch('personType');
-  const maxSteps = personType === 'cpf' ? 4 : 5; // PF: Type, Personal, Address, Signature. PJ: Type, Personal, Company, Address, Signature
   
   const stepFields: Record<number, (keyof ProfileFormData)[]> = {
     [STEPS.TYPE]: ['personType'],
@@ -277,37 +277,42 @@ export default function ProfilePage() {
   }
   
   const handleRescueClick = () => {
-    triggerConfetti();
-    router.push('/dashboard/clientes');
+    setIsRescuing(true);
+    setTimeout(() => {
+        triggerConfetti();
+        setIsRescuing(false);
+        router.push('/dashboard/clientes');
+    }, 4000);
   }
 
   if (isSaved) {
     return (
        <AlertDialog open={isSaved} onOpenChange={setIsSaved}>
-        <AlertDialogContent className="sm:max-w-2xl text-center p-8">
-            <AlertDialogHeader className="items-center">
-                <div className="flex flex-col md:flex-row items-center gap-6">
+        <AlertDialogContent className="sm:max-w-2xl text-center p-8 border-green-500 border-2">
+            <AlertDialogHeader className="items-center space-y-4">
+                <div className="flex flex-col md:flex-row items-center gap-6 w-full">
                     <Image 
                         src="https://pouynmrblzvwlhrfyins.supabase.co/storage/v1/object/public/icons/imags/Untitled%20folder/STARTUP%207.png" 
                         alt="Sucesso" 
                         width={150} 
                         height={150}
-                        className="size-[150px]"
+                        className="size-[120px] md:size-[150px]"
                     />
                     <div className="text-center md:text-left">
-                        <AlertDialogTitle className="text-2xl font-bold">Parabéns! Agora é sucesso na certa.</AlertDialogTitle>
-                        <AlertDialogDescription className="mt-4 text-base text-muted-foreground">
-                            E para celebrar, temos um presente: <strong>adicionamos 1 Crédito de Boas-vindas à sua conta!</strong>
-                            <br/><br/>
-                            Use-o para gerir seu <strong>primeiro cliente de graça, para sempre.</strong> Isso inclui cobrança automática, contratos e portal do cliente, sem nenhum custo de gestão.
-                            <br/><br/>
-                            Pronta para colocar seu primeiro cliente no piloto automático?
-                        </AlertDialogDescription>
+                        <AlertDialogTitle className="text-2xl font-bold text-foreground">Parabéns! Agora é sucesso na certa.</AlertDialogTitle>
                     </div>
                 </div>
+                <AlertDialogDescription className="text-base text-foreground text-center md:text-left !mt-6">
+                    E para celebrar, temos um presente: <strong className="text-green-600">adicionamos 1 Crédito de Boas-vindas à sua conta!</strong>
+                    <br/><br/>
+                    Use-o para gerir seu <strong className="text-green-600">primeiro cliente de graça, para sempre.</strong> Isso inclui cobrança automática, contratos e portal do cliente, sem nenhum custo de gestão.
+                    <br/><br/>
+                    Pronta para colocar seu primeiro cliente no piloto automático?
+                </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter className="justify-center mt-6">
-                <Button onClick={handleRescueClick} className="bg-green-600 hover:bg-green-700 text-lg py-6 px-8">
+                <Button onClick={handleRescueClick} className="bg-green-600 hover:bg-green-700 text-lg py-6 px-8" disabled={isRescuing}>
+                  {isRescuing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Resgatar agora
                 </Button>
             </AlertDialogFooter>
