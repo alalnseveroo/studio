@@ -215,33 +215,32 @@ export default function ProfilePage() {
     [STEPS.SIGNATURE]: ['signature'],
   };
 
-  const getStepForPersonType = (step: number) => {
-    if (personType === 'cpf') {
-      if (step === STEPS.COMPANY) return STEPS.ADDRESS;
-      if (step === STEPS.ADDRESS) return STEPS.SIGNATURE;
-    }
-    return step;
-  }
+  const finalStep = STEPS.SIGNATURE;
 
   const handleNext = async () => {
     const fieldsToValidate = stepFields[currentStep];
     const isValid = await form.trigger(fieldsToValidate);
 
     if (isValid) {
-      if (currentStep === getStepForPersonType(STEPS.SIGNATURE)) {
+      if (currentStep === finalStep) {
         await onSubmit(form.getValues());
       } else {
-        setCurrentStep(prev => getStepForPersonType(prev + 1));
+        let nextStep = currentStep + 1;
+        if (personType === 'cpf' && currentStep === STEPS.PERSONAL) {
+            nextStep = STEPS.ADDRESS; // Pula a etapa de empresa
+        }
+        setCurrentStep(nextStep);
       }
     }
   }
 
   const handleBack = () => {
     if (currentStep > STEPS.TYPE) {
-      setCurrentStep(prev => {
-        if (personType === 'cpf' && prev === STEPS.ADDRESS) return STEPS.PERSONAL;
-        return prev - 1
-      });
+      let prevStep = currentStep - 1;
+       if (personType === 'cpf' && currentStep === STEPS.ADDRESS) {
+           prevStep = STEPS.PERSONAL; // Pula a etapa de empresa ao voltar
+       }
+      setCurrentStep(prevStep);
     }
   }
 
@@ -405,8 +404,8 @@ export default function ProfilePage() {
                             <div className="space-y-6">
                                 {currentStep === STEPS.PERSONAL && <PersonalStep form={form} />}
                                 {personType === 'cnpj' && currentStep === STEPS.COMPANY && <CompanyStep form={form} />}
-                                {currentStep === getStepForPersonType(STEPS.ADDRESS) && <AddressStep form={form} />}
-                                {currentStep === getStepForPersonType(STEPS.SIGNATURE) && <SignatureStep form={form} sigCanvas={sigCanvas} />}
+                                {currentStep === STEPS.ADDRESS && <AddressStep form={form} />}
+                                {currentStep === STEPS.SIGNATURE && <SignatureStep form={form} sigCanvas={sigCanvas} />}
                             </div>
 
                             <div className="flex justify-between items-center pt-4">
@@ -414,8 +413,8 @@ export default function ProfilePage() {
                                     <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
                                 </Button>
                                 <Button type="button" onClick={handleNext} disabled={isLoading}>
-                                    {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : (currentStep === getStepForPersonType(STEPS.SIGNATURE) ? 'Salvar Perfil' : 'Avançar')}
-                                    {currentStep !== getStepForPersonType(STEPS.SIGNATURE) && <ArrowRight className="ml-2 h-4 w-4" />}
+                                    {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : (currentStep === finalStep ? 'Salvar Perfil' : 'Avançar')}
+                                    {currentStep !== finalStep && <ArrowRight className="ml-2 h-4 w-4" />}
                                 </Button>
                             </div>
                         </div>
@@ -640,3 +639,4 @@ const SignatureStep = ({ form, sigCanvas }: { form: any, sigCanvas: React.RefObj
         </Button>
     </div>
 );
+
