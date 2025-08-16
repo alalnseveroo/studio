@@ -212,18 +212,18 @@ export default function ContratoDetailPage() {
               )}
 
               {signingStep === 'initial' && (
-                  <Button onClick={handleSendOtp} disabled={!hasAgreed}>
+                  <Button onClick={handleSendOtp} disabled={!hasAgreed} className="bg-green-500 hover:bg-green-600">
                       Receber código de verificação
                   </Button>
               )}
 
               {signingStep === 'otp_sent' && (
-                  <Button onClick={handleSignContract} disabled={otp.length < 6}>
+                  <Button onClick={handleSignContract} disabled={otp.length < 6} className="bg-green-500 hover:bg-green-600">
                     Verificar e Assinar
                   </Button>
               )}
                {signingStep === 'verifying' && (
-                  <Button disabled>
+                  <Button disabled className="bg-green-500 hover:bg-green-600">
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       Verificando...
                   </Button>
