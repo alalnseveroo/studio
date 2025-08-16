@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
-import { Check, ArrowLeft, CreditCard, Users, Briefcase } from 'lucide-react'
+import { Check, ArrowLeft, CreditCard, Users, Briefcase, Loader2 } from 'lucide-react'
 import Image from 'next/image'
 import {
   Dialog,
@@ -15,9 +15,12 @@ import {
 import { cn } from '@/lib/utils'
 import { RadioGroup, RadioGroupItem } from './ui/radio-group'
 import Link from 'next/link'
-import { getProfile } from '@/lib/actions/profile'
+import { getProfile, saveProfile } from '@/lib/actions/profile'
+import { getOrCreateAsaasCustomer } from '@/lib/asaas'
 import type { Profile } from '@/lib/types'
 import confetti from "canvas-confetti";
+import { useToast } from '@/hooks/use-toast'
+
 
 export const triggerConfetti = () => {
     const end = Date.now() + 3 * 1000; // 3 seconds
@@ -143,7 +146,8 @@ interface UpgradePlanModalProps {
     onClose: () => void;
 }
 
-type Step = 'selection' | 'offer' | 'credits';
+type Step = 'selection' | 'offer' | 'credits' | 'checkout';
+type ButtonState = 'idle' | 'loading' | 'success';
 
 const BASE_LINK_MENSAL = "https://pay.kirvano.com/7d7c5149-41dd-4bd1-b269-36500fb5c0e4";
 const BASE_LINK_SEMESTRAL = "https://pay.kirvano.com/87f87449-a348-4a15-ad42-f2d9b717fe52";
@@ -155,6 +159,9 @@ export function UpgradePlanModal({ isOpen, onClose }: UpgradePlanModalProps) {
   const [selectedPlan, setSelectedPlan] = useState('professional');
   const [step, setStep] = useState<Step>('selection');
   const [userProfile, setUserProfile] = useState<Profile | null>(null);
+  const [buttonState, setButtonState] = useState<ButtonState>('idle');
+  const [checkoutUrl, setCheckoutUrl] = useState<string>('');
+  const { toast } = useToast();
 
   useEffect(() => {
     if (isOpen) {
@@ -165,6 +172,50 @@ export function UpgradePlanModal({ isOpen, onClose }: UpgradePlanModalProps) {
         fetchProfileData();
     }
   }, [isOpen]);
+  
+  const handleContinue = async () => {
+    if (!userProfile) {
+      toast({ variant: 'destructive', title: "Erro", description: "Perfil do usuário não encontrado. Por favor, recarregue a página." });
+      return;
+    }
+    setButtonState('loading');
+    
+    try {
+      // Garante que o usuário existe como cliente no Asaas.
+      const asaasCustomer = await getOrCreateAsaasCustomer(userProfile);
+      
+      // Se o perfil local não tiver o ID do Asaas, atualiza-o.
+      if (asaasCustomer && userProfile.asaas_customer_id !== asaasCustomer.id) {
+          const profileUpdateData = { ...userProfile, asaas_customer_id: asaasCustomer.id };
+          await saveProfile(profileUpdateData as any); // A 'is_completed' field might be missing, casting to any for now
+          setUserProfile(profileUpdateData); // Update local state
+      }
+
+      setButtonState('success');
+      
+      setTimeout(() => {
+         if (selectedPlan === 'professional') {
+            setStep('offer');
+        } else {
+            setStep('credits');
+        }
+        setButtonState('idle'); // Reset button for the next screen
+      }, 1000); // Wait 1 second to show the success checkmark
+
+    } catch (error: any) {
+        setButtonState('idle');
+        toast({ variant: 'destructive', title: "Erro de Sincronização", description: error.message });
+    }
+  };
+
+  const handleClose = () => {
+    onClose();
+    setTimeout(() => {
+        setStep('selection');
+        setSelectedPlan('professional');
+        setButtonState('idle');
+    }, 300);
+  }
   
   const buildPaymentLink = (baseUrl: string) => {
     if (!userProfile) return baseUrl;
@@ -185,22 +236,6 @@ export function UpgradePlanModal({ isOpen, onClose }: UpgradePlanModalProps) {
 
     const queryString = params.toString();
     return queryString ? `${baseUrl}?${queryString}` : baseUrl;
-  }
-  
-  const handleContinue = () => {
-    if (selectedPlan === 'professional') {
-        setStep('offer');
-    } else {
-        setStep('credits');
-    }
-  }
-
-  const handleClose = () => {
-    onClose();
-    setTimeout(() => {
-        setStep('selection');
-        setSelectedPlan('professional');
-    }, 300);
   }
 
   const renderContent = () => {
@@ -292,8 +327,10 @@ export function UpgradePlanModal({ isOpen, onClose }: UpgradePlanModalProps) {
                             />
                         </div>
                         <div className="mt-6 flex justify-end">
-                            <Button size="lg" className="text-base py-6" onClick={handleContinue}>
-                                Continuar
+                             <Button size="lg" className="text-base py-6 w-40" onClick={handleContinue} disabled={buttonState !== 'idle'}>
+                                {buttonState === 'loading' && <Loader2 className="h-6 w-6 animate-spin" />}
+                                {buttonState === 'success' && <Check className="h-6 w-6" />}
+                                {buttonState === 'idle' && 'Continuar'}
                             </Button>
                         </div>
                     </div>
@@ -369,3 +406,5 @@ export function UpgradePlanModal({ isOpen, onClose }: UpgradePlanModalProps) {
     </Dialog>
   )
 }
+
+    
