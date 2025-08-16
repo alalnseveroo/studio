@@ -20,7 +20,7 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp
 import { Checkbox } from '@/components/ui/checkbox'
 
 
-type SigningStep = 'initial' | 'otp_sent' | 'verifying' | 'already_signed'
+type SigningStep = 'initial' | 'otp_sent' | 'verifying' | 'already_signed' | 'success';
 
 export default function ContratoDetailPage() {
   const params = useParams()
@@ -93,12 +93,15 @@ export default function ContratoDetailPage() {
       setSigningStep('otp_sent');
       setOtp('');
     } else {
+      setSigningStep('success');
       toast({
         title: 'Contrato Assinado!',
         description: 'Sua assinatura foi registrada com sucesso.',
         className: 'bg-green-100 border-green-200 text-green-800'
       })
-      fetchContractAndProfile()
+      setTimeout(() => {
+        fetchContractAndProfile()
+      }, 2000);
     }
   }
   
@@ -211,21 +214,21 @@ export default function ContratoDetailPage() {
                   </div>
               )}
 
-              {signingStep === 'initial' && (
-                  <Button onClick={handleSendOtp} disabled={!hasAgreed} className="bg-green-500 hover:bg-green-600">
-                      Receber código de verificação
-                  </Button>
+              {signingStep !== 'success' && (
+                 <Button 
+                    onClick={signingStep === 'otp_sent' ? handleSignContract : handleSendOtp} 
+                    disabled={!hasAgreed || signingStep === 'verifying'} 
+                    className="bg-green-500 hover:bg-green-600"
+                  >
+                    {signingStep === 'verifying' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    {signingStep === 'otp_sent' ? 'Verificar e Assinar' : 'Receber código de verificação'}
+                 </Button>
               )}
-
-              {signingStep === 'otp_sent' && (
-                  <Button onClick={handleSignContract} disabled={otp.length < 6} className="bg-green-500 hover:bg-green-600">
-                    Verificar e Assinar
-                  </Button>
-              )}
-               {signingStep === 'verifying' && (
+              
+              {signingStep === 'success' && (
                   <Button disabled className="bg-green-500 hover:bg-green-600">
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Verificando...
+                      <Check className="mr-2 h-4 w-4" />
+                      Assinado!
                   </Button>
               )}
             </div>
