@@ -150,7 +150,7 @@ export default function ContratoDetailPage() {
             </CardHeader>
             <CardContent>
                 <div 
-                    className="prose prose-sm max-w-none rounded-md border bg-gray-50 p-6 h-[70vh] overflow-y-auto"
+                    className="prose prose-sm max-w-none rounded-md border bg-gray-50 p-6 h-[70vh] overflow-y-auto prose-p:mb-3"
                     dangerouslySetInnerHTML={{ __html: contract.full_contract_text || '' }}
                 />
             </CardContent>
