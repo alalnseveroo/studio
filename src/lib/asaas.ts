@@ -14,7 +14,7 @@ type AsaasCustomer = {
     // ... outros campos que a API do Asaas retorna
 };
 
-async function getOrCreateAsaasCustomer(profile: Profile | Cliente): Promise<AsaasCustomer> {
+async function getOrCreateAsaasCustomer(profile: Profile): Promise<AsaasCustomer> {
     if (!ASAAS_API_KEY) {
         throw new Error("A chave da API do Asaas não está configurada.");
     }
@@ -43,11 +43,11 @@ async function getOrCreateAsaasCustomer(profile: Profile | Cliente): Promise<Asa
     // Se não tem ID, cria um novo cliente no Asaas
     const payload = {
         name: profile.full_name || profile.company_name,
-        email: profile.email,
         cpfCnpj: profile.cpf || profile.cnpj,
-        phone: profile.phone?.replace(/\D/g, ''),
-        mobilePhone: profile.phone?.replace(/\D/g, ''),
-        address: profile.address?.split(',')[0],
+        email: profile.email,
+        phone: profile.phone,
+        mobilePhone: profile.phone,
+        address: profile.address?.split(',')[0].trim(),
         addressNumber: profile.address?.split(',')[1]?.trim().split(' ')[0],
         province: profile.address?.split('-')[1]?.split(',')[0]?.trim(),
         postalCode: profile.address?.match(/CEP: ([\d-]+)/)?.[1].replace(/\D/g, ''),
