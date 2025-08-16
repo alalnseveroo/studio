@@ -31,6 +31,7 @@ export type Cliente = {
   first_charge_date?: string | null;
 
   propostas?: Proposta; 
+  asaas_customer_id?: string | null;
 };
 
 export type Proposta = {
@@ -73,6 +74,7 @@ export type Profile = {
   sex: 'male' | 'female';
   avatar_url: string | null;
   phone?: string | null;
+  asaas_customer_id?: string | null;
 };
 
 export type Contrato = {
@@ -124,3 +126,4 @@ export type Cobranca = {
     
 
     
+

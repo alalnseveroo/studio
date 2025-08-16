@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/server'
 import type { ProfileFormData } from '@/app/dashboard/settings/profile/page';
 import { sendProfileWebhook } from './webhook';
 import { sendTransactionalEmail } from '../brevo';
+import { getOrCreateAsaasCustomer } from '../asaas';
 
 const AVATAR_USER_MALE = 'https://pouynmrblzvwlhrfyins.supabase.co/storage/v1/object/public/icons/AvatarUser/avatar-assist-homem.png';
 const AVATAR_USER_FEMALE = 'https://pouynmrblzvwlhrfyins.supabase.co/storage/v1/object/public/icons/AvatarUser/avatar-assist-muler.png';
@@ -19,6 +20,21 @@ export async function saveProfile(formData: ProfileFormData & { is_completed: bo
   if (!user) {
     return { error: { message: 'Usuário não autenticado.' } }
   }
+
+  // 1. Criar ou obter o cliente no Asaas ANTES de salvar no nosso banco
+  let asaasCustomerId: string | null = null;
+  try {
+      const asaasCustomer = await getOrCreateAsaasCustomer(formData);
+      asaasCustomerId = asaasCustomer.id;
+  } catch (asaasError: any) {
+      console.error("Asaas customer creation failed:", asaasError.message);
+      return { error: { message: `Falha ao sincronizar com o sistema de pagamentos: ${asaasError.message}` } };
+  }
+
+  if (!asaasCustomerId) {
+       return { error: { message: 'Não foi possível obter um ID de cliente do sistema de pagamentos.' } };
+  }
+
 
   const avatarUrl = formData.sex === 'male' ? AVATAR_USER_MALE : AVATAR_USER_FEMALE;
 
@@ -34,9 +50,11 @@ export async function saveProfile(formData: ProfileFormData & { is_completed: bo
     signature: formData.signature,
     sex: formData.sex,
     avatar_url: avatarUrl,
+    phone: formData.phone,
     updated_at: new Date().toISOString(),
     is_completed: formData.is_completed,
     email: user.email, // Incluindo email para o webhook
+    asaas_customer_id: asaasCustomerId, // 2. Salvar o ID do Asaas no nosso banco
   };
 
   const { data, error } = await supabase.from('profiles').upsert(profileData).select().single();
@@ -70,7 +88,7 @@ export async function saveProfile(formData: ProfileFormData & { is_completed: bo
       }, 60000); // 1 minuto
   }
 
-  return { error: null }
+  return { data, error: null }
 }
 
 
