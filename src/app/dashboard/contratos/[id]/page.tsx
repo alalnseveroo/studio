@@ -165,7 +165,7 @@ export default function ContratoDetailPage() {
             </Alert>
           )}
 
-          {signingStep !== 'already_signed' && signingStep !== 'verifying' && (
+          {signingStep !== 'already_signed' && (
             <div className="space-y-6">
               <div>
                   <h2 className="text-xl font-bold">Assinar contrato</h2>
@@ -192,7 +192,7 @@ export default function ContratoDetailPage() {
               </div>
 
               {signingStep === 'otp_sent' && (
-                  <div className="flex flex-col items-center justify-center gap-2">
+                  <div className="flex flex-col items-start gap-2">
                       <InputOTP maxLength={6} value={otp} onChange={(value) => setOtp(value)}>
                           <InputOTPGroup>
                               <InputOTPSlot index={0} />
@@ -205,7 +205,7 @@ export default function ContratoDetailPage() {
                               <InputOTPSlot index={5} />
                           </InputOTPGroup>
                       </InputOTP>
-                       <Button variant="link" size="sm" className="text-xs" onClick={handleSendOtp}>
+                       <Button variant="link" size="sm" className="text-xs h-auto p-0" onClick={handleSendOtp}>
                           Não recebeu? Reenviar código
                       </Button>
                   </div>
@@ -222,16 +222,14 @@ export default function ContratoDetailPage() {
                     Verificar e Assinar
                   </Button>
               )}
+               {signingStep === 'verifying' && (
+                  <Button disabled>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Verificando...
+                  </Button>
+              )}
             </div>
           )}
-
-          {signingStep === 'verifying' && (
-            <div className="flex justify-center items-center py-12">
-                <Loader2 className="mr-2 h-8 w-8 animate-spin" />
-                <p>Processando...</p>
-            </div>
-          )}
-
         </div>
       </div>
     </div>
