@@ -1,5 +1,4 @@
 
-
 export type Cliente = {
   id: string;
   user_id: string;
@@ -33,6 +32,7 @@ export type Cliente = {
   asaas_customer_id?: string | null;
 
   propostas?: Proposta; 
+  Cobranca?: Cobranca[];
 };
 
 export type Proposta = {
@@ -75,6 +75,7 @@ export type Profile = {
   sex: 'male' | 'female';
   avatar_url: string | null;
   phone?: string | null;
+  asaas_customer_id?: string | null;
 };
 
 export type Contrato = {

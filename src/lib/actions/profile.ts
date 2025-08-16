@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/server'
 import type { ProfileFormData } from '@/app/dashboard/settings/profile/page';
 import { sendProfileWebhook } from './webhook';
 import { sendTransactionalEmail } from '../brevo';
+import { getOrCreateAsaasCustomer } from '../asaas';
 
 const AVATAR_USER_MALE = 'https://pouynmrblzvwlhrfyins.supabase.co/storage/v1/object/public/icons/AvatarUser/avatar-assist-homem.png';
 const AVATAR_USER_FEMALE = 'https://pouynmrblzvwlhrfyins.supabase.co/storage/v1/object/public/icons/AvatarUser/avatar-assist-muler.png';
@@ -30,25 +31,60 @@ export async function saveProfile(formData: ProfileFormData & { is_completed: bo
     full_name: formData.fullName,
     nationality: formData.nationality,
     cpf: formData.cpf,
+    phone: formData.phone,
     address: formData.address,
     signature: formData.signature,
     sex: formData.sex,
     avatar_url: avatarUrl,
     updated_at: new Date().toISOString(),
     is_completed: formData.is_completed,
-    email: user.email, // Incluindo email para o webhook
+    email: user.email,
   };
 
-  const { data, error } = await supabase.from('profiles').upsert(profileData).select().single();
+  const { data: savedProfile, error } = await supabase.from('profiles').upsert(profileData).select().single();
 
   if (error) {
     console.error('Supabase error:', error)
     return { error: { message: `Não foi possível salvar o perfil: ${error.message}` } }
   }
   
-    if(data) {
+  // Após salvar o perfil, cria o cliente no Asaas para o próprio usuário/empresa
+  if (savedProfile) {
+    // A função `getOrCreateAsaasCustomer` espera um tipo `Cliente`, mas podemos adaptar
+    // o `Profile` para se parecer com um cliente para essa chamada.
+    const profileAsClientData = {
+        id: savedProfile.id,
+        user_id: savedProfile.id,
+        full_name: savedProfile.full_name,
+        company_name: savedProfile.company_name,
+        email: savedProfile.email,
+        cpf: savedProfile.cpf,
+        cnpj: savedProfile.cnpj,
+        address: savedProfile.address,
+        // Preencha outros campos necessários se a função `getOrCreateAsaasCustomer` exigir
+    };
+    
+    // @ts-ignore
+    const { asaas_customer_id, error: asaasError } = await getOrCreateAsaasCustomer(profileAsClientData, user.id);
+
+    if (asaasError) {
+        console.error(`Falha ao criar/buscar o usuário no Asaas: ${asaasError.message}`);
+        // Considerar como lidar com este erro. Por enquanto, apenas logamos.
+    } else if (asaas_customer_id) {
+        // Salva o ID do cliente Asaas no perfil do usuário no Supabase
+        const { error: updateAsaasIdError } = await supabase
+            .from('profiles')
+            .update({ asaas_customer_id: asaas_customer_id })
+            .eq('id', user.id);
+            
+        if (updateAsaasIdError) {
+            console.error("Falha ao salvar asaas_customer_id no perfil do usuário:", updateAsaasIdError);
+        }
+    }
+  }
+    if(savedProfile) {
       try {
-          await sendProfileWebhook('update', data);
+          await sendProfileWebhook('update', savedProfile);
       } catch (webhookError: any) {
           console.warn(`Falha ao enviar webhook de atualização de perfil: ${webhookError.message}`);
       }
@@ -60,7 +96,7 @@ export async function saveProfile(formData: ProfileFormData & { is_completed: bo
             toEmail: user.email!,
             templateId: 65,
             params: {
-              CONTRATADA_NOME: data.full_name || data.company_name
+              CONTRATADA_NOME: savedProfile.full_name || savedProfile.company_name
             },
             userId: user.id
           })

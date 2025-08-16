@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
-import { Check, ArrowLeft, CreditCard, Users, Briefcase } from 'lucide-react'
+import { Check, ArrowLeft, CreditCard, Users, Briefcase, Loader2, RefreshCw } from 'lucide-react'
 import Image from 'next/image'
 import {
   Dialog,
@@ -18,6 +18,9 @@ import Link from 'next/link'
 import { getProfile } from '@/lib/actions/profile'
 import type { Profile } from '@/lib/types'
 import confetti from "canvas-confetti";
+import { createAsaasCharge, createAsaasPaymentLink, getAsaasPixCharge } from '@/lib/asaas'
+import PixQRCode from './pix-qrcode'
+import { useToast } from '@/hooks/use-toast'
 
 export const triggerConfetti = () => {
     const end = Date.now() + 3 * 1000; // 3 seconds
@@ -110,32 +113,38 @@ const PlanCard = ({
     )
 }
 
-const CreditOptionCard = ({
-    icon: Icon,
-    title,
-    description,
-    href
-}: {
-    icon: React.ElementType,
-    title: string,
-    description: string,
-    href: string
-}) => {
-    return (
-         <Link href={href} target="_blank" rel="noopener noreferrer" className="block w-full">
-            <div className="flex items-center gap-4 rounded-xl border-2 p-5 transition-all hover:border-primary hover:shadow-lg">
-                <div className="p-3 bg-muted rounded-full">
-                    <Icon className="h-6 w-6 text-primary" />
-                </div>
-                <div className="flex-1">
-                    <h3 className="font-bold text-base">{title}</h3>
-                    <p className="text-sm text-muted-foreground">{description}</p>
-                </div>
-                <CreditCard className="h-5 w-5 text-muted-foreground" />
+const CheckoutDisplay = ({ paymentId, paymentLink, onRetry }: { paymentId: string; paymentLink: string; onRetry: () => void; }) => (
+    <div className="w-full max-w-md mx-auto">
+        <h2 className="text-xl font-bold text-center mb-6">Finalize seu Pagamento</h2>
+        <div className="rounded-lg border bg-card text-card-foreground shadow-sm p-6 space-y-6">
+            <div>
+                <h3 className="font-semibold mb-4 text-center">Opção 1: Pagar com PIX</h3>
+                <PixQRCode paymentId={paymentId} />
             </div>
-        </Link>
-    )
-}
+            <div className="relative flex items-center">
+                <div className="flex-grow border-t border-muted"></div>
+                <span className="flex-shrink mx-4 text-muted-foreground text-xs">OU</span>
+                <div className="flex-grow border-t border-muted"></div>
+            </div>
+            <div>
+                 <h3 className="font-semibold mb-4 text-center">Opção 2: Pagar com Cartão de Crédito</h3>
+                <Button asChild className="w-full">
+                    <Link href={paymentLink} target="_blank" rel="noopener noreferrer">
+                        <CreditCard className="mr-2 h-4 w-4" />
+                        Pagar com Cartão
+                    </Link>
+                </Button>
+                <p className="text-xs text-muted-foreground text-center mt-2">Você será redirecionado para um ambiente seguro para finalizar a compra.</p>
+            </div>
+        </div>
+        <div className="text-center mt-4">
+             <Button variant="link" onClick={onRetry}>
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Gerar novamente
+            </Button>
+        </div>
+    </div>
+);
 
 
 interface UpgradePlanModalProps {
@@ -143,18 +152,20 @@ interface UpgradePlanModalProps {
     onClose: () => void;
 }
 
-type Step = 'selection' | 'offer' | 'credits';
+type Step = 'selection' | 'checkout' | 'loading' | 'error';
 
-const BASE_LINK_MENSAL = "https://pay.kirvano.com/7d7c5149-41dd-4bd1-b269-36500fb5c0e4";
-const BASE_LINK_SEMESTRAL = "https://pay.kirvano.com/87f87449-a348-4a15-ad42-f2d9b717fe52";
-const BASE_LINK_2_CREDITS = "https://pay.kirvano.com/bbf1923d-e307-4319-9cb4-9ae4ee4d5a87";
-const BASE_LINK_4_CREDITS = "https://pay.kirvano.com/1d926d20-3ae9-403b-9acb-8882bdd898dd";
-
+interface CheckoutData {
+  paymentId: string;
+  paymentLink: string;
+}
 
 export function UpgradePlanModal({ isOpen, onClose }: UpgradePlanModalProps) {
   const [selectedPlan, setSelectedPlan] = useState('professional');
   const [step, setStep] = useState<Step>('selection');
   const [userProfile, setUserProfile] = useState<Profile | null>(null);
+  const [checkoutData, setCheckoutData] = useState<CheckoutData | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     if (isOpen) {
@@ -166,33 +177,58 @@ export function UpgradePlanModal({ isOpen, onClose }: UpgradePlanModalProps) {
     }
   }, [isOpen]);
   
-  const buildPaymentLink = (baseUrl: string) => {
-    if (!userProfile) return baseUrl;
-
-    const params = new URLSearchParams();
-    if (userProfile.full_name || userProfile.company_name) {
-        params.append('customer.name', userProfile.full_name || userProfile.company_name!);
-    }
-    if (userProfile.email) {
-        params.append('customer.email', userProfile.email);
-    }
-    if (userProfile.cpf || userProfile.cnpj) {
-        params.append('customer.document', userProfile.cpf || userProfile.cnpj!);
-    }
-    if (userProfile.phone) {
-        params.append('customer.phone', userProfile.phone.replace(/\D/g, ''));
+  const handleContinue = async () => {
+    setStep('loading');
+    setError(null);
+    setCheckoutData(null);
+    
+    if (!userProfile) {
+        setError("Não foi possível carregar os dados do seu perfil. Tente novamente.");
+        setStep('error');
+        return;
     }
 
-    const queryString = params.toString();
-    return queryString ? `${baseUrl}?${queryString}` : baseUrl;
-  }
-  
-  const handleContinue = () => {
+    const { asaas_customer_id } = userProfile;
+    if (!asaas_customer_id) {
+         setError("Sua conta de pagamentos não foi encontrada. Contate o suporte.");
+         setStep('error');
+         return;
+    }
+    
+    let description = '';
+    let value = 0;
+
     if (selectedPlan === 'professional') {
-        setStep('offer');
-    } else {
-        setStep('credits');
+        description = 'Assinatura Plano Profissional Crivo - Mensal';
+        value = 49.90;
+    } else { // flexible
+        description = 'Compra de 2 créditos Crivo';
+        value = 20.00; // 2 * R$10
     }
+
+    const { payment, error: chargeError } = await createAsaasCharge({
+        customer: asaas_customer_id,
+        value: value,
+        dueDate: new Date().toISOString().split('T')[0],
+        description: description,
+    });
+    
+    if (chargeError || !payment) {
+        setError(chargeError?.message || "Ocorreu um erro ao criar a cobrança. Tente novamente.");
+        setStep('error');
+        return;
+    }
+    
+    const { link, error: linkError } = await createAsaasPaymentLink(payment.id);
+
+    if (linkError || !link) {
+        setError(linkError?.message || "Ocorreu um erro ao gerar o link de pagamento. Tente novamente.");
+        setStep('error');
+        return;
+    }
+
+    setCheckoutData({ paymentId: payment.id, paymentLink: link });
+    setStep('checkout');
   }
 
   const handleClose = () => {
@@ -200,53 +236,42 @@ export function UpgradePlanModal({ isOpen, onClose }: UpgradePlanModalProps) {
     setTimeout(() => {
         setStep('selection');
         setSelectedPlan('professional');
+        setCheckoutData(null);
+        setError(null);
     }, 300);
   }
 
   const renderContent = () => {
     switch (step) {
-        case 'offer':
+        case 'loading':
             return (
-                <div className="flex flex-col justify-center p-8 md:p-16 bg-background">
-                    <div className="w-full max-w-2xl mx-auto">
-                        <div className="rounded-xl border-2 p-6 transition-all border-primary shadow-lg">
-                            <h3 className="font-bold text-lg">Oferta Exclusiva Semestral</h3>
-                            <div className="mt-4">
-                                <span className="text-3xl font-bold">R$ 34,15</span>
-                                <span className="text-sm text-muted-foreground ml-2">/mês no plano de 6 meses</span>
-                            </div>
-                            <p className="font-semibold text-lg mt-1">Total: R$ 204,90</p>
-                            <p className="text-sm text-muted-foreground mt-4">Economize e tenha tranquilidade por mais tempo com nosso plano semestral. Todos os benefícios do plano profissional com um desconto especial.</p>
-                        </div>
-                        <div className="mt-6 flex flex-col sm:flex-row justify-end gap-4">
-                            <Button asChild size="lg" variant="outline" className="text-base py-6 border-2 border-black hover:bg-black hover:text-white">
-                                <Link href={buildPaymentLink(BASE_LINK_MENSAL)}>Prefiro o mensal</Link>
-                            </Button>
-                             <Button asChild size="lg" className="text-base py-6 bg-green-600 hover:bg-green-700">
-                                <Link href={buildPaymentLink(BASE_LINK_SEMESTRAL)}>Sim, eu aceito</Link>
-                            </Button>
-                        </div>
-                    </div>
+                <div className="flex flex-col justify-center items-center p-8 md:p-16 bg-background h-full">
+                    <Loader2 className="h-12 w-12 animate-spin text-primary mb-4"/>
+                    <p className="text-muted-foreground">Gerando seu checkout seguro...</p>
                 </div>
             );
-        case 'credits':
-            return (
-                <div className="flex flex-col justify-center p-8 md:p-16 bg-background">
-                    <div className="w-full max-w-lg mx-auto space-y-4">
-                        <CreditOptionCard
-                           icon={Users}
-                           title="Pacote para 2 Clientes"
-                           description="Ideal para começar a expandir sua carteira."
-                           href={buildPaymentLink(BASE_LINK_2_CREDITS)}
-                        />
-                         <CreditOptionCard
-                           icon={Briefcase}
-                           title="Pacote para 4 Clientes"
-                           description="O melhor custo-benefício para acelerar seu crescimento."
-                           href={buildPaymentLink(BASE_LINK_4_CREDITS)}
-                        />
-                    </div>
+        case 'error':
+             return (
+                <div className="flex flex-col justify-center items-center p-8 md:p-16 bg-background h-full text-center">
+                    <h2 className="text-xl font-bold text-destructive">Oops! Algo deu errado.</h2>
+                    <p className="text-muted-foreground mt-2">{error}</p>
+                    <Button onClick={handleContinue} className="mt-6">
+                        <RefreshCw className="mr-2 h-4 w-4" />
+                        Tentar Novamente
+                    </Button>
                 </div>
+            );
+        case 'checkout':
+            return (
+                 <div className="flex flex-col justify-center p-8 md:p-16 bg-background h-full">
+                     {checkoutData && (
+                        <CheckoutDisplay 
+                            paymentId={checkoutData.paymentId}
+                            paymentLink={checkoutData.paymentLink}
+                            onRetry={handleContinue}
+                        />
+                     )}
+                 </div>
             );
         case 'selection':
         default:
@@ -293,7 +318,7 @@ export function UpgradePlanModal({ isOpen, onClose }: UpgradePlanModalProps) {
                         </div>
                         <div className="mt-6 flex justify-end">
                             <Button size="lg" className="text-base py-6" onClick={handleContinue}>
-                                Continuar
+                                Continuar para o Pagamento
                             </Button>
                         </div>
                     </div>
@@ -304,17 +329,18 @@ export function UpgradePlanModal({ isOpen, onClose }: UpgradePlanModalProps) {
   
   const getLeftColumnContent = () => {
     switch(step) {
-        case 'offer':
+        case 'checkout':
             return {
-                title: 'Preparamos algo especial para você',
+                title: 'Quase lá! Escolha como pagar',
                 image: "https://pouynmrblzvwlhrfyins.supabase.co/storage/v1/object/public/icons/imags/Untitled%20folder/Rewards%202.png",
-                alt: "Oferta Especial"
+                alt: "Pagamento"
             };
-        case 'credits':
+        case 'loading':
+        case 'error':
              return {
-                title: 'Escolha qual melhor crédito para você',
+                title: 'Aguarde um momento',
                 image: "https://pouynmrblzvwlhrfyins.supabase.co/storage/v1/object/public/icons/imags/Untitled%20folder/High%20Five%203.png",
-                alt: "Pacote de créditos"
+                alt: "Carregando"
             };
         case 'selection':
         default:
@@ -353,7 +379,7 @@ export function UpgradePlanModal({ isOpen, onClose }: UpgradePlanModalProps) {
                             </p>
                          }
                     </div>
-                    <div className={cn("mt-8 flex justify-center w-full", step === 'credits' ? 'md:justify-start' : 'md:justify-center')}>
+                    <div className={cn("mt-8 flex justify-center w-full")}>
                         <Image 
                             src={image}
                             alt={alt}

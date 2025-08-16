@@ -84,7 +84,7 @@ export async function createAsaasCharge(chargeDetails: {
 }) {
     try {
         const payload = {
-            billingType: 'PIX',
+            billingType: 'UNDEFINED', // Permite PIX e Cartão
             ...chargeDetails
         };
 
@@ -105,6 +105,34 @@ export async function createAsaasCharge(chargeDetails: {
 
     } catch (e: any) {
         return { payment: null, error: { message: e.message || 'Erro de conexão com a API do Asaas ao criar cobrança.' } };
+    }
+}
+
+// Função para gerar um link de pagamento para uma cobrança existente
+export async function createAsaasPaymentLink(paymentId: string) {
+     try {
+        const payload = {
+            paymentId,
+            billingType: "UNDEFINED"
+        }
+
+        const response = await fetch(`${ASAAS_API_URL}/paymentLinks`, {
+            method: 'POST',
+            headers: asaasHeaders,
+            body: JSON.stringify(payload)
+        });
+        
+        const data = await response.json();
+        
+        if (!response.ok) {
+            const errorMessage = data.errors?.[0]?.description || 'Erro desconhecido ao criar o link de pagamento no Asaas.';
+            return { link: null, error: { message: errorMessage } };
+        }
+
+        return { link: data.url, error: null };
+
+    } catch (e: any) {
+        return { link: null, error: { message: e.message || 'Erro de conexão com a API do Asaas ao criar link de pagamento.' } };
     }
 }
 

@@ -29,10 +29,10 @@ export async function createFullClient(formData: any) {
     return { data: null, error: { message: 'Usuário não autenticado.' } }
   }
 
-  // Buscar o perfil da contratada (usuário)
+  // Buscar o perfil da contratada (usuário) para obter asaas_customer_id
   const { data: providerProfile, error: profileError } = await supabase
     .from('profiles')
-    .select('full_name, company_name')
+    .select('full_name, company_name, asaas_customer_id')
     .eq('id', user.id)
     .single();
 
@@ -64,39 +64,47 @@ export async function createFullClient(formData: any) {
     cnpj: formData.personType === 'cnpj' ? formData.cnpj : null,
     representative_name: formData.personType === 'cnpj' ? formData.representativeName : null,
     representative_cpf: formData.personType === 'cnpj' ? formData.representativeCpf : null,
-    billing_status: 'inactive' as const, 
+    billing_status: 'inactive' as const,
   };
 
 
-  const { data, error } = await supabase.from('clientes').insert(clientData).select().single()
+  const { data: newClient, error } = await supabase.from('clientes').insert(clientData).select().single()
 
   if (error) {
     console.error('Supabase error:', error)
     return { data: null, error: { message: `Não foi possível adicionar o cliente: ${error.message}` } }
   }
+
+  // Após criar o cliente no Supabase, cria ou busca no Asaas
+  if (newClient) {
+     const { asaas_customer_id, error: asaasError } = await getOrCreateAsaasCustomer(newClient, user.id);
+     if (asaasError) {
+         // Opcional: deletar o cliente criado no Supabase ou apenas logar o erro
+         console.error(`Falha ao criar cliente no Asaas para o cliente Supabase ID ${newClient.id}: ${asaasError.message}`);
+         // Por simplicidade, vamos apenas logar e continuar. O cliente pode ser sincronizado depois.
+     }
+  }
   
-    if (data && data.email) {
+    if (newClient && newClient.email) {
         try {
-            const portalUrl = new URL(`/portal/${data.id}`, process.env.NEXT_PUBLIC_SITE_URL).toString();
+            const portalUrl = new URL(`/portal/${newClient.id}`, process.env.NEXT_PUBLIC_SITE_URL).toString();
             const providerName = providerProfile.full_name || providerProfile.company_name;
 
-            // Enriquecer os dados com a URL do portal e o nome da contratada
             const dataWithContext = { 
-                ...data, 
+                ...newClient, 
                 portal_url: portalUrl,
                 provider_name: providerName 
             };
 
             await sendClientWebhook('create', dataWithContext);
 
-            // Agendar e-mail após 2 minutos
             setTimeout(async () => {
                 try {
                     await sendTransactionalEmail({
-                        toEmail: data.email!,
+                        toEmail: newClient.email!,
                         templateId: 62,
                         params: { 
-                            CLIENTE_NOME: data.full_name || data.company_name,
+                            CLIENTE_NOME: newClient.full_name || newClient.company_name,
                             CONTRATADA_NOME: providerName,
                          },
                         userId: user.id
@@ -104,7 +112,7 @@ export async function createFullClient(formData: any) {
                 } catch (emailError: any) {
                     console.error('Falha ao enviar e-mail agendado de criação de cliente:', emailError.message);
                 }
-            }, 120000); // 2 minutos
+            }, 120000);
 
         } catch (webhookError: any) {
             console.warn(`Falha ao enviar webhook de criação de cliente: ${webhookError.message}`);
@@ -112,7 +120,7 @@ export async function createFullClient(formData: any) {
     }
 
   revalidatePath('/dashboard/clientes')
-  return { data, error: null }
+  return { data: newClient, error: null }
 }
 
 
