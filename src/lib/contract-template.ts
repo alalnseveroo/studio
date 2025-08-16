@@ -14,7 +14,8 @@ function getContratanteInfo(contratante: Cliente): string {
     if (contratante.person_type === 'cnpj') {
         return `
 <p><strong>CONTRATANTE:</strong></p>
-<p><strong>${contratante.company_name || '[Nome da Empresa Contratante]'}</strong>, pessoa jurídica de direito privado, inscrita no CNPJ/ME sob o nº <strong>${contratante.cnpj || '[Número do CNPJ]'}</strong>, com sede na ${contratante.address || '[Endereço completo com CEP, Cidade e Estado]'}, neste ato representada por <strong>${contratante.representative_name || '[Nome do Representante Legal]'}</strong>, portador(a) da cédula de identidade RG nº <strong>${contratante.representative_rg || '[Número do RG]'}</strong> e inscrito(a) no CPF/ME sob o nº <strong>${contratante.representative_cpf || '[Número do CPF]'}</strong>.</p>
+<p><strong>${contratante.company_name || '[Nome da Empresa Contratante]'}</strong>, pessoa jurídica de direito privado, inscrita no CNPJ/ME sob o nº <strong>${contratante.cnpj || '[Número do CNPJ]'}</strong>, com sede na ${contratante.address || '[Endereço completo com CEP, Cidade e Estado]'}.</p>
+<p>Neste ato representada por <strong>${contratante.representative_name || '[Nome do Representante Legal]'}</strong>, portador(a) da cédula de identidade RG nº <strong>${contratante.representative_rg || '[Número do RG]'}</strong> e inscrito(a) no CPF/ME sob o nº <strong>${contratante.representative_cpf || '[Número do CPF]'}</strong>.</p>
 `;
     }
     return `
@@ -27,7 +28,7 @@ function getContratadaInfo(contratada: Profile): string {
     if (contratada.person_type === 'cnpj') {
         return `
 <p><strong>CONTRATADA:</strong></p>
-<p><strong>${contratada.company_name || '[Nome da sua Empresa ou seu Nome Completo como MEI]'}</strong>, pessoa jurídica de direito privado, inscrita no CNPJ/ME sob o nº <strong>${contratada.cnpj || '[Número do seu CNPJ]'}</strong>, com sede na ${contratada.address || '[Seu endereço completo com CEP, Cidade e Estado]'}, neste ato representada por si.</p>
+<p><strong>${contratada.company_name || '[Nome da sua Empresa ou seu Nome Completo como MEI]'}</strong>, pessoa jurídica de direito privado, inscrita no CNPJ/ME sob o nº <strong>${contratada.cnpj || '[Número do seu CNPJ]'}</strong>, com sede na ${contratada.address || '[Seu endereço completo com CEP, Cidade e Estado]'}.</p>
 `;
     }
     return `
