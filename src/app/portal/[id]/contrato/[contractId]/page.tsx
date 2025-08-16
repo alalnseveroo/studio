@@ -187,7 +187,7 @@ export default function ContratoPortalPage() {
                             <div className="space-y-6">
                                 <div
                                     id="contract-content"
-                                    className="prose max-w-none rounded-md border bg-gray-50 p-6"
+                                    className="prose prose-sm max-w-none rounded-md border bg-gray-50 p-6"
                                     dangerouslySetInnerHTML={{ __html: contract.full_contract_text || '' }}
                                 />
                                 <div className="flex justify-end">
@@ -223,7 +223,7 @@ export default function ContratoPortalPage() {
                                         </AlertDescription>
                                     </Alert>
                                     <div
-                                        className="prose max-w-none rounded-md border bg-gray-50 p-6"
+                                        className="prose prose-sm max-w-none rounded-md border bg-gray-50 p-6"
                                         dangerouslySetInnerHTML={{ __html: contract.full_contract_text || '' }}
                                     />
                                     <div className="flex justify-end">
@@ -347,7 +347,7 @@ export default function ContratoPortalPage() {
                                 <h3 className="text-lg font-semibold mb-4">Cópia do Contrato Assinado</h3>
                                 <div
                                     id="contract-content-for-pdf"
-                                    className="prose max-w-none rounded-md border bg-gray-50 p-6"
+                                    className="prose prose-sm max-w-none rounded-md border bg-gray-50 p-6"
                                     dangerouslySetInnerHTML={{ __html: contract.full_contract_text || '' }}
                                 />
                             </div>

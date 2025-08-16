@@ -20,7 +20,7 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp
 import { Checkbox } from '@/components/ui/checkbox'
 
 
-type SigningStep = 'initial' | 'otp_sent' | 'verifying' | 'success';
+type SigningStep = 'initial' | 'otp_sent' | 'verifying' | 'success' | 'already_signed';
 
 export default function ContratoDetailPage() {
   const params = useParams()
@@ -217,8 +217,8 @@ export default function ContratoDetailPage() {
               {signingStep !== 'success' && (
                  <Button 
                     onClick={signingStep === 'otp_sent' ? handleSignContract : handleSendOtp} 
-                    disabled={!hasAgreed || signingStep === 'verifying'} 
-                    className="bg-green-500 hover:bg-green-600"
+                    disabled={!hasAgreed || signingStep === 'verifying' || signingStep === 'success'} 
+                    className="bg-[#22c55e] hover:bg-green-600"
                   >
                     {signingStep === 'verifying' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     {signingStep === 'otp_sent' ? 'Verificar e Assinar' : 'Receber código de verificação'}
@@ -226,7 +226,7 @@ export default function ContratoDetailPage() {
               )}
               
               {signingStep === 'success' && (
-                  <Button disabled className="bg-green-500 hover:bg-green-600">
+                  <Button disabled className="bg-[#22c55e] hover:bg-green-600">
                       <Check className="mr-2 h-4 w-4" />
                       Assinado!
                   </Button>
