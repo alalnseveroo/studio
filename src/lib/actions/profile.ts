@@ -1,5 +1,4 @@
 
-
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
@@ -24,7 +23,8 @@ export async function saveProfile(formData: ProfileFormData & { is_completed: bo
   // 1. Criar ou obter o cliente no Asaas ANTES de salvar no nosso banco
   let asaasCustomerId: string | null = null;
   try {
-      const asaasCustomer = await getOrCreateAsaasCustomer(formData);
+      const profileWithEmail = { ...formData, email: user.email };
+      const asaasCustomer = await getOrCreateAsaasCustomer(profileWithEmail);
       asaasCustomerId = asaasCustomer.id;
   } catch (asaasError: any) {
       console.error("Asaas customer creation failed:", asaasError.message);

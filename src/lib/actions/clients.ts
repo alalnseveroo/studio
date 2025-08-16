@@ -8,6 +8,8 @@ import type { Cliente, Profile, Proposta } from '@/lib/types';
 import { format } from 'date-fns'
 import { sendClientWebhook } from './webhook';
 import { addOrUpdateContact, sendTransactionalEmail } from '../brevo';
+import { getOrCreateAsaasCustomer } from '../asaas';
+
 
 const AVATARS_CLIENT_MALE = [
     'https://pouynmrblzvwlhrfyins.supabase.co/storage/v1/object/public/icons/AvatarClient/client-avatar-3.png',
@@ -30,7 +32,7 @@ export async function createFullClient(formData: any) {
   // Buscar o perfil da contratada (usuário)
   const { data: providerProfile, error: profileError } = await supabase
     .from('profiles')
-    .select('full_name, company_name')
+    .select('*') // Busca o perfil completo
     .eq('id', user.id)
     .single();
 
@@ -47,7 +49,7 @@ export async function createFullClient(formData: any) {
     avatarUrl = AVATARS_CLIENT_FEMALE[Math.floor(Math.random() * AVATARS_CLIENT_FEMALE.length)];
   }
   
-  const clientData = {
+  const clientDataForDb = {
     user_id: user.id,
     client_id: clientId,
     avatar_url: avatarUrl,
@@ -66,12 +68,35 @@ export async function createFullClient(formData: any) {
   };
 
 
-  const { data, error } = await supabase.from('clientes').insert(clientData).select().single()
+  const { data, error } = await supabase.from('clientes').insert(clientDataForDb).select().single()
 
   if (error) {
     console.error('Supabase error:', error)
     return { data: null, error: { message: `Não foi possível adicionar o cliente: ${error.message}` } }
   }
+  
+  // Após criar o cliente no nosso DB, cria no Asaas
+  try {
+    const clientForAsaas = {
+        ...data,
+        // Garante que o nome e cpf/cnpj corretos sejam enviados
+        name: data.full_name || data.company_name,
+        cpfCnpj: data.cpf || data.cnpj,
+    };
+    const asaasCustomer = await getOrCreateAsaasCustomer(clientForAsaas as Cliente);
+
+    // Salva o ID do Asaas de volta no nosso cliente
+    if (asaasCustomer && asaasCustomer.id) {
+        await supabase
+            .from('clientes')
+            .update({ asaas_customer_id: asaasCustomer.id })
+            .eq('id', data.id);
+    }
+  } catch (asaasError: any) {
+      console.error(`Falha ao criar cliente no Asaas para o cliente ${data.id}: ${asaasError.message}`);
+      // Não retorna erro fatal, mas loga. O app pode continuar funcionando.
+  }
+
   
     if (data && data.email) {
         try {
