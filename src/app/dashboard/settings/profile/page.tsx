@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/form'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { CheckCircle, Loader2, ArrowLeft, ArrowRight, User, Building, MapPin, PencilLine, PartyPopper, Search, Info, Check, ChevronsUpDown, XCircle, BadgeCheck } from 'lucide-react'
+import { CheckCircle, Loader2, ArrowLeft, ArrowRight, User, Building, MapPin, PencilLine, PartyPopper, Search, Info, Check, ChevronsUpDown, XCircle } from 'lucide-react'
 import SignatureCanvas from 'react-signature-canvas'
 import { saveProfile, getProfile } from '@/lib/actions/profile'
 import { useToast } from '@/hooks/use-toast'
@@ -142,7 +142,7 @@ export default function ProfilePage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSaved, setIsSaved] = useState(false)
   const [currentStep, setCurrentStep] = useState(STEPS.TYPE);
-  const [isRescuing, setIsRescuing] = useState(false);
+  const [rescueState, setRescueState] = useState<'idle' | 'loading' | 'success'>('idle');
   const sigCanvas = useRef<SignatureCanvas>(null);
   const { toast } = useToast()
   const router = useRouter();
@@ -277,11 +277,15 @@ export default function ProfilePage() {
   }
   
   const handleRescueClick = () => {
-    setIsRescuing(true);
+    if (rescueState !== 'idle') return;
+
+    setRescueState('loading');
     setTimeout(() => {
+        setRescueState('success');
         triggerConfetti();
-        setIsRescuing(false);
-        router.push('/dashboard/clientes');
+        setTimeout(() => {
+             router.push('/dashboard/propostas/nova');
+        }, 1000)
     }, 4000);
   }
 
@@ -302,18 +306,19 @@ export default function ProfilePage() {
                         <AlertDialogTitle className="text-2xl font-bold text-foreground">Parabéns! Agora é sucesso na certa.</AlertDialogTitle>
                     </div>
                 </div>
-                <AlertDialogDescription className="text-base text-foreground text-center md:text-left !mt-6">
+                <div className="text-base text-foreground text-center md:text-left !mt-6">
                     E para celebrar, temos um presente: <strong className="text-green-600">adicionamos 1 Crédito de Boas-vindas à sua conta!</strong>
                     <br/><br/>
                     Use-o para gerir seu <strong className="text-green-600">primeiro cliente de graça, para sempre.</strong> Isso inclui cobrança automática, contratos e portal do cliente, sem nenhum custo de gestão.
                     <br/><br/>
                     Pronta para colocar seu primeiro cliente no piloto automático?
-                </AlertDialogDescription>
+                </div>
             </AlertDialogHeader>
             <AlertDialogFooter className="justify-center mt-6">
-                <Button onClick={handleRescueClick} className="bg-green-600 hover:bg-green-700 text-lg py-6 px-8" disabled={isRescuing}>
-                  {isRescuing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Resgatar agora
+                 <Button onClick={handleRescueClick} className="bg-green-600 hover:bg-green-700 text-lg py-6 px-8 transition-all" disabled={rescueState !== 'idle'}>
+                  {rescueState === 'loading' && <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Resgatando...</>}
+                  {rescueState === 'success' && <><Check className="mr-2 h-4 w-4" /> Resgatado!</>}
+                  {rescueState === 'idle' && 'Resgatar agora'}
                 </Button>
             </AlertDialogFooter>
         </AlertDialogContent>
