@@ -534,14 +534,12 @@ export default function ClientPortalPage() {
                 Use o QR Code ou a chave "Copia e Cola" para realizar o pagamento no app do seu banco.
             </AlertDialogDescription>
             </AlertDialogHeader>
-                {provider && selectedCharge && (
-                    <PixQRCode
-                        pixKey={provider.cpf || provider.cnpj || ''}
-                        value={selectedCharge.value || 0}
-                        beneficiaryName={provider.full_name || provider.company_name || 'Beneficiário'}
-                        beneficiaryCity={provider.address?.split(',').slice(-2, -1)[0]?.trim() || 'CIDADE'}
-                    />
+                {selectedCharge && selectedCharge.asaas_payment_id && (
+                    <PixQRCode paymentId={selectedCharge.asaas_payment_id} />
                 )}
+                 {selectedCharge && !selectedCharge.asaas_payment_id && provider && (
+                     <p className="text-center text-sm text-destructive py-4">Esta cobrança não foi gerada via Asaas. Contacte o prestador de serviço para mais detalhes.</p>
+                 )}
             <AlertDialogFooter>
                 <AlertDialogCancel>Fechar</AlertDialogCancel>
             </AlertDialogFooter>
@@ -594,5 +592,3 @@ export default function ClientPortalPage() {
     </>
   )
 }
-
-    

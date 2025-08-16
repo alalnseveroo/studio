@@ -8,6 +8,8 @@ import type { Cliente, Profile, Proposta } from '@/lib/types';
 import { format } from 'date-fns'
 import { sendClientWebhook } from './webhook';
 import { addOrUpdateContact, sendTransactionalEmail } from '../brevo';
+import { createAsaasCharge, getOrCreateAsaasCustomer } from '../asaas';
+
 
 const AVATARS_CLIENT_MALE = [
     'https://pouynmrblzvwlhrfyins.supabase.co/storage/v1/object/public/icons/AvatarClient/client-avatar-3.png',
@@ -241,6 +243,20 @@ export async function updateClientFinancials(id: string, financials: {
   if (profileError || !providerProfile) {
     return { error: { message: 'Perfil da contratada não encontrado.' } };
   }
+  
+  const { asaas_customer_id, error: asaasError } = await getOrCreateAsaasCustomer(client, user.id);
+  if (asaasError) {
+      return { error: { message: `Erro ao integrar com Asaas: ${asaasError.message}` } };
+  }
+
+  if (asaas_customer_id && client.asaas_customer_id !== asaas_customer_id) {
+    const { error: updateAsaasIdError } = await supabase
+        .from('clientes')
+        .update({ asaas_customer_id })
+        .eq('id', client.id);
+    if (updateAsaasIdError) console.error("Failed to save Asaas customer ID", updateAsaasIdError);
+  }
+
 
   const financialUpdateData = {
       billing_status: financials.billing_status,
@@ -284,26 +300,39 @@ export async function updateClientFinancials(id: string, financials: {
   }
 
   
-  if (financials.send_charge_now && parsedValue && client.email) {
+  if (financials.send_charge_now && parsedValue && asaas_customer_id) {
       const dueDate = new Date();
+      
+       const { payment, error: asaasChargeError } = await createAsaasCharge({
+            customer: asaas_customer_id,
+            value: parsedValue,
+            dueDate: format(dueDate, 'yyyy-MM-dd'),
+            description: `Cobrança de serviços - ${providerProfile.full_name || providerProfile.company_name}`
+        });
+
+        if (asaasChargeError) {
+             return { error: { message: `Configurações salvas, mas não foi possível gerar a cobrança no Asaas: ${asaasChargeError.message}`}};
+        }
+
       const { data: chargeData, error: chargeError } = await supabase.from('cobrancas').insert({
           user_id: user.id,
           cliente_id: id,
           due_date: dueDate.toISOString().split('T')[0],
           value: parsedValue,
           status: 'pendente',
+          asaas_payment_id: payment.id
       }).select().single();
 
       if (chargeError) {
           console.error('Supabase error creating immediate charge:', chargeError);
-          return { error: { message: `Configurações salvas, mas não foi possível gerar a cobrança imediata: ${chargeError.message}`}};
+          return { error: { message: `Cobrança gerada no Asaas, mas não foi possível salvar no sistema: ${chargeError.message}`}};
       }
       
       // Enviar e-mail de cobrança imediata
       const portalUrl = new URL(`/portal/${id}`, process.env.NEXT_PUBLIC_SITE_URL).toString();
       try {
           await sendTransactionalEmail({
-              toEmail: client.email,
+              toEmail: client.email!,
               templateId: 63, // Lembrete Manual / Cobrança imediata
               params: {
                   CLIENTE_NOME: client.full_name || client.company_name,
