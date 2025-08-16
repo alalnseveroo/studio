@@ -20,7 +20,7 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp
 import { Checkbox } from '@/components/ui/checkbox'
 
 
-type SigningStep = 'initial' | 'otp_sent' | 'verifying' | 'already_signed' | 'success';
+type SigningStep = 'initial' | 'otp_sent' | 'verifying' | 'success';
 
 export default function ContratoDetailPage() {
   const params = useParams()
@@ -150,7 +150,7 @@ export default function ContratoDetailPage() {
             </CardHeader>
             <CardContent>
                 <div 
-                    className="prose prose-sm max-w-none rounded-md border bg-gray-50 p-6 h-[70vh] overflow-y-auto prose-p:mb-3"
+                    className="prose prose-sm max-w-none rounded-md border bg-gray-50 p-6 h-[70vh] overflow-y-auto"
                     dangerouslySetInnerHTML={{ __html: contract.full_contract_text || '' }}
                 />
             </CardContent>
