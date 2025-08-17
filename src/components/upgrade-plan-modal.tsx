@@ -20,6 +20,7 @@ import { getOrCreateAsaasCustomer } from '@/lib/asaas'
 import type { Profile } from '@/lib/types'
 import confetti from "canvas-confetti";
 import { useToast } from '@/hooks/use-toast'
+import { useRouter } from 'next/navigation'
 
 
 export const triggerConfetti = () => {
@@ -162,6 +163,7 @@ export function UpgradePlanModal({ isOpen, onClose }: UpgradePlanModalProps) {
   const [buttonState, setButtonState] = useState<ButtonState>('idle');
   const [checkoutUrl, setCheckoutUrl] = useState<string>('');
   const { toast } = useToast();
+  const router = useRouter();
 
   useEffect(() => {
     if (isOpen) {
@@ -196,9 +198,11 @@ export function UpgradePlanModal({ isOpen, onClose }: UpgradePlanModalProps) {
       setTimeout(() => {
          if (selectedPlan === 'professional') {
             setStep('offer');
-        } else {
-            setStep('credits');
-        }
+         } else {
+            // Se o plano for flexível, redireciona para a página de compra de créditos
+            handleClose(); // Fecha o modal
+            router.push('/dashboard/settings/buy-credits');
+         }
         setButtonState('idle'); // Reset button for the next screen
       }, 1000); // Wait 1 second to show the success checkmark
 
@@ -261,25 +265,6 @@ export function UpgradePlanModal({ isOpen, onClose }: UpgradePlanModalProps) {
                                 <Link href={buildPaymentLink(BASE_LINK_SEMESTRAL)}>Sim, eu aceito</Link>
                             </Button>
                         </div>
-                    </div>
-                </div>
-            );
-        case 'credits':
-            return (
-                <div className="flex flex-col justify-center p-8 md:p-16 bg-background">
-                    <div className="w-full max-w-lg mx-auto space-y-4">
-                        <CreditOptionCard
-                           icon={Users}
-                           title="Pacote para 2 Clientes"
-                           description="Ideal para começar a expandir sua carteira."
-                           href={buildPaymentLink(BASE_LINK_2_CREDITS)}
-                        />
-                         <CreditOptionCard
-                           icon={Briefcase}
-                           title="Pacote para 4 Clientes"
-                           description="O melhor custo-benefício para acelerar seu crescimento."
-                           href={buildPaymentLink(BASE_LINK_4_CREDITS)}
-                        />
                     </div>
                 </div>
             );
@@ -406,5 +391,3 @@ export function UpgradePlanModal({ isOpen, onClose }: UpgradePlanModalProps) {
     </Dialog>
   )
 }
-
-    
