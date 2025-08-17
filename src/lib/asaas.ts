@@ -5,7 +5,7 @@ import type { Profile } from "./types";
 
 const ASAAS_API_URL = 'https://api-sandbox.asaas.com/v3';
 // Chave de API fornecida diretamente para garantir o funcionamento.
-const ASAAS_API_KEY = '$aact_hmlg_000MzkwODA2MWY2OGM3MWRlMDU2NWM3MzJlNzZmNGZhZGY6Ojg3MzU5ODExLWJlYjEtNGMyMC1iNTgyLWFkOWI1YzQ5OWIzYTo6JGFhY2hfZjE3NDA1NDMtY2M2My00ZTc3LTg3NzktZTIwNDBiZjhjY2Jh';
+const ASAAS_API_KEY = process.env.ASAAS_API_KEY;
 
 type AsaasCustomer = {
     id: string;
@@ -48,8 +48,17 @@ async function getOrCreateAsaasCustomer(profile: Partial<Profile> & { fullName?:
     
     // Se não tem ID ou não foi encontrado, cria um novo cliente no Asaas.
     console.log(`Cliente Asaas não encontrado para o perfil ${profile.id}. Criando um novo...`);
+    
+    const name = profile.personType === 'cpf' 
+        ? (profile.fullName || profile.full_name) 
+        : (profile.companyName || profile.company_name);
+
+    if (!name) {
+        throw new Error("O nome do cliente (físico ou empresa) é obrigatório.");
+    }
+
     const payload = {
-        name: profile.personType === 'cpf' ? profile.fullName : profile.companyName,
+        name,
         cpfCnpj: profile.cpf || profile.cnpj,
         email: profile.email,
         phone: profile.phone,
