@@ -4,7 +4,7 @@
 import type { Profile } from "./types";
 
 const ASAAS_API_URL = 'https://api-sandbox.asaas.com/v3';
-// Chave de API fornecida diretamente para garantir o funcionamento.
+// A chave de API será lida das variáveis de ambiente do servidor.
 const ASAAS_API_KEY = process.env.ASAAS_API_KEY;
 
 type AsaasCustomer = {
@@ -54,21 +54,32 @@ async function getOrCreateAsaasCustomer(profile: Partial<Profile> & { fullName?:
         : (profile.companyName || profile.company_name);
 
     if (!name) {
-        throw new Error("O nome do cliente (físico ou empresa) é obrigatório.");
+        throw new Error("O campo name deve ser informado");
     }
 
-    const payload = {
+    const payload: {
+        name: string,
+        cpfCnpj: string | undefined,
+        email: string,
+        phone?: string | null,
+        mobilePhone?: string | null,
+        postalCode?: string,
+        addressNumber?: string,
+        externalReference?: string
+    } = {
         name,
         cpfCnpj: profile.cpf || profile.cnpj,
         email: profile.email,
         phone: profile.phone,
         mobilePhone: profile.phone,
-        address: profile.address?.split(',')[0].trim(),
-        addressNumber: profile.address?.split(',')[1]?.trim().split(' ')[0],
-        province: profile.address?.split('-')[1]?.split(',')[0]?.trim(),
-        postalCode: profile.address?.match(/CEP: ([\d-]+)/)?.[1].replace(/\D/g, ''),
-        externalReference: profile.id // Usa o ID do Supabase como referência externa
+        externalReference: profile.id
     };
+    
+    if (profile.address) {
+        payload.postalCode = profile.address.match(/CEP: ([\d-]+)/)?.[1].replace(/\D/g, '');
+        payload.addressNumber = profile.address.split(',')[1]?.trim().split(' ')[0];
+    }
+
 
     const createUrl = `${ASAAS_API_URL}/customers`;
     try {
@@ -98,3 +109,5 @@ async function getOrCreateAsaasCustomer(profile: Partial<Profile> & { fullName?:
 
 
 export { getOrCreateAsaasCustomer };
+
+    
