@@ -15,7 +15,7 @@ type AsaasCustomer = {
     // ... outros campos que a API do Asaas retorna
 };
 
-async function getOrCreateAsaasCustomer(profile: Partial<Profile> & { fullName?: string, personType?: string, companyName?: string }): Promise<AsaasCustomer> {
+async function getOrCreateAsaasCustomer(profile: Partial<Profile & { fullName?: string, personType?: string, companyName?: string }>): Promise<AsaasCustomer> {
     if (!ASAAS_API_KEY) {
         throw new Error("A chave da API do Asaas não está configurada.");
     }
@@ -50,9 +50,9 @@ async function getOrCreateAsaasCustomer(profile: Partial<Profile> & { fullName?:
     console.log(`Cliente Asaas não encontrado para o perfil ${profile.id}. Criando um novo...`);
     
     // Lógica robusta para obter o nome, verificando todas as possibilidades.
-    const name = profile.person_type === 'cpf' 
-        ? (profile.fullName || profile.full_name) 
-        : (profile.companyName || profile.company_name);
+    const name = profile.personType === 'cpf' 
+      ? profile.fullName || profile.full_name
+      : profile.companyName || profile.company_name;
 
     if (!name) {
         throw new Error("O campo name deve ser informado");
