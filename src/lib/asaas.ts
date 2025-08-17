@@ -108,5 +108,63 @@ async function getOrCreateAsaasCustomer(profile: Partial<Profile> & { fullName?:
     }
 }
 
+export async function createPixCharge(customerId: string, value: number, description: string) {
+    if (!ASAAS_API_KEY) {
+        return { error: "A chave da API do Asaas não está configurada." };
+    }
+
+    const today = new Date();
+    const dueDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    const externalReference = `CREDITS_${customerId}_${Date.now()}`;
+
+    const payload = {
+        billingType: "PIX",
+        customer: customerId,
+        value,
+        dueDate,
+        description,
+        externalReference
+    };
+    
+    try {
+        const response = await fetch(`${ASAAS_API_URL}/payments`, {
+            method: 'POST',
+            headers: {
+                'accept': 'application/json',
+                'content-type': 'application/json',
+                'access_token': ASAAS_API_KEY,
+            },
+            body: JSON.stringify(payload)
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.errors?.[0]?.description || 'Erro desconhecido ao criar cobrança PIX.');
+        }
+
+        const pixResponse = await fetch(`${ASAAS_API_URL}/payments/${data.id}/pixQrCode`, {
+            headers: { 'access_token': ASAAS_API_KEY }
+        });
+
+        const pixData = await pixResponse.json();
+        
+        if (!pixResponse.ok) {
+             throw new Error(pixData.errors?.[0]?.description || 'Erro ao obter QR Code.');
+        }
+
+        return {
+            id: data.id,
+            status: data.status,
+            encodedImage: pixData.encodedImage,
+            payload: pixData.payload,
+            error: null
+        };
+
+    } catch (error: any) {
+        console.error("Erro ao criar cobrança PIX no Asaas:", error);
+        return { error: error.message };
+    }
+}
 
 export { getOrCreateAsaasCustomer };
