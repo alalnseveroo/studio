@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/form'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { CheckCircle, Loader2, ArrowLeft, ArrowRight, User, Building, MapPin, PencilLine, PartyPopper, Search, Info, Check, ChevronsUpDown, XCircle } from 'lucide-react'
+import { CheckCircle, Loader2, ArrowLeft, ArrowRight, User, Building, MapPin, PencilLine, PartyPopper, Search, Info, Check, ChevronsUpDown, XCircle, CreditCard } from 'lucide-react'
 import SignatureCanvas from 'react-signature-canvas'
 import { saveProfile, getProfile } from '@/lib/actions/profile'
 import { useToast } from '@/hooks/use-toast'
@@ -170,43 +170,47 @@ export default function ProfilePage() {
     },
   })
 
+  const loadProfileData = useCallback((data: Profile) => {
+    form.reset({
+      personType: data.person_type || 'cpf',
+      sex: data.sex,
+      fullName: data.full_name || '',
+      nationality: data.nationality || 'Brasileira',
+      cpf: data.cpf || '',
+      phone: data.phone || '',
+      companyName: data.company_name || '',
+      cnpj: data.cnpj || '',
+      cep: data.address?.match(/CEP: ([\d-]+)/)?.[1].replace(/\D/g, '') || '',
+      street: data.address?.split(',')[0] || '',
+      number: data.address?.split(',')[1]?.trim().split(' ')[0] || '',
+      neighborhood: data.address?.split('-')[1]?.split(',')[0]?.trim() || '',
+      city: data.address?.split(',').slice(-2, -1)[0]?.trim() || '',
+      state: data.address?.split('-').slice(-1)[0]?.trim().split(',')[0] || '',
+    });
+
+    if (data.signature) {
+      setTimeout(() => sigCanvas.current?.fromDataURL(data.signature as string), 100);
+    }
+  }, [form]);
+
+
   useEffect(() => {
     async function fetchProfile() {
       setIsLoading(true);
       const { data } = await getProfile();
       if (data) {
-        if(data.is_completed) {
-            setIsSaved(true)
-        } else {
-            const parsed = profileSchema.safeParse(data);
-            if (parsed.success) {
-                setCurrentStep(STEPS.SIGNATURE);
-            }
-            form.reset({
-                personType: data.person_type || 'cpf',
-                sex: data.sex,
-                fullName: data.full_name || '',
-                nationality: data.nationality || 'Brasileira',
-                cpf: data.cpf || '',
-                phone: data.phone || '',
-                companyName: data.company_name || '',
-                cnpj: data.cnpj || '',
-                cep: data.address?.match(/CEP: ([\d-]+)/)?.[1].replace(/\D/g, '') || '',
-                street: data.address?.split(',')[0] || '',
-                number: data.address?.split(',')[1]?.trim().split(' ')[0] || '',
-                neighborhood: data.address?.split('-')[1]?.split(',')[0]?.trim() || '',
-                city: data.address?.split(',').slice(-2, -1)[0]?.trim() || '',
-                state: data.address?.split('-').slice(-1)[0]?.trim().split(',')[0] || '',
-            });
-             if (data.signature) {
-                setTimeout(() => sigCanvas.current?.fromDataURL(data.signature as string), 100);
-            }
+        // Agora sempre carrega os dados para edição, em vez de bloquear
+        loadProfileData(data as Profile);
+        if (data.is_completed) {
+            // Se já está completo, podemos deixar o usuário na etapa final para revisar/salvar
+            setCurrentStep(STEPS.SIGNATURE);
         }
       }
       setIsLoading(false);
     }
     fetchProfile();
-  }, [form]);
+  }, [loadProfileData]);
+
 
   const personType = form.watch('personType');
   
@@ -259,7 +263,7 @@ export default function ProfilePage() {
     
     const address = `${values.street}, ${values.number}${values.complement ? `, ${values.complement}` : ''} - ${values.neighborhood}, ${values.city} - ${values.state}, CEP: ${values.cep}`;
 
-    const data = { ...values, signature: signatureData, address, is_completed: true };
+    const data = { ...values, signature: signatureData, is_completed: true };
     
     const { error } = await saveProfile(data);
 
@@ -284,7 +288,7 @@ export default function ProfilePage() {
         setRescueState('success');
         triggerConfetti();
         setTimeout(() => {
-             router.push('/dashboard/propostas/nova');
+             router.push('/dashboard/settings/buy-credits');
         }, 1000)
     }, 4000);
   }
@@ -315,10 +319,10 @@ export default function ProfilePage() {
                 </div>
             </AlertDialogHeader>
             <AlertDialogFooter className="justify-center mt-6">
-                 <Button onClick={handleRescueClick} className="bg-green-600 hover:bg-green-700 text-lg py-6 px-8 transition-all" disabled={rescueState !== 'idle'}>
-                  {rescueState === 'loading' && <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Resgatando...</>}
-                  {rescueState === 'success' && <><Check className="mr-2 h-4 w-4" /> Resgatado!</>}
-                  {rescueState === 'idle' && 'Resgatar agora'}
+                 <Button asChild className="bg-green-600 hover:bg-green-700 text-lg py-6 px-8 transition-all">
+                    <Link href="/dashboard/settings/buy-credits">
+                        <CreditCard className="mr-2 h-5 w-5"/> Comprar mais créditos
+                    </Link>
                 </Button>
             </AlertDialogFooter>
         </AlertDialogContent>
