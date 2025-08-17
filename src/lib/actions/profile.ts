@@ -25,7 +25,11 @@ export async function saveProfile(formData: ProfileFormData & { is_completed: bo
   try {
       const profileWithEmail = { ...formData, email: user.email };
       const asaasCustomer = await getOrCreateAsaasCustomer(profileWithEmail);
-      asaasCustomerId = asaasCustomer.id;
+      if (asaasCustomer && asaasCustomer.id) {
+        asaasCustomerId = asaasCustomer.id; // Extrai apenas o ID (string)
+      } else {
+        throw new Error('O objeto de cliente retornado pelo Asaas é inválido ou não contém um ID.');
+      }
   } catch (asaasError: any) {
       console.error("Asaas customer creation failed:", asaasError.message);
       return { error: { message: `Falha ao sincronizar com o sistema de pagamentos: ${asaasError.message}` } };
@@ -54,7 +58,7 @@ export async function saveProfile(formData: ProfileFormData & { is_completed: bo
     updated_at: new Date().toISOString(),
     is_completed: formData.is_completed,
     email: user.email, // Incluindo email para o webhook
-    asaas_customer_id: asaasCustomerId, // 2. Salvar o ID do Asaas no nosso banco
+    asaas_customer_id: asaasCustomerId, // 2. Salvar a STRING do ID do Asaas
   };
 
   const { data, error } = await supabase.from('profiles').upsert(profileData).select().single();
