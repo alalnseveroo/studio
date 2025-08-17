@@ -143,6 +143,7 @@ export async function createPixCharge(customerId: string, value: number, descrip
             throw new Error(data.errors?.[0]?.description || 'Erro desconhecido ao criar cobrança PIX.');
         }
 
+        // Após criar o pagamento, buscamos o QR Code gerado pelo Asaas
         const pixResponse = await fetch(`${ASAAS_API_URL}/payments/${data.id}/pixQrCode`, {
             headers: { 'access_token': ASAAS_API_KEY }
         });
@@ -156,8 +157,8 @@ export async function createPixCharge(customerId: string, value: number, descrip
         return {
             id: data.id,
             status: data.status,
-            encodedImage: pixData.encodedImage,
-            payload: pixData.payload,
+            encodedImage: pixData.encodedImage, // QR Code em base64
+            payload: pixData.payload, // Chave "Copia e Cola"
             error: null
         };
 

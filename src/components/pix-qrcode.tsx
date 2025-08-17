@@ -6,6 +6,7 @@ import { QRCodeCanvas } from 'qrcode.react';
 import { Button } from './ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Copy, RefreshCw } from 'lucide-react';
+import Image from 'next/image';
 
 interface PixQRCodeProps {
     pixKey: string;
@@ -13,6 +14,10 @@ interface PixQRCodeProps {
     beneficiaryName: string;
     beneficiaryCity: string;
 }
+
+// NOTE: This component is currently UNUSED. The logic was replaced by pix-qrcode-modal.tsx
+// which gets the QR code directly from the Asaas API to prevent validation errors.
+// This file is kept for historical purposes but can be removed.
 
 const calcularCRC16 = (payload: string): string => {
     let crc = 0xFFFF;
