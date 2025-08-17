@@ -142,7 +142,6 @@ export default function ProfilePage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSaved, setIsSaved] = useState(false)
   const [currentStep, setCurrentStep] = useState(STEPS.TYPE);
-  const [rescueState, setRescueState] = useState<'idle' | 'loading' | 'success'>('idle');
   const sigCanvas = useRef<SignatureCanvas>(null);
   const { toast } = useToast()
   const router = useRouter();
@@ -273,6 +272,7 @@ export default function ProfilePage() {
       toast({ variant: 'destructive', title: 'Erro ao Salvar Perfil', description: error.message });
     } else {
       setIsSaved(true);
+      triggerConfetti();
     }
   }
 
@@ -280,19 +280,6 @@ export default function ProfilePage() {
     return <div className="flex flex-1 items-center justify-center p-6"><Loader2 className="h-8 w-8 animate-spin" /></div>
   }
   
-  const handleRescueClick = () => {
-    if (rescueState !== 'idle') return;
-
-    setRescueState('loading');
-    setTimeout(() => {
-        setRescueState('success');
-        triggerConfetti();
-        setTimeout(() => {
-             router.push('/dashboard/settings/buy-credits');
-        }, 1000)
-    }, 4000);
-  }
-
   if (isSaved) {
     return (
        <AlertDialog open={isSaved} onOpenChange={setIsSaved}>

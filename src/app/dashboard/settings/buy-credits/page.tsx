@@ -8,7 +8,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Separator } from '@/components/ui/separator'
 import { getProfile } from '@/lib/actions/profile'
 import type { Profile } from '@/lib/types'
-import { ArrowLeft, CreditCard, Gift, Loader2, Minus, Plus, ShieldCheck, ShoppingCart } from 'lucide-react'
+import { ArrowLeft, CreditCard, Gift, Loader2, Minus, Plus, ShieldCheck, ShoppingCart, Check } from 'lucide-react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -39,7 +39,7 @@ export default function BuyCreditsPage() {
 
     const handleAmountChange = (newAmount: number) => {
         const constrainedAmount = Math.max(5, newAmount);
-        setAmount(constrainedAmount - (constrainedAmount % 5));
+        setAmount(constrainedAmount);
     }
     
     const handlePayment = () => {
