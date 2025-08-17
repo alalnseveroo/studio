@@ -49,7 +49,8 @@ async function getOrCreateAsaasCustomer(profile: Partial<Profile> & { fullName?:
     // Se não tem ID ou não foi encontrado, cria um novo cliente no Asaas.
     console.log(`Cliente Asaas não encontrado para o perfil ${profile.id}. Criando um novo...`);
     
-    const name = profile.personType === 'cpf' 
+    // Lógica robusta para obter o nome, verificando todas as possibilidades.
+    const name = profile.person_type === 'cpf' 
         ? (profile.fullName || profile.full_name) 
         : (profile.companyName || profile.company_name);
 
