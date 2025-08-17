@@ -11,13 +11,14 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const eventType = body.event;
 
-    console.log('Webhook Asaas recebido:', JSON.stringify(body, null, 2));
+    console.log('Webhook Asaas recebido:', eventType);
 
     // Verificamos se o evento é uma confirmação ou recebimento de pagamento
     if (eventType === 'PAYMENT_CONFIRMED' || eventType === 'PAYMENT_RECEIVED') {
       const payment = body.payment;
 
       if (!payment || !payment.customer || !payment.value) {
+        console.error('Payload de pagamento inválido recebido do Asaas.');
         return NextResponse.json({ error: 'Payload de pagamento inválido.' }, { status: 400 });
       }
 
@@ -33,6 +34,7 @@ export async function POST(req: NextRequest) {
       const supabase = createAdminClient();
 
       // Encontra o perfil do usuário no nosso banco de dados usando o ID do cliente do Asaas
+      // A busca pode ser tanto na tabela de profiles (para o dono da conta) quanto na de clientes
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('id, credits')
@@ -62,6 +64,10 @@ export async function POST(req: NextRequest) {
       }
 
       console.log(`Sucesso! ${creditsToAdd} créditos adicionados ao perfil ${profile.id}. Novo total: ${newTotalCredits}`);
+    
+    } else {
+        // Se for qualquer outro evento (como PAYMENT_CREATED), apenas acuse o recebimento.
+        console.log(`Evento '${eventType}' recebido e ignorado.`);
     }
 
     // Retorna uma resposta de sucesso para o Asaas para confirmar o recebimento.
