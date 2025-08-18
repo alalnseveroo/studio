@@ -17,7 +17,6 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { format } from 'date-fns'
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp'
 import SignatureCanvas from 'react-signature-canvas'
-import PixQRCode from '@/components/pix-qrcode'
 import { cn } from '@/lib/utils'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 
@@ -329,11 +328,13 @@ export default function ContratoPortalPage() {
                                 </AlertDescription>
                             </Alert>
                              <div className="flex justify-center">
-                                {firstCharge && firstCharge.asaas_payment_id ? (
-                                    <PixQRCode paymentId={firstCharge.asaas_payment_id} />
-                                ) : (
-                                    <p className="text-center text-sm text-destructive py-4">Não foi possível carregar a cobrança. Contacte o prestador de serviço.</p>
-                                )}
+                                 <Alert>
+                                    <Info className="h-4 w-4" />
+                                    <AlertTitle>Instruções de Pagamento</AlertTitle>
+                                    <AlertDescription>
+                                        Por favor, entre em contato com <strong>{provider?.full_name || 'a contratada'}</strong> pelo e-mail <strong>{provider?.email || '[e-mail não disponível]'}</strong> para receber a chave PIX e realizar o pagamento.
+                                    </AlertDescription>
+                                </Alert>
                             </div>
                             <p className="text-xs text-muted-foreground text-center w-full">
                                 Após o pagamento, a contratada será notificada para dar início aos trabalhos.

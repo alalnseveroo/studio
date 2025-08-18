@@ -11,7 +11,7 @@ import { getChargesForClientPortal } from '@/lib/actions/cobrancas'
 import { getProfile } from '@/lib/actions/profile'
 import { createClient } from '@/lib/supabase/client'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { AlertCircle, User, FileText, Check, Clock, Verified, Briefcase, Mail, Download, CreditCard, Lock, Loader2, DollarSign, Calendar, CheckCircle, MessageSquare, ArrowUpRight, X } from 'lucide-react'
+import { AlertCircle, User, FileText, Check, Clock, Verified, Briefcase, Mail, Download, CreditCard, Lock, Loader2, DollarSign, Calendar, CheckCircle, MessageSquare, ArrowUpRight, X, Info } from 'lucide-react'
 import {
   AlertDialog,
   AlertDialogContent,
@@ -28,7 +28,6 @@ import type { Cliente, Contrato, Profile, Cobranca, Proposta } from '@/lib/types
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { Card, CardHeader, CardContent } from '@/components/ui/card'
-import PixQRCode from '@/components/pix-qrcode'
 import { format, isPast } from 'date-fns'
 import { cn } from '@/lib/utils'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
@@ -373,17 +372,18 @@ export default function ClientPortalPage() {
      <AlertDialog open={!!selectedCharge} onOpenChange={() => setSelectedCharge(null)}>
         <AlertDialogContent>
             <AlertDialogHeader>
-            <AlertDialogTitle>Pagamento via PIX</AlertDialogTitle>
+            <AlertDialogTitle>Realizar Pagamento</AlertDialogTitle>
             <AlertDialogDescription>
-                Use o QR Code ou a chave "Copia e Cola" para realizar o pagamento no app do seu banco.
+                Para realizar o pagamento, por favor, entre em contato com sua assistente.
             </AlertDialogDescription>
             </AlertDialogHeader>
-                {selectedCharge && selectedCharge.asaas_payment_id && (
-                    <PixQRCode paymentId={selectedCharge.asaas_payment_id} />
-                )}
-                 {selectedCharge && !selectedCharge.asaas_payment_id && provider && (
-                     <p className="text-center text-sm text-destructive py-4">Esta cobrança não foi gerada via Asaas. Contacte o prestador de serviço para mais detalhes.</p>
-                 )}
+                <Alert>
+                    <Info className="h-4 w-4" />
+                    <AlertTitle>Instruções</AlertTitle>
+                    <AlertDescription>
+                        A chave PIX e outros detalhes para o pagamento devem ser solicitados diretamente à <strong>{providerName}</strong> através do e-mail: <strong>{provider?.email || '[e-mail não disponível]'}</strong> ou pelo chat.
+                    </AlertDescription>
+                </Alert>
             <AlertDialogFooter>
                 <AlertDialogCancel>Fechar</AlertDialogCancel>
             </AlertDialogFooter>
