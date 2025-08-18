@@ -207,4 +207,54 @@ export async function createAsaasCharge(chargeDetails: {
     }
 }
 
+export async function createAsaasPaymentLink(paymentId: string) {
+    try {
+        const response = await fetch(`${ASAAS_API_URL}/payments/${paymentId}/identificationField`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'access_token': ASAAS_API_KEY || ''
+            }
+        });
+
+        const data = await response.json();
+        
+        if (!response.ok) {
+            const errorMessage = data.errors?.[0]?.description || 'Erro desconhecido ao criar link de pagamento no Asaas.';
+            return { link: null, error: { message: errorMessage } };
+        }
+        
+        // A API do Asaas não retorna um link direto, mas sim o 'identificationField' (linha digitável)
+        // O link de pagamento real geralmente é construído a partir do ID do pagamento
+        const paymentLink = `${ASAAS_API_URL}/pay/${paymentId}`;
+
+        return { link: paymentLink, error: null };
+
+    } catch (e: any) {
+        return { link: null, error: { message: e.message || 'Erro de conexão com a API do Asaas ao criar link de pagamento.' } };
+    }
+}
+
+export async function getAsaasPixCharge(paymentId: string) {
+    try {
+        const pixResponse = await fetch(`${ASAAS_API_URL}/payments/${paymentId}/pixQrCode`, {
+            headers: { 'access_token': ASAAS_API_KEY || '' }
+        });
+
+        const pixData = await pixResponse.json();
+        
+        if (!pixResponse.ok) {
+             throw new Error(pixData.errors?.[0]?.description || 'Erro ao obter QR Code.');
+        }
+
+        return {
+            qrCode: pixData.encodedImage, // QR Code em base64
+            payload: pixData.payload, // Chave "Copia e Cola"
+            error: null
+        };
+    } catch (error: any) {
+        return { qrCode: null, payload: null, error: { message: error.message } };
+    }
+}
+
 export { getOrCreateAsaasCustomer };
