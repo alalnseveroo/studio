@@ -8,7 +8,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Separator } from '@/components/ui/separator'
 import { getProfile } from '@/lib/actions/profile'
 import type { Profile } from '@/lib/types'
-import { ArrowLeft, CreditCard, Gift, Loader2, Minus, Plus, ShieldCheck, ShoppingCart, Check, CheckCircle, FileText, Globe, BarChart3, Star } from 'lucide-react'
+import { ArrowLeft, CreditCard, Gift, Loader2, Minus, Plus, ShieldCheck, ShoppingCart, Check, CheckCircle, FileText, Globe, BarChart3, Star, Copy } from 'lucide-react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -116,28 +116,30 @@ export default function BuyCreditsPage() {
         <div className="flex flex-1 justify-center p-4 sm:p-6 md:p-10 animate-fade-in">
             <div className={cn("relative w-full max-w-5xl transition-all duration-500 ease-in-out", showPix ? "-translate-x-1/4" : "translate-x-0")}>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
-                    {/* Coluna Esquerda - Seleção */}
+                    {/* Coluna Direita - Seleção (agora na esquerda no código) */}
                     <div className="space-y-8">
                          <div className="space-y-2">
                              <h1 className="text-2xl font-bold">Comprar Créditos</h1>
                              <p className="text-muted-foreground">Registre quantos clientes quiser, pague somente quando o cliente for ativado com assinatura ou pagamento recorrente.</p>
                          </div>
-
-                         <div className="flex flex-col items-center gap-6">
-                            <div className="flex items-center gap-4">
-                                <Button size="icon" variant="outline" onClick={() => handleAmountChange(amount - 5)} disabled={amount <= 5}>
-                                    <Minus className="h-6 w-6" />
-                                </Button>
-                                <div className="text-5xl font-bold tracking-tight w-48 text-center">
+                         
+                        <div className="flex flex-col items-center gap-6">
+                            <div className="flex items-center gap-4 w-full justify-end">
+                                <div className="text-5xl font-bold tracking-tight w-48 text-right">
                                     <span className="text-3xl text-muted-foreground mr-1">R$</span>{amount.toFixed(2).replace('.', ',')}
                                 </div>
-                                <Button size="icon" variant="outline" onClick={() => handleAmountChange(amount + 5)}>
-                                    <Plus className="h-6 w-6" />
-                                </Button>
+                                <div className="flex flex-col gap-2">
+                                     <Button size="icon" variant="outline" className="rounded-full h-8 w-8" onClick={() => handleAmountChange(amount + 5)}>
+                                        <Plus className="h-5 w-5" />
+                                    </Button>
+                                    <Button size="icon" variant="outline" className="rounded-full h-8 w-8" onClick={() => handleAmountChange(amount - 5)} disabled={amount <= 5}>
+                                        <Minus className="h-5 w-5" />
+                                    </Button>
+                                </div>
                             </div>
-                            <div className="flex flex-wrap items-center justify-center gap-2">
+                            <div className="flex flex-wrap items-center justify-start gap-2 w-full">
                                 {presetAmounts.map(val => (
-                                    <Button key={val} variant="outline" size="sm" onClick={() => handleAmountChange(val)}>
+                                    <Button key={val} variant="outline" size="sm" onClick={() => handleAmountChange(val)} className="bg-muted hover:bg-muted/80">
                                         R$ {val}
                                     </Button>
                                 ))}
@@ -151,12 +153,14 @@ export default function BuyCreditsPage() {
                                     <label
                                         htmlFor="pix"
                                         className={cn(
-                                            "flex items-start gap-3 rounded-lg border-2 p-4 cursor-pointer transition-all",
+                                            "flex flex-col justify-between rounded-lg border-2 p-4 cursor-pointer transition-all aspect-square relative",
                                             paymentMethod === 'pix' ? "border-green-500 shadow-md" : "border-border"
                                         )}
                                     >
-                                        <div className={cn("mt-1 flex h-5 w-5 items-center justify-center rounded-full border-2", paymentMethod === 'pix' ? "border-green-500 bg-green-500" : "border-muted-foreground")}>
-                                            {paymentMethod === 'pix' && <Check className="h-3 w-3 text-white" />}
+                                        <div className="absolute top-3 right-3">
+                                            <div className={cn("flex h-5 w-5 items-center justify-center rounded-full border-2", paymentMethod === 'pix' ? "border-green-500 bg-green-500" : "border-muted-foreground")}>
+                                                {paymentMethod === 'pix' && <Check className="h-3 w-3 text-white" />}
+                                            </div>
                                         </div>
                                         <div>
                                             <span className="font-bold text-base">PIX</span>
@@ -168,13 +172,15 @@ export default function BuyCreditsPage() {
                                 <label
                                     htmlFor="credit_card"
                                     className={cn(
-                                        "flex items-start gap-3 rounded-lg border-2 p-4 cursor-pointer transition-all opacity-50 cursor-not-allowed",
+                                        "flex flex-col justify-between rounded-lg border-2 p-4 cursor-pointer transition-all opacity-50 cursor-not-allowed aspect-square relative",
                                         paymentMethod === 'credit_card' ? "border-green-500 shadow-md" : "border-border"
                                     )}
                                 >
-                                     <div className={cn("mt-1 flex h-5 w-5 items-center justify-center rounded-full border-2", paymentMethod === 'credit_card' ? "border-green-500 bg-green-500" : "border-muted-foreground")}>
-                                        {paymentMethod === 'credit_card' && <Check className="h-3 w-3 text-white" />}
-                                    </div>
+                                     <div className="absolute top-3 right-3">
+                                        <div className={cn("flex h-5 w-5 items-center justify-center rounded-full border-2", paymentMethod === 'credit_card' ? "border-green-500 bg-green-500" : "border-muted-foreground")}>
+                                            {paymentMethod === 'credit_card' && <Check className="h-3 w-3 text-white" />}
+                                        </div>
+                                     </div>
                                     <div>
                                         <span className="font-bold text-base">Cartão de Crédito</span>
                                          <p className="text-xs text-muted-foreground mt-1">Em breve.</p>
@@ -182,8 +188,14 @@ export default function BuyCreditsPage() {
                                 </label>
                             </RadioGroup>
                         </div>
+                        
+                         <div className="pt-4">
+                            <Button size="lg" className="text-lg py-6" onClick={handlePayment} disabled={isProcessingPayment}>
+                                {isProcessingPayment ? <Loader2 className="h-6 w-6 animate-spin" /> : 'Realizar Pagamento'}
+                            </Button>
+                        </div>
                     </div>
-                    {/* Coluna Direita - Resumo */}
+                    {/* Coluna Esquerda - Resumo (agora na direita no código) */}
                     <div className="lg:col-span-1">
                         <Card className="sticky top-24">
                             <CardHeader>
@@ -226,11 +238,6 @@ export default function BuyCreditsPage() {
                                         ))}
                                     </div>
                                 </div>
-                                 <div className="pt-4">
-                                    <Button style={{ width: '40%', backgroundColor: '#4ade80' }} size="lg" className="text-lg py-6" onClick={handlePayment} disabled={isProcessingPayment}>
-                                        {isProcessingPayment ? <Loader2 className="h-6 w-6 animate-spin" /> : 'Realizar Pagamento'}
-                                    </Button>
-                                </div>
                             </CardContent>
                         </Card>
                     </div>
@@ -268,5 +275,3 @@ export default function BuyCreditsPage() {
         </div>
     )
 }
-
-    
