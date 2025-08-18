@@ -34,7 +34,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useToast } from '@/hooks/use-toast'
 import { ChatInterface } from '@/components/chat-interface'
 import { PortalCalendar } from '@/components/portal-calendar'
-import { StaticPixQRCode } from '@/components/static-pix-qrcode'
 
 
 export default function ClientPortalPage() {
@@ -308,7 +307,7 @@ export default function ClientPortalPage() {
                          <TableRow key={charge.id}>
                             <TableCell>{format(new Date(charge.due_date), 'dd/MM/yyyy')}</TableCell>
                             <TableCell>R$ {Number(charge.value).toFixed(2)}</TableCell>
-                            <TableCell><Badge variant="outline" className={cn("font-normal", status.className)}>{status.text}</Badge></TableCell>
+                            <TableCell><Badge variant="outline" className={cn("font-normal w-24 justify-center", status.className)}>{status.text}</Badge></TableCell>
                             <TableCell className="text-right space-x-2">
                                {isInvoiceAvailable ? (
                                     <Button variant="outline" size="sm" onClick={() => handleDownloadClick(charge)}>Nota Fiscal</Button>
@@ -375,15 +374,15 @@ export default function ClientPortalPage() {
             <AlertDialogHeader>
             <AlertDialogTitle>Realizar Pagamento</AlertDialogTitle>
             <AlertDialogDescription>
-                Aponte a câmera do seu celular para o QR Code ou use o código abaixo.
+                <Alert>
+                  <Info className="h-4 w-4" />
+                  <AlertTitle>Instruções de Pagamento</AlertTitle>
+                  <AlertDescription>
+                      Por favor, entre em contato com <strong>{provider?.full_name || 'a contratada'}</strong> pelo e-mail <strong>{provider?.email || '[e-mail não disponível]'}</strong> para receber a chave PIX e realizar o pagamento.
+                  </AlertDescription>
+              </Alert>
             </AlertDialogDescription>
             </AlertDialogHeader>
-            {provider && selectedCharge && (
-                <StaticPixQRCode 
-                    provider={provider}
-                    charge={selectedCharge}
-                />
-            )}
             <AlertDialogFooter>
                 <AlertDialogCancel>Fechar</AlertDialogCancel>
             </AlertDialogFooter>

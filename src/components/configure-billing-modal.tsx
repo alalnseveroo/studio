@@ -40,12 +40,14 @@ import type { Proposta } from '@/lib/types'
 
 const billingSchema = z.object({
   proposal_id: z.string().nullable(),
-  value: z.string().min(1, { message: 'O valor é obrigatório.'}),
-  payment_day: z.string().min(1, { message: 'O dia do vencimento é obrigatório.'}),
+  value: z.coerce.number().min(1, { message: 'O valor deve ser maior que zero.'}),
+  payment_day: z.coerce.number().min(1, { message: 'O dia do vencimento é obrigatório.'}),
   first_charge_date: z.string().optional(),
   billing_status: z.enum(['active', 'inactive']),
   send_charge_now: z.boolean().default(false).optional(),
 })
+
+type BillingFormData = z.infer<typeof billingSchema>;
 
 interface ConfigureBillingModalProps {
   isOpen: boolean
@@ -65,12 +67,12 @@ export function ConfigureBillingModal({
   const [isLoading, setIsLoading] = useState(false)
   const { toast } = useToast()
 
-  const form = useForm<z.infer<typeof billingSchema>>({
+  const form = useForm<BillingFormData>({
     resolver: zodResolver(billingSchema),
     defaultValues: {
         proposal_id: null,
-        value: '',
-        payment_day: '',
+        value: undefined,
+        payment_day: undefined,
         first_charge_date: '',
         billing_status: 'active',
         send_charge_now: false,
@@ -83,14 +85,14 @@ export function ConfigureBillingModal({
     if (selectedProposalId) {
         const proposal = proposals.find(p => p.id === selectedProposalId);
         if (proposal) {
-            if (proposal.value) form.setValue('value', String(proposal.value));
-            if (proposal.payment_day) form.setValue('payment_day', String(proposal.payment_day));
+            if (proposal.value) form.setValue('value', proposal.value);
+            if (proposal.payment_day) form.setValue('payment_day', proposal.payment_day);
         }
     }
   }, [selectedProposalId, proposals, form]);
 
 
-  const handleFormSubmit = async (values: z.infer<typeof billingSchema>) => {
+  const handleFormSubmit = async (values: BillingFormData) => {
     if (!clientId) {
         toast({ variant: 'destructive', title: 'Erro', description: 'Nenhum cliente selecionado.'})
         return;
@@ -161,7 +163,7 @@ export function ConfigureBillingModal({
                     render={({ field }) => (
                         <FormItem>
                             <FormLabel>Valor da Mensalidade (R$)</FormLabel>
-                            <FormControl><Input type="number" placeholder="1500.00" {...field} value={field.value || ''} /></FormControl>
+                            <FormControl><Input type="number" step="0.01" placeholder="1500.00" {...field} /></FormControl>
                              <FormMessage />
                         </FormItem>
                     )}
@@ -173,7 +175,7 @@ export function ConfigureBillingModal({
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Dia do Vencimento</FormLabel>
-                                <FormControl><Input type="number" placeholder="10" {...field} value={field.value || ''} /></FormControl>
+                                <FormControl><Input type="number" placeholder="10" {...field} /></FormControl>
                                 <FormMessage />
                             </FormItem>
                         )}
@@ -239,4 +241,3 @@ export function ConfigureBillingModal({
       </Dialog>
   )
 }
-

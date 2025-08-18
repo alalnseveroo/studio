@@ -24,7 +24,7 @@ export async function getCharges() {
             clientes (*)
         `)
         .eq('user_id', user.id)
-        .order('due_date', { ascending: true });
+        .order('due_date', { ascending: false });
 
     if (error) {
         console.error('Supabase error getting charges:', error);

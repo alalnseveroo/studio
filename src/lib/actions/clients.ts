@@ -1,5 +1,4 @@
 
-
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
@@ -198,8 +197,8 @@ export async function updateClientProfile(id: string, formData: any) {
 export async function updateClientFinancials(id: string, financials: { 
     billing_status: 'active' | 'inactive'; 
     proposal_id: string | null; 
-    value: string | null,
-    payment_day: string | null,
+    value: number,
+    payment_day: number,
     first_charge_date?: string | null,
     send_charge_now?: boolean,
 }) {
@@ -209,16 +208,6 @@ export async function updateClientFinancials(id: string, financials: {
     return { error: { message: 'Usuário não autenticado.' } };
   }
   
-  const parsedValue = financials.value ? parseFloat(financials.value) : null;
-  if (financials.value && isNaN(parsedValue)) {
-      return { error: { message: 'O valor fornecido não é um número válido.' } };
-  }
-
-  const parsedPaymentDay = financials.payment_day ? parseInt(financials.payment_day, 10) : null;
-   if (financials.payment_day && isNaN(parsedPaymentDay)) {
-      return { error: { message: 'O dia de pagamento fornecido não é um número válido.' } };
-  }
-
   const { data: client, error: clientError } = await supabase
     .from('clientes')
     .select('*')
@@ -256,8 +245,8 @@ export async function updateClientFinancials(id: string, financials: {
   const financialUpdateData = {
       billing_status: financials.billing_status,
       proposal_id: financials.proposal_id,
-      value: parsedValue,
-      payment_day: parsedPaymentDay,
+      value: financials.value,
+      payment_day: financials.payment_day,
       first_charge_date: financials.first_charge_date || null,
       updated_at: new Date().toISOString(),
     };
@@ -295,12 +284,12 @@ export async function updateClientFinancials(id: string, financials: {
   }
 
   
-  if (financials.send_charge_now && parsedValue && asaas_customer_id) {
+  if (financials.send_charge_now && financials.value && asaas_customer_id) {
       const dueDate = new Date();
       
        const { payment, error: asaasChargeError } = await createAsaasCharge({
             customer: asaas_customer_id,
-            value: parsedValue,
+            value: financials.value,
             dueDate: format(dueDate, 'yyyy-MM-dd'),
             description: `Cobrança de serviços - ${providerProfile.full_name || providerProfile.company_name}`
         });
@@ -313,7 +302,7 @@ export async function updateClientFinancials(id: string, financials: {
           user_id: user.id,
           cliente_id: id,
           due_date: dueDate.toISOString().split('T')[0],
-          value: parsedValue,
+          value: financials.value,
           status: 'pendente',
           asaas_payment_id: payment.id
       }).select().single();
