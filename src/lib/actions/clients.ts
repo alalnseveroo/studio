@@ -76,10 +76,10 @@ export async function createFullClient(formData: any) {
 
   // Após criar o cliente no Supabase, cria ou busca no Asaas
   if (newClient) {
-     const { asaas_customer_id, error: asaasError } = await getOrCreateAsaasCustomer(newClient, user.id);
-     if (asaasError) {
+     const asaasCustomer = await getOrCreateAsaasCustomer(newClient, user.id);
+     if (asaasCustomer.error) {
          // Opcional: deletar o cliente criado no Supabase ou apenas logar o erro
-         console.error(`Falha ao criar cliente no Asaas para o cliente Supabase ID ${newClient.id}: ${asaasError.message}`);
+         console.error(`Falha ao criar cliente no Asaas para o cliente Supabase ID ${newClient.id}: ${asaasCustomer.error.message}`);
          // Por simplicidade, vamos apenas logar e continuar. O cliente pode ser sincronizado depois.
      }
   }
@@ -197,8 +197,8 @@ export async function updateClientProfile(id: string, formData: any) {
 export async function updateClientFinancials(id: string, financials: { 
     billing_status: 'active' | 'inactive'; 
     proposal_id: string | null; 
-    value: string | number | null;
-    payment_day: string | number | null;
+    value: number;
+    payment_day: number;
     first_charge_date?: string | null;
     send_charge_now?: boolean;
 }) {
@@ -208,8 +208,8 @@ export async function updateClientFinancials(id: string, financials: {
     return { error: { message: 'Usuário não autenticado.' } };
   }
   
-  const client = await getClientById(id);
-  if (client.error || !client.data) {
+  const { data: client, error: clientError } = await getClientById(id);
+  if (clientError || !client) {
     return { error: { message: 'Cliente não encontrado.' } };
   }
 
@@ -223,17 +223,17 @@ export async function updateClientFinancials(id: string, financials: {
     return { error: { message: 'Perfil da contratada não encontrado.' } };
   }
   
-  const { asaas_customer_id, error: asaasError } = await getOrCreateAsaasCustomer(client.data, user.id);
+  const { asaas_customer_id, error: asaasError } = await getOrCreateAsaasCustomer(client, user.id);
   if (asaasError) {
       return { error: { message: `Erro ao integrar com Asaas: ${asaasError.message}` } };
   }
 
-  if (asaas_customer_id && client.data.asaas_customer_id !== asaas_customer_id) {
-    await supabase.from('clientes').update({ asaas_customer_id }).eq('id', client.data.id);
+  if (asaas_customer_id && client.asaas_customer_id !== asaas_customer_id) {
+    await supabase.from('clientes').update({ asaas_customer_id }).eq('id', client.id);
   }
 
   // Lógica de cobrança imediata
-  if (financials.send_charge_now && financials.value && asaas_customer_id) {
+  if (financials.send_charge_now) {
     const chargeValue = Number(financials.value);
     const dueDate = new Date();
     
@@ -264,9 +264,8 @@ export async function updateClientFinancials(id: string, financials: {
 
   // Define a data da próxima cobrança recorrente
   let nextChargeDate = financials.first_charge_date;
-  if (financials.send_charge_now && financials.payment_day) {
+  if (financials.send_charge_now) {
     const today = new Date();
-    // A próxima cobrança será no próximo mês, no dia de pagamento
     const nextMonthDate = addMonths(today, 1);
     nextChargeDate = format(new Date(nextMonthDate.getFullYear(), nextMonthDate.getMonth(), Number(financials.payment_day)), 'yyyy-MM-dd');
   }

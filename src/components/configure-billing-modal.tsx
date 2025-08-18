@@ -41,7 +41,7 @@ import type { Proposta } from '@/lib/types'
 const billingSchema = z.object({
   proposal_id: z.string().nullable(),
   value: z.coerce.number().min(1, { message: 'O valor deve ser maior que zero.'}),
-  payment_day: z.coerce.number().min(1, { message: 'O dia do vencimento é obrigatório.'}),
+  payment_day: z.coerce.number().min(1, 'O dia do vencimento é obrigatório.').max(31, 'Dia inválido.'),
   first_charge_date: z.string().optional(),
   billing_status: z.enum(['active', 'inactive']),
   send_charge_now: z.boolean().default(false).optional(),
@@ -71,8 +71,8 @@ export function ConfigureBillingModal({
     resolver: zodResolver(billingSchema),
     defaultValues: {
         proposal_id: null,
-        value: '' as any, // Initialize as empty string
-        payment_day: '' as any, // Initialize as empty string
+        value: undefined, 
+        payment_day: undefined,
         first_charge_date: '',
         billing_status: 'active',
         send_charge_now: false,
@@ -80,6 +80,19 @@ export function ConfigureBillingModal({
   })
 
   const selectedProposalId = form.watch('proposal_id');
+
+  useEffect(() => {
+    if (isOpen) {
+        form.reset({
+             proposal_id: null,
+            value: undefined,
+            payment_day: undefined,
+            first_charge_date: '',
+            billing_status: 'active',
+            send_charge_now: false,
+        });
+    }
+  }, [isOpen, form]);
 
   useEffect(() => {
     if (selectedProposalId) {
@@ -114,12 +127,11 @@ export function ConfigureBillingModal({
       })
       onBillingConfigured();
       onClose();
-      form.reset();
     }
   }
 
   return (
-      <Dialog open={isOpen} onOpenChange={(open) => { if (!open) { form.reset(); onClose(); } }}>
+      <Dialog open={isOpen} onOpenChange={(open) => { if (!open) { onClose(); } }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Configurar Cobrança Recorrente</DialogTitle>
@@ -163,7 +175,7 @@ export function ConfigureBillingModal({
                     render={({ field }) => (
                         <FormItem>
                             <FormLabel>Valor da Mensalidade (R$)</FormLabel>
-                            <FormControl><Input type="number" step="0.01" placeholder="1500.00" {...field} value={field.value || ''} /></FormControl>
+                            <FormControl><Input type="number" step="0.01" placeholder="1500.00" {...field} value={field.value ?? ''} /></FormControl>
                              <FormMessage />
                         </FormItem>
                     )}
@@ -175,7 +187,7 @@ export function ConfigureBillingModal({
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Dia do Vencimento</FormLabel>
-                                <FormControl><Input type="number" placeholder="10" {...field} value={field.value || ''}/></FormControl>
+                                <FormControl><Input type="number" placeholder="10" {...field} value={field.value ?? ''}/></FormControl>
                                 <FormMessage />
                             </FormItem>
                         )}
@@ -186,7 +198,7 @@ export function ConfigureBillingModal({
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Data da 1ª Cobrança</FormLabel>
-                                <FormControl><Input type="date" {...field} value={field.value || ''} /></FormControl>
+                                <FormControl><Input type="date" {...field} value={field.value ?? ''} /></FormControl>
                                 <FormMessage />
                             </FormItem>
                         )}
@@ -229,7 +241,7 @@ export function ConfigureBillingModal({
               />
               
               <DialogFooter>
-                <Button type="button" variant="ghost" onClick={() => { form.reset(); onClose(); }}>Cancelar</Button>
+                <Button type="button" variant="ghost" onClick={onClose}>Cancelar</Button>
                 <Button type="submit" disabled={isLoading}>
                   {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Salvar Configuração
