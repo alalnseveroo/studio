@@ -111,7 +111,6 @@ export default function BuyCreditsPage() {
     }
 
     const credits = Math.floor(amount / 5);
-    const creditsPix = showPix ? Math.floor(pixData?.value || 0 / 5) : 0;
 
     return (
         <div className="flex flex-1 justify-center p-4 sm:p-6 md:p-10 animate-fade-in">
@@ -172,6 +171,7 @@ export default function BuyCreditsPage() {
                                             </div>
                                         </div>
                                         <div>
+                                            <ShieldCheck className="h-8 w-8 mb-2" />
                                             <span className="font-bold text-base">PIX</span>
                                             <p className="text-xs text-muted-foreground mt-1">Aprovação imediata.</p>
                                         </div>
@@ -191,6 +191,7 @@ export default function BuyCreditsPage() {
                                         </div>
                                      </div>
                                     <div>
+                                        <CreditCard className="h-8 w-8 mb-2" />
                                         <span className="font-bold text-base">Cartão de Crédito</span>
                                          <p className="text-xs text-muted-foreground mt-1">Em breve.</p>
                                     </div>
@@ -228,7 +229,7 @@ export default function BuyCreditsPage() {
                                 )}
                                 <Separator />
                                 <div className="flex justify-between items-center text-sm">
-                                    <span className="text-muted-foreground">{credits} crédito{credits > 1 ? 's' : ''}</span>
+                                    <span className="text-muted-foreground">{credits} crédito{credits !== 1 ? 's' : ''}</span>
                                     <span className="font-semibold">1 crédito = 1 cliente ativo</span>
                                 </div>
                                 <div className="flex justify-between items-center text-lg">
