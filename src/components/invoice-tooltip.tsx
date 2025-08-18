@@ -116,36 +116,33 @@ export function InvoiceTooltip({ charge, onUploadSuccess }: InvoiceTooltipProps)
 
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <PopoverTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full">
-                      <PlusCircle className="h-5 w-5 text-muted-foreground hover:text-primary transition-colors"/>
-                      <span className="sr-only">Anexar nota fiscal</span>
-                  </Button>
-              </PopoverTrigger>
-            </TooltipTrigger>
-            <TooltipContent className="bg-black text-white border-black">
-              <p>Anexar nota fiscal</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      <PopoverContent className="w-80" align="end">
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <PopoverTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full">
+                    <PlusCircle className="h-5 w-5 text-muted-foreground hover:text-primary transition-colors"/>
+                    <span className="sr-only">Anexar nota fiscal</span>
+                </Button>
+            </PopoverTrigger>
+          </TooltipTrigger>
+          <TooltipContent className="bg-black text-white border-black">
+            <p>Anexar nota fiscal</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+      <PopoverContent className="w-80 bg-black text-white border-black" align="end">
         <div className="grid gap-4">
           <div className="space-y-2">
             <h4 className="font-medium leading-none">Entregar nota fiscal</h4>
-            <p className="text-sm text-muted-foreground">
-              Anexe o arquivo PDF da nota fiscal para esta cobrança.
-            </p>
           </div>
            <div 
-            className="flex items-center justify-center w-full p-4 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted/50"
+            className="flex items-center justify-center w-full p-4 border-2 border-dashed border-gray-600 rounded-lg cursor-pointer hover:bg-gray-800/50"
             onClick={() => fileInputRef.current?.click()}
           >
             <div className="text-center">
-                <Upload className="mx-auto h-8 w-8 text-muted-foreground"/>
-                <p className="mt-1 text-sm text-muted-foreground">
+                <Upload className="mx-auto h-8 w-8 text-gray-400"/>
+                <p className="mt-1 text-sm text-gray-400">
                   {file ? file.name : 'Clique para pegar o PDF'}
                 </p>
             </div>
@@ -159,13 +156,13 @@ export function InvoiceTooltip({ charge, onUploadSuccess }: InvoiceTooltipProps)
           </div>
            {file && (
              <div className="flex justify-end -mt-2">
-                <Button variant="ghost" size="sm" className="h-auto py-1 px-2 text-xs" onClick={() => setFile(null)}>
+                <Button variant="link" size="sm" className="h-auto py-1 px-2 text-xs text-red-400 hover:text-red-500" onClick={() => setFile(null)}>
                     <Trash2 className="mr-1 h-3 w-3"/>
                     Remover
                 </Button>
              </div>
           )}
-           <Button onClick={handleUpload} disabled={isLoading || !file}>
+           <Button onClick={handleUpload} disabled={isLoading || !file} variant="secondary" className="bg-white text-black hover:bg-gray-200">
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {charge.invoice_url ? 'Substituir NF-e' : 'Enviar NF-e'}
           </Button>
