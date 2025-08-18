@@ -101,7 +101,7 @@ export function DaysOffCalendar() {
       <div className="w-full">
         <Calendar
           locale={ptBR}
-          className="w-full p-0"
+          className="w-full"
           month={month}
           onMonthChange={setMonth}
           modifiers={{
@@ -141,11 +141,11 @@ export function DaysOffCalendar() {
                   </Tooltip>
                 )
               }
-              return <div className="relative">{props.date.getDate()}</div>
+              return <div className="relative flex items-center justify-center w-full h-full">{props.date.getDate()}</div>
             },
           }}
         />
-        <div className="px-4 pb-4 text-xs text-muted-foreground space-y-2">
+        <div className="pt-4 text-xs text-muted-foreground space-y-2">
             <div className="flex items-center gap-2">
                 <div className="w-2.5 h-2.5 rounded-full bg-pink-500" />
                 <span>Feriados e pontos facultativos</span>
