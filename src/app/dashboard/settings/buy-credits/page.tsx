@@ -120,30 +120,32 @@ export default function BuyCreditsPage() {
     const credits = Math.floor(amount / 5);
 
     return (
-        <div className="flex flex-1 justify-center p-4 sm:p-6 md:p-10 animate-fade-in">
+        <div className="relative flex flex-1 justify-center p-4 sm:p-6 md:p-10 animate-fade-in overflow-hidden">
             <div className={cn("relative w-full max-w-5xl transition-all duration-500 ease-in-out", showPix ? "lg:-translate-x-1/4" : "translate-x-0")}>
-                 <div className="absolute -top-4 -left-4">
-                     <Button asChild variant="ghost" size="icon">
-                        <Link href="/dashboard/settings/profile">
-                            <ArrowLeft className="h-5 w-5"/>
-                            <span className="sr-only">Voltar</span>
-                        </Link>
-                    </Button>
-                </div>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-12 gap-y-8 items-start">
                     {/* Coluna Esquerda - Seleção */}
                     <div className="space-y-8 lg:order-1">
-                         <div className="space-y-2">
+                         <div className="space-y-2 relative">
+                             <div className="absolute -top-6 -left-4">
+                                <Button asChild variant="ghost" size="icon">
+                                    <Link href="/dashboard/settings/profile">
+                                        <ArrowLeft className="h-5 w-5"/>
+                                        <span className="sr-only">Voltar</span>
+                                    </Link>
+                                </Button>
+                            </div>
                              <h1 className="text-2xl font-bold">Comprar Créditos</h1>
                              <p className="text-muted-foreground">Registre quantos clientes quiser, <strong>pague somente quando o cliente for ativado com assinatura ou pagamento recorrente.</strong></p>
                          </div>
                          
                         <div className="flex flex-col items-start gap-6">
                             <div className="flex items-center gap-4 w-full justify-start">
-                                <div className="text-5xl font-bold tracking-tight text-left">
-                                    <span className="text-3xl text-muted-foreground mr-1">R$</span>{amount.toFixed(2).replace('.', ',')}
+                                <div className="text-left">
+                                     <div className="text-5xl font-bold tracking-tight">
+                                        <span className="text-3xl text-muted-foreground mr-1">R$</span>{amount.toFixed(2).replace('.', ',')}
+                                    </div>
                                 </div>
-                                <div className="flex flex-col gap-2">
+                                <div className="flex items-center gap-2">
                                      <Button size="icon" variant="outline" className="rounded-full h-8 w-8" onClick={() => handleAmountChange(amount + 5)}>
                                         <Plus className="h-5 w-5" />
                                     </Button>
@@ -163,7 +165,7 @@ export default function BuyCreditsPage() {
                         
                         <div>
                             <h2 className="text-lg font-semibold mb-4">Forma de Pagamento</h2>
-                            <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod} className="grid grid-cols-2 gap-4 max-w-xs">
+                             <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod} className="grid grid-cols-2 gap-4 max-w-xs">
                                 <label
                                     htmlFor="pix"
                                     className={cn(
@@ -191,7 +193,7 @@ export default function BuyCreditsPage() {
                                         paymentMethod === 'credit_card' ? "border-green-500 shadow-md" : "border-border"
                                     )}
                                 >
-                                    <RadioGroupItem value="credit_card" id="credit_card" className="sr-only peer" />
+                                    <RadioGroupItem value="credit_card" id="credit_card" className="sr-only peer" disabled/>
                                     <div className="absolute top-3 right-3">
                                         <div className={cn("flex h-5 w-5 items-center justify-center rounded-full border-2", paymentMethod === 'credit_card' ? "border-green-500 bg-green-500" : "border-muted-foreground")}>
                                             {paymentMethod === 'credit_card' && <Check className="h-3 w-3 text-white" />}
@@ -235,9 +237,6 @@ export default function BuyCreditsPage() {
                                     </div>
                                 )}
                                 <Separator />
-                                <div className="flex justify-between items-center text-sm">
-                                    <span className="text-muted-foreground">{credits} crédito{credits !== 1 ? 's' : ''}</span>
-                                </div>
                                 <div className="flex justify-between items-center text-lg">
                                     <span className="text-muted-foreground">Valor total:</span>
                                     <span className="font-bold">R$ {amount.toFixed(2).replace('.', ',')}</span>
@@ -305,3 +304,5 @@ export default function BuyCreditsPage() {
         </div>
     )
 }
+
+    
