@@ -1,11 +1,8 @@
+
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useToast } from '@/hooks/use-toast'
@@ -70,10 +67,10 @@ export function InvoiceTooltip({ charge, onUploadSuccess }: InvoiceTooltipProps)
 
     setIsLoading(true)
     const supabase = createClient()
-    const filePath = `public/${charge.user_id}/${charge.id}/${file.name}`
+    const filePath = `invoices/${charge.user_id}/${charge.id}/${file.name}`
 
     const { error: uploadError } = await supabase.storage
-      .from('invoices')
+      .from('public') // Bucket público
       .upload(filePath, file, { cacheControl: '3600', upsert: true })
 
     if (uploadError) {
@@ -87,7 +84,7 @@ export function InvoiceTooltip({ charge, onUploadSuccess }: InvoiceTooltipProps)
     }
 
     const { data: { publicUrl } } = supabase.storage
-      .from('invoices')
+      .from('public') // Mesmo bucket público
       .getPublicUrl(filePath)
 
     if (!publicUrl) {
