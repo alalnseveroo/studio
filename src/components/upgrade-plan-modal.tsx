@@ -20,7 +20,7 @@ import { getOrCreateAsaasCustomer } from '@/lib/asaas'
 import type { Profile } from '@/lib/types'
 import confetti from "canvas-confetti";
 import { createAsaasCharge, createAsaasPaymentLink, getAsaasPixCharge } from '@/lib/asaas'
-import PixQRCode from './pix-qrcode'
+import { PixQRCode } from './pix-qrcode'
 import { useToast } from '@/hooks/use-toast'
 import { useRouter } from 'next/navigation'
 
