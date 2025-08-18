@@ -294,7 +294,7 @@ export default async function DashboardPage() {
             </Card>
             <Card>
                 <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
+                    <CardTitle className="flex items-center gap-2 text-base font-semibold">
                         <CalendarDays className="h-5 w-5" />
                         Folgas e Feriados
                     </CardTitle>

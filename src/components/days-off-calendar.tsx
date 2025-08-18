@@ -98,52 +98,64 @@ export function DaysOffCalendar() {
 
   return (
     <TooltipProvider>
-      <Calendar
-        locale={ptBR}
-        className="w-full"
-        month={month}
-        onMonthChange={setMonth}
-        modifiers={{
-          holiday: holidayDates,
-          dayOff: dayOffDates,
-        }}
-        modifiersClassNames={{
-          holiday: 'relative',
-          dayOff: 'bg-pink-100 text-pink-800 rounded-md',
-        }}
-        components={{
-          DayContent: (props) => {
-            const isHoliday = holidayDates.some(
-              (holidayDate) => holidayDate.getDate() === props.date.getDate() && 
-                               holidayDate.getMonth() === props.date.getMonth() &&
-                               holidayDate.getFullYear() === props.date.getFullYear()
-            );
-            const holidayInfo = holidays.find(
-              (h) => new Date(h.date + 'T00:00:00').toDateString() === props.date.toDateString()
-            );
+      <div className="w-full">
+        <Calendar
+          locale={ptBR}
+          className="w-full"
+          month={month}
+          onMonthChange={setMonth}
+          modifiers={{
+            holiday: holidayDates,
+            dayOff: dayOffDates,
+          }}
+          modifiersClassNames={{
+            holiday: 'relative',
+            dayOff: 'bg-pink-100 text-pink-800 rounded-md',
+          }}
+          components={{
+            DayContent: (props) => {
+              const isHoliday = holidayDates.some(
+                (holidayDate) => holidayDate.getDate() === props.date.getDate() && 
+                                 holidayDate.getMonth() === props.date.getMonth() &&
+                                 holidayDate.getFullYear() === props.date.getFullYear()
+              );
+              const holidayInfo = holidays.find(
+                (h) => new Date(h.date + 'T00:00:00').toDateString() === props.date.toDateString()
+              );
 
-            if (isHoliday) {
-              return (
-                <Tooltip delayDuration={100}>
-                  <TooltipTrigger asChild>
-                    <div className="relative w-full h-full flex items-center justify-center">
-                      {props.date.getDate()}
-                      <div className="absolute bottom-1 w-1 h-1 bg-pink-500 rounded-full" />
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent className="w-auto">
-                    <div className="flex items-center gap-4">
-                        <p className="font-semibold">{holidayInfo?.name}</p>
-                        <Button size="sm" onClick={() => handleSetDayOff(props.date)}>Folga</Button>
-                    </div>
-                  </TooltipContent>
-                </Tooltip>
-              )
-            }
-            return <div className="relative">{props.date.getDate()}</div>
-          },
-        }}
-      />
+              if (isHoliday) {
+                return (
+                  <Tooltip delayDuration={100}>
+                    <TooltipTrigger asChild>
+                      <div className="relative w-full h-full flex items-center justify-center">
+                        {props.date.getDate()}
+                        <div className="absolute bottom-1 w-1 h-1 bg-pink-500 rounded-full" />
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent className="w-auto">
+                      <div className="flex items-center gap-4">
+                          <p className="font-semibold">{holidayInfo?.name}</p>
+                          <Button size="sm" onClick={() => handleSetDayOff(props.date)}>Folga</Button>
+                      </div>
+                    </TooltipContent>
+                  </Tooltip>
+                )
+              }
+              return <div className="relative">{props.date.getDate()}</div>
+            },
+          }}
+        />
+        <div className="px-4 pb-4 text-xs text-muted-foreground space-y-2">
+            <div className="flex items-center gap-2">
+                <div className="w-2.5 h-2.5 rounded-full bg-pink-500" />
+                <span>Feriados e pontos facultativos</span>
+            </div>
+            <div className="flex items-center gap-2">
+                <div className="w-2.5 h-2.5 bg-pink-100 rounded-sm" />
+                <span>Optou por folga</span>
+            </div>
+        </div>
+      </div>
     </TooltipProvider>
   )
 }
