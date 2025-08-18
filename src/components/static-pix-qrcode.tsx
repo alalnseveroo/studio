@@ -9,13 +9,12 @@ import QRCode from "qrcode.react";
 import type { Profile, Cobranca } from '@/lib/types';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 
-// --- Início da Lógica de Geração do Payload PIX ---
+// --- Início da Lógica de Geração do Payload PIX (Adaptada para TS) ---
 
 const ID_PAYLOAD_FORMAT_INDICATOR = '00';
 const ID_MERCHANT_ACCOUNT_INFORMATION = '26';
 const ID_MERCHANT_ACCOUNT_INFORMATION_GUI = '00';
 const ID_MERCHANT_ACCOUNT_INFORMATION_KEY = '01';
-const ID_MERCHANT_ACCOUNT_INFORMATION_DESCRIPTION = '02';
 const ID_MERCHANT_CATEGORY_CODE = '52';
 const ID_TRANSACTION_CURRENCY = '53';
 const ID_TRANSACTION_AMOUNT = '54';
@@ -26,40 +25,12 @@ const ID_ADDITIONAL_DATA_FIELD_TEMPLATE = '62';
 const ID_ADDITIONAL_DATA_FIELD_TEMPLATE_TXID = '05';
 const ID_CRC16 = '63';
 
-const formatValue = (id: string, value: string) => {
+const formatValue = (id: string, value: string): string => {
     const size = String(value.length).padStart(2, '0');
     return id + size + value;
 };
 
-const generatePayload = (
-    pixKey: string,
-    merchantName: string,
-    merchantCity: string,
-    txid: string,
-    amount: number
-): string => {
-    let payload =
-        formatValue(ID_PAYLOAD_FORMAT_INDICATOR, '01') +
-        formatValue(
-            ID_MERCHANT_ACCOUNT_INFORMATION,
-            formatValue(ID_MERCHANT_ACCOUNT_INFORMATION_GUI, 'br.gov.bcb.pix') +
-            formatValue(ID_MERCHANT_ACCOUNT_INFORMATION_KEY, pixKey)
-        ) +
-        formatValue(ID_MERCHANT_CATEGORY_CODE, '0000') +
-        formatValue(ID_TRANSACTION_CURRENCY, '986') +
-        formatValue(ID_TRANSACTION_AMOUNT, amount.toFixed(2)) +
-        formatValue(ID_COUNTRY_CODE, 'BR') +
-        formatValue(ID_MERCHANT_NAME, merchantName) +
-        formatValue(ID_MERCHANT_CITY, merchantCity) +
-        formatValue(
-            ID_ADDITIONAL_DATA_FIELD_TEMPLATE,
-            formatValue(ID_ADDITIONAL_DATA_FIELD_TEMPLATE_TXID, txid)
-        );
-
-    return payload;
-};
-
-const crc16 = (payload: string) => {
+const calcularCRC16 = (payload: string): string => {
     let crc = 0xFFFF;
     const polynomial = 0x1021;
     for (let i = 0; i < payload.length; i++) {
@@ -69,7 +40,43 @@ const crc16 = (payload: string) => {
         }
     }
     return (crc & 0xFFFF).toString(16).toUpperCase().padStart(4, '0');
-}
+};
+
+const gerarPixCopiaCola = (
+    chave: string,
+    nome: string,
+    cidade: string,
+    valor: number,
+    txid: string
+): string => {
+    const valorFormatado = valor.toFixed(2);
+    const nomeFormatado = nome.substring(0, 25);
+    const cidadeFormatada = cidade.substring(0, 15);
+    
+    // Merchant Account Info (ID do BACEN + chave Pix)
+    const gui = "br.gov.bcb.pix";
+    const guiFormatado = formatValue(ID_MERCHANT_ACCOUNT_INFORMATION_GUI, gui);
+    const chaveFormatada = formatValue(ID_MERCHANT_ACCOUNT_INFORMATION_KEY, chave);
+    const merchantAccountInfo = guiFormatado + chaveFormatada;
+
+    const txidFormatado = formatValue(ID_ADDITIONAL_DATA_FIELD_TEMPLATE_TXID, txid);
+    const campoAdicional = formatValue(ID_ADDITIONAL_DATA_FIELD_TEMPLATE, txidFormatado);
+
+    let payload =
+        formatValue(ID_PAYLOAD_FORMAT_INDICATOR, '01') +
+        merchantAccountInfo +
+        formatValue(ID_MERCHANT_CATEGORY_CODE, '0000') +
+        formatValue(ID_TRANSACTION_CURRENCY, '986') +
+        formatValue(ID_TRANSACTION_AMOUNT, valorFormatado) +
+        formatValue(ID_COUNTRY_CODE, 'BR') +
+        formatValue(ID_MERCHANT_NAME, nomeFormatado) +
+        formatValue(ID_MERCHANT_CITY, cidadeFormatada) +
+        campoAdicional;
+        
+    payload += formatValue(ID_CRC16, calcularCRC16(payload));
+
+    return payload;
+};
 
 // --- Fim da Lógica ---
 
@@ -98,9 +105,8 @@ export function StaticPixQRCode({ provider, charge }: StaticPixQRCodeProps) {
         const txid = charge.id.substring(0, 25).replace(/[^a-zA-Z0-9]/g, '0');
         const amount = charge.value;
 
-        const partialPayload = generatePayload(pixKey, merchantName, merchantCity, txid, amount);
-        const finalPayload = partialPayload + formatValue(ID_CRC16, crc16(partialPayload));
-
+        const finalPayload = gerarPixCopiaCola(pixKey, merchantName, merchantCity, amount, txid);
+        
         setPayload(finalPayload);
         setIsLoading(false);
     }, [provider, charge]);
