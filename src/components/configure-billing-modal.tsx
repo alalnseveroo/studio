@@ -71,8 +71,8 @@ export function ConfigureBillingModal({
     resolver: zodResolver(billingSchema),
     defaultValues: {
         proposal_id: null,
-        value: undefined,
-        payment_day: undefined,
+        value: '' as any, // Initialize as empty string
+        payment_day: '' as any, // Initialize as empty string
         first_charge_date: '',
         billing_status: 'active',
         send_charge_now: false,
@@ -163,7 +163,7 @@ export function ConfigureBillingModal({
                     render={({ field }) => (
                         <FormItem>
                             <FormLabel>Valor da Mensalidade (R$)</FormLabel>
-                            <FormControl><Input type="number" step="0.01" placeholder="1500.00" {...field} /></FormControl>
+                            <FormControl><Input type="number" step="0.01" placeholder="1500.00" {...field} value={field.value || ''} /></FormControl>
                              <FormMessage />
                         </FormItem>
                     )}
@@ -175,7 +175,7 @@ export function ConfigureBillingModal({
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Dia do Vencimento</FormLabel>
-                                <FormControl><Input type="number" placeholder="10" {...field} /></FormControl>
+                                <FormControl><Input type="number" placeholder="10" {...field} value={field.value || ''}/></FormControl>
                                 <FormMessage />
                             </FormItem>
                         )}
