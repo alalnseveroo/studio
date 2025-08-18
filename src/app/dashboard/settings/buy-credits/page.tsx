@@ -163,29 +163,27 @@ export default function BuyCreditsPage() {
                         
                         <div>
                             <h2 className="text-lg font-semibold mb-4">Forma de Pagamento</h2>
-                             <div className="grid grid-cols-2 gap-4 max-w-xs">
-                                <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod}>
-                                     <RadioGroupItem value="pix" id="pix" className="sr-only peer" />
-                                     <label
-                                        htmlFor="pix"
-                                        className={cn(
-                                            "flex flex-col justify-between rounded-lg border-2 p-4 cursor-pointer transition-all aspect-square relative",
-                                            paymentMethod === 'pix' ? "border-green-500 shadow-md" : "border-border"
-                                        )}
-                                    >
-                                        <div className="absolute top-3 right-3">
-                                            <div className={cn("flex h-5 w-5 items-center justify-center rounded-full border-2", paymentMethod === 'pix' ? "border-green-500 bg-green-500" : "border-muted-foreground")}>
-                                                {paymentMethod === 'pix' && <Check className="h-3 w-3 text-white" />}
-                                            </div>
+                            <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod} className="grid grid-cols-2 gap-4 max-w-xs">
+                                <label
+                                    htmlFor="pix"
+                                    className={cn(
+                                        "flex flex-col justify-between rounded-lg border-2 p-4 cursor-pointer transition-all aspect-square relative",
+                                        paymentMethod === 'pix' ? "border-green-500 shadow-md" : "border-border"
+                                    )}
+                                >
+                                    <RadioGroupItem value="pix" id="pix" className="sr-only peer" />
+                                    <div className="absolute top-3 right-3">
+                                        <div className={cn("flex h-5 w-5 items-center justify-center rounded-full border-2", paymentMethod === 'pix' ? "border-green-500 bg-green-500" : "border-muted-foreground")}>
+                                            {paymentMethod === 'pix' && <Check className="h-3 w-3 text-white" />}
                                         </div>
-                                        <div>
-                                            <ShieldCheck className="h-8 w-8 mb-2" />
-                                            <span className="font-bold text-base">PIX</span>
-                                            <p className="text-xs text-muted-foreground mt-1">Aprovação imediata.</p>
-                                        </div>
-                                    </label>
-                                </RadioGroup>
-                                 <RadioGroupItem value="credit_card" id="credit_card" className="sr-only peer" />
+                                    </div>
+                                    <div>
+                                        <ShieldCheck className="h-8 w-8 mb-2" />
+                                        <span className="font-bold text-base">PIX</span>
+                                        <p className="text-xs text-muted-foreground mt-1">Aprovação imediata.</p>
+                                    </div>
+                                </label>
+
                                 <label
                                     htmlFor="credit_card"
                                     className={cn(
@@ -193,18 +191,19 @@ export default function BuyCreditsPage() {
                                         paymentMethod === 'credit_card' ? "border-green-500 shadow-md" : "border-border"
                                     )}
                                 >
-                                     <div className="absolute top-3 right-3">
+                                    <RadioGroupItem value="credit_card" id="credit_card" className="sr-only peer" />
+                                    <div className="absolute top-3 right-3">
                                         <div className={cn("flex h-5 w-5 items-center justify-center rounded-full border-2", paymentMethod === 'credit_card' ? "border-green-500 bg-green-500" : "border-muted-foreground")}>
                                             {paymentMethod === 'credit_card' && <Check className="h-3 w-3 text-white" />}
                                         </div>
-                                     </div>
+                                    </div>
                                     <div>
                                         <CreditCard className="h-8 w-8 mb-2" />
                                         <span className="font-bold text-base">Cartão de Crédito</span>
-                                         <p className="text-xs text-muted-foreground mt-1">Em breve.</p>
+                                        <p className="text-xs text-muted-foreground mt-1">Em breve.</p>
                                     </div>
                                 </label>
-                            </div>
+                            </RadioGroup>
                         </div>
                         
                          <div className="pt-4">
@@ -306,5 +305,3 @@ export default function BuyCreditsPage() {
         </div>
     )
 }
-
-    
