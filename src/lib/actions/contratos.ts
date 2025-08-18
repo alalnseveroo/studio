@@ -242,31 +242,6 @@ export async function signContractAsProvider(contractId: string, otp: string) {
         return { data: null, error: { message: `Não foi possível assinar o contrato: ${updateError.message}` } };
     }
 
-    // Enviar e-mail para o cliente após a assinatura da contratada
-    if (contract.clientes?.email) {
-        try {
-            const portalUrl = new URL(`/portal/${contract.cliente_id}/contrato/${contract.id}`, process.env.NEXT_PUBLIC_SITE_URL).toString();
-            const clientName = contract.clientes.full_name || contract.clientes.company_name;
-
-            // Template de notificação para o cliente assinar
-            const BREVO_TEMPLATE_ID_CLIENT_NOTIFICATION = 58; 
-
-            await sendTransactionalEmail(
-                contract.clientes.email,
-                BREVO_TEMPLATE_ID_CLIENT_NOTIFICATION,
-                {
-                    NOME_CLIENTE: clientName,
-                    LINK_CONTRATO: portalUrl
-                },
-                user.id
-            );
-        } catch (emailError: any) {
-            // Não bloqueia o processo se o e-mail falhar, mas registra o erro.
-            console.error(`Falha ao enviar e-mail de notificação para o cliente ${contract.clientes.email}:`, emailError.message);
-        }
-    }
-
-
     revalidatePath(`/dashboard/contratos/${contractId}`);
     revalidatePath(`/portal/${contract.cliente_id}/contrato/${contract.id}`);
     revalidatePath(`/portal/${contract.cliente_id}`);

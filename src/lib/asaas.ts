@@ -17,7 +17,7 @@ type AsaasCustomer = {
     // ... outros campos que a API do Asaas retorna
 };
 
-async function getOrCreateAsaasCustomer(profile: Partial<Profile & Cliente & { fullName?: string, personType?: string, companyName?: string }>): Promise<AsaasCustomer> {
+async function getOrCreateAsaasCustomer(profile: Partial<Profile & Cliente & { fullName?: string, personType?: string, companyName?: string }>, userId?: string): Promise<AsaasCustomer> {
     if (!ASAAS_API_KEY) {
         throw new Error("A chave da API do Asaas não está configurada.");
     }
@@ -52,9 +52,9 @@ async function getOrCreateAsaasCustomer(profile: Partial<Profile & Cliente & { f
     console.log(`Cliente Asaas não encontrado para o perfil ${profile.id}. Criando um novo...`);
     
     // Lógica robusta para obter o nome, verificando todas as possibilidades.
-    const name = profile.person_type === 'cpf' 
+    const name = (profile.person_type === 'cpf' 
       ? profile.fullName || profile.full_name
-      : profile.companyName || profile.company_name;
+      : profile.companyName || profile.company_name) || profile.email; // Fallback para email
 
     if (!name) {
         throw new Error("O campo name deve ser informado");
@@ -62,13 +62,13 @@ async function getOrCreateAsaasCustomer(profile: Partial<Profile & Cliente & { f
 
     const payload: {
         name: string,
-        cpfCnpj: string | undefined,
+        cpfCnpj: string | undefined | null,
         email: string,
         phone?: string | null,
         mobilePhone?: string | null,
         postalCode?: string,
         addressNumber?: string,
-        externalReference?: string
+        externalReference?: string | undefined
     } = {
         name,
         cpfCnpj: profile.cpf || profile.cnpj,
@@ -102,6 +102,18 @@ async function getOrCreateAsaasCustomer(profile: Partial<Profile & Cliente & { f
              throw new Error(`Asaas API Error (POST): ${responseData.errors?.[0]?.description || response.statusText}`);
         }
         console.log("Cliente criado no Asaas com sucesso:", responseData.id);
+
+        const supabase = createClient();
+        const { error: updateError } = await supabase
+            .from(userId ? 'clientes' : 'profiles')
+            .update({ asaas_customer_id: responseData.id })
+            .eq('id', profile.id!);
+
+        if (updateError) {
+             console.error(`Falha ao salvar o asaas_customer_id para o ID ${profile.id}:`, updateError.message);
+             // Não lança erro, mas registra o problema.
+        }
+
         return responseData;
 
     } catch (error: any) {
@@ -226,7 +238,9 @@ export async function createAsaasPaymentLink(paymentId: string) {
         
         // A API do Asaas não retorna um link direto, mas sim o 'identificationField' (linha digitável)
         // O link de pagamento real geralmente é construído a partir do ID do pagamento
-        const paymentLink = `${ASAAS_API_URL}/pay/${paymentId}`;
+        // A URL correta é /payment, não /pay
+        const paymentLink = `https://www.asaas.com/payment/${paymentId}`;
+
 
         return { link: paymentLink, error: null };
 

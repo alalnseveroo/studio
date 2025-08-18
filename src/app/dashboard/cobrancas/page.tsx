@@ -70,48 +70,6 @@ export default function CobrancasPage() {
     fetchData()
   }, [])
 
-  const handleSendReminder = async (charge: Cobranca) => {
-      setIsSending(charge.id);
-      
-      if (!charge.clientes?.email || !providerProfile) {
-          toast({ variant: 'destructive', title: "Dados Incompletos", description: `Não foi possível enviar o lembrete. Verifique o e-mail do cliente e o perfil da contratada.` });
-          setIsSending(null);
-          return;
-      }
-      
-      const portalUrl = new URL(`/portal/${charge.cliente_id}`, process.env.NEXT_PUBLIC_SITE_URL).toString();
-      const BREVO_TEMPLATE_ID = 63; // Lembrete Manual / Cobrança imediata
-
-      try {
-        await sendTransactionalEmail({
-          toEmail: charge.clientes.email,
-          templateId: BREVO_TEMPLATE_ID,
-          params: {
-              CLIENTE_NOME: charge.clientes.full_name || charge.clientes.company_name,
-              CONTRATADA_NOME: providerProfile.full_name || providerProfile.company_name,
-              COBRANCA_VALOR: (charge.value || 0).toFixed(2),
-              COBRANCA_VENCIMENTO: format(new Date(charge.due_date), 'dd/MM/yyyy'),
-              LINK_PORTAL: portalUrl,
-          },
-          userId: charge.user_id 
-        });
-        
-        toast({
-            title: "E-mail de Cobrança Enviado!",
-            description: `A cobrança foi enviada para ${charge.clientes.full_name || charge.clientes.company_name}.`
-        });
-
-      } catch (error: any) {
-          toast({
-              variant: 'destructive',
-              title: "Erro ao enviar e-mail",
-              description: error.message || "Não foi possível enviar o e-mail."
-          })
-      } finally {
-        setIsSending(null);
-      }
-  }
-
   const handleMarkAsPaid = async (chargeId: string) => {
     setIsLoading(true);
     const { error } = await markChargeAsPaid(chargeId);
@@ -243,10 +201,6 @@ export default function CobrancasPage() {
                             </TableCell>
                             <TableCell className="text-center">
                                  <div className="flex items-center justify-center">
-                                    <Button variant="ghost" size="icon" disabled={isSending === charge.id} onClick={() => handleSendReminder(charge)}>
-                                        {isSending === charge.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                                        <span className="sr-only">Enviar Lembrete</span>
-                                    </Button>
                                      {charge.status === 'pendente' && (
                                          <Button variant="ghost" size="icon" onClick={() => handleMarkAsPaid(charge.id)}>
                                             <BadgeCheck className="h-4 w-4" />

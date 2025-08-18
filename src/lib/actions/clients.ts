@@ -98,22 +98,6 @@ export async function createFullClient(formData: any) {
 
             await sendClientWebhook('create', dataWithContext);
 
-            setTimeout(async () => {
-                try {
-                    await sendTransactionalEmail({
-                        toEmail: newClient.email!,
-                        templateId: 62,
-                        params: { 
-                            CLIENTE_NOME: newClient.full_name || newClient.company_name,
-                            CONTRATADA_NOME: providerName,
-                         },
-                        userId: user.id
-                    });
-                } catch (emailError: any) {
-                    console.error('Falha ao enviar e-mail agendado de criação de cliente:', emailError.message);
-                }
-            }, 120000);
-
         } catch (webhookError: any) {
             console.warn(`Falha ao enviar webhook de criação de cliente: ${webhookError.message}`);
         }
@@ -334,26 +318,6 @@ export async function updateClientFinancials(id: string, financials: {
       if (chargeError) {
           console.error('Supabase error creating immediate charge:', chargeError);
           return { error: { message: `Cobrança gerada no Asaas, mas não foi possível salvar no sistema: ${chargeError.message}`}};
-      }
-      
-      // Enviar e-mail de cobrança imediata
-      const portalUrl = new URL(`/portal/${id}`, process.env.NEXT_PUBLIC_SITE_URL).toString();
-      try {
-          await sendTransactionalEmail({
-              toEmail: client.email!,
-              templateId: 63, // Lembrete Manual / Cobrança imediata
-              params: {
-                  CLIENTE_NOME: client.full_name || client.company_name,
-                  CONTRATADA_NOME: providerProfile.full_name || providerProfile.company_name,
-                  COBRANCA_VALOR: parsedValue.toFixed(2),
-                  COBRANCA_VENCIMENTO: format(dueDate, 'dd/MM/yyyy'),
-                  LINK_PORTAL: portalUrl,
-              },
-              userId: user.id,
-          });
-      } catch (emailError: any) {
-         console.error('Falha ao enviar e-mail de cobrança imediata:', emailError.message);
-         // Não retorna erro, apenas loga. A cobrança foi criada com sucesso.
       }
   }
 
