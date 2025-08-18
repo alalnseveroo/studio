@@ -10,6 +10,9 @@ import {
   AlertTriangle,
   ClipboardList,
   CalendarDays,
+  UserPlus,
+  FilePlus,
+  Receipt,
 } from 'lucide-react'
 
 import {
@@ -75,6 +78,15 @@ const getChargeStatusInfo = (status: string, dueDate: string) => {
     return { text: 'Pendente', className: 'border-yellow-500 bg-yellow-500/10 text-yellow-700' };
 }
 
+const QuickActionButton = ({ href, icon: Icon, label }: { href: string, icon: React.ElementType, label: string }) => (
+  <Button asChild variant="outline" className="flex flex-col items-center justify-center h-24 w-24 gap-2 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+    <Link href={href}>
+      <Icon className="h-6 w-6 text-primary" />
+      <span className="text-xs font-normal">{label}</span>
+    </Link>
+  </Button>
+);
+
 
 export default async function DashboardPage() {
     const [{ data: clients }, { data: contracts }, { data: charges }, { data: profile }] = await Promise.all([
@@ -99,6 +111,13 @@ export default async function DashboardPage() {
       <div className="flex items-center">
         <h1 className="text-lg font-semibold md:text-2xl">Dashboard</h1>
       </div>
+
+       <div className="flex items-center gap-4">
+          <QuickActionButton href="/dashboard/clientes" icon={UserPlus} label="Criar Cliente" />
+          <QuickActionButton href="/dashboard/cobrancas" icon={Receipt} label="Criar Cobrança" />
+          <QuickActionButton href="/dashboard/contratos" icon={FileSignature} label="Criar Contrato" />
+          <QuickActionButton href="/dashboard/propostas/nova" icon={FilePlus} label="Criar Proposta" />
+        </div>
       
       <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
         <Card>
