@@ -9,6 +9,7 @@ import { useToast } from '@/hooks/use-toast'
 import type { Holiday, DayOff } from '@/lib/types'
 import { createClient } from '@/lib/supabase/client'
 import { format, parseISO } from 'date-fns'
+import { ptBR } from 'date-fns/locale'
 
 async function getHolidays(): Promise<Holiday[]> {
   const supabase = createClient()
@@ -98,6 +99,8 @@ export function DaysOffCalendar() {
   return (
     <TooltipProvider>
       <Calendar
+        locale={ptBR}
+        className="w-full"
         month={month}
         onMonthChange={setMonth}
         modifiers={{
