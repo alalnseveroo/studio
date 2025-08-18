@@ -111,6 +111,7 @@ export default function BuyCreditsPage() {
     }
 
     const credits = Math.floor(amount / 5);
+    const creditsPix = showPix ? Math.floor(pixData?.value || 0 / 5) : 0;
 
     return (
         <div className="flex flex-1 justify-center p-4 sm:p-6 md:p-10 animate-fade-in">
@@ -156,7 +157,7 @@ export default function BuyCreditsPage() {
                         
                         <div>
                             <h2 className="text-lg font-semibold mb-4">Forma de Pagamento</h2>
-                            <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod} className="grid grid-cols-2 gap-4">
+                            <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod} className="grid grid-cols-2 gap-4 max-w-xs">
                                  <RadioGroupItem value="pix" id="pix" className="sr-only peer" />
                                     <label
                                         htmlFor="pix"
