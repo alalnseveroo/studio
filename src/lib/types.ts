@@ -77,6 +77,7 @@ export type Profile = {
   avatar_url: string | null;
   phone?: string | null;
   asaas_customer_id?: string | null;
+  pix_key?: string | null; // Adicionado campo para a chave pix
 };
 
 export type Contrato = {
@@ -145,5 +146,6 @@ export type DayOff = {
     
 
     
+
 
 

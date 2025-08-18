@@ -34,6 +34,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useToast } from '@/hooks/use-toast'
 import { ChatInterface } from '@/components/chat-interface'
 import { PortalCalendar } from '@/components/portal-calendar'
+import { StaticPixQRCode } from '@/components/static-pix-qrcode'
 
 
 export default function ClientPortalPage() {
@@ -369,21 +370,20 @@ export default function ClientPortalPage() {
         </div>
      )}
 
-     <AlertDialog open={!!selectedCharge} onOpenChange={() => setSelectedCharge(null)}>
+    <AlertDialog open={!!selectedCharge} onOpenChange={() => setSelectedCharge(null)}>
         <AlertDialogContent>
             <AlertDialogHeader>
             <AlertDialogTitle>Realizar Pagamento</AlertDialogTitle>
             <AlertDialogDescription>
-                Para realizar o pagamento, por favor, entre em contato com sua assistente.
+                Aponte a câmera do seu celular para o QR Code ou use o código abaixo.
             </AlertDialogDescription>
             </AlertDialogHeader>
-                <Alert>
-                    <Info className="h-4 w-4" />
-                    <AlertTitle>Instruções</AlertTitle>
-                    <AlertDescription>
-                        A chave PIX e outros detalhes para o pagamento devem ser solicitados diretamente à <strong>{providerName}</strong> através do e-mail: <strong>{provider?.email || '[e-mail não disponível]'}</strong> ou pelo chat.
-                    </AlertDescription>
-                </Alert>
+            {provider && selectedCharge && (
+                <StaticPixQRCode 
+                    provider={provider}
+                    charge={selectedCharge}
+                />
+            )}
             <AlertDialogFooter>
                 <AlertDialogCancel>Fechar</AlertDialogCancel>
             </AlertDialogFooter>
