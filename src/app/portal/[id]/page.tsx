@@ -34,6 +34,7 @@ import { cn } from '@/lib/utils'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { useToast } from '@/hooks/use-toast'
 import { ChatInterface } from '@/components/chat-interface'
+import { PortalCalendar } from '@/components/portal-calendar'
 
 
 export default function ClientPortalPage() {
@@ -180,6 +181,7 @@ export default function ClientPortalPage() {
               <a className="text-[#111418] text-sm font-medium leading-normal" href="#proposta">Proposta</a>
               <a className="text-[#111418] text-sm font-medium leading-normal" href="#contratos">Contratos</a>
               <a className="text-[#111418] text-sm font-medium leading-normal" href="#pagamentos">Pagamentos</a>
+               <a className="text-[#111418] text-sm font-medium leading-normal" href="#disponibilidade">Disponibilidade</a>
               <a className="text-[#111418] text-sm font-medium leading-normal" href="#chat">Chat</a>
             </div>
              <Avatar className="size-10">
@@ -327,6 +329,15 @@ export default function ClientPortalPage() {
               </div>
             </div>
             
+            <h2 id="disponibilidade" className="text-[#111418] text-[22px] font-bold leading-tight tracking-[-0.015em] px-4 pb-3 pt-5">Disponibilidade da Assistente</h2>
+            <div className="p-4">
+              <Card className="shadow-[0_0_4px_rgba(0,0,0,0.1)]">
+                <CardContent className="p-4">
+                  {provider && <PortalCalendar providerId={provider.id} />}
+                </CardContent>
+              </Card>
+            </div>
+
             <h2 id="chat" className="text-[#111418] text-[22px] font-bold leading-tight tracking-[-0.015em] px-4 pb-3 pt-5">Chat</h2>
             <div className="px-4">
               <ChatInterface clientId={clientId} isUser={false} />
