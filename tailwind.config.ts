@@ -49,6 +49,7 @@ export default {
         border: 'var(--border)',
         input: 'var(--input)',
         ring: 'var(--ring)',
+        'payment-green': '#4ade80',
         chart: {
           '1': 'var(--chart-1)',
           '2': 'var(--chart-2)',
@@ -99,3 +100,5 @@ export default {
   },
   plugins: [require('tailwindcss-animate'), require('@tailwindcss/typography')],
 } satisfies Config;
+
+    

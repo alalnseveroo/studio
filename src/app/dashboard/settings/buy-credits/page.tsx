@@ -8,30 +8,44 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Separator } from '@/components/ui/separator'
 import { getProfile } from '@/lib/actions/profile'
 import type { Profile } from '@/lib/types'
-import { ArrowLeft, CreditCard, Gift, Loader2, Minus, Plus, ShieldCheck, ShoppingCart, Check } from 'lucide-react'
+import { ArrowLeft, CreditCard, Gift, Loader2, Minus, Plus, ShieldCheck, ShoppingCart, Check, CheckCircle, FileText, Globe, BarChart3, Star } from 'lucide-react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { createPixCharge } from '@/lib/asaas'
 import { useToast } from '@/hooks/use-toast'
-import { PixQRCodeModal, type PixData } from '@/components/pix-qrcode-modal'
+import Image from 'next/image'
+import QRCode from "qrcode.react";
 
 const benefitItems = [
-    { text: "Gestão de contratos automatizada.", icon: ShieldCheck },
-    { text: "Cobranças recorrentes via PIX.", icon: CreditCard },
-    { text: "Portal do cliente com sua marca.", icon: Gift }
+    { text: "Contratos ilimitados", icon: FileText },
+    { text: "Nota fiscal automática", icon: BarChart3 },
+    { text: "Cobrança automática", icon: ShieldCheck },
+    { text: "Recorrência via PIX", icon: CreditCard },
+    { text: "Portal do cliente com sua marca", icon: Gift },
+    { text: "Perfil exposto no Google", icon: Globe },
+    { text: "Controle do seu negócio", icon: Star },
+    { text: "E-mail marketing (em breve)", icon: Star },
 ];
 
 const presetAmounts = [15, 30, 50, 100];
 
+interface PixData {
+  qrCodeImage: string;
+  payload: string;
+  value: number;
+}
+
 export default function BuyCreditsPage() {
     const [amount, setAmount] = useState(15);
     const [paymentMethod, setPaymentMethod] = useState('pix');
-    const [userProfile, setUserProfile] = useState<Profile | null>(null);
+    const [userProfile, setUserProfile] = useState<Profile & { email?: string } | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isProcessingPayment, setIsProcessingPayment] = useState(false);
     const [pixData, setPixData] = useState<PixData | null>(null);
+    const [showPix, setShowPix] = useState(false);
     const { toast } = useToast();
+    const [isCopied, setIsCopied] = useState(false);
 
     useEffect(() => {
         const fetchProfileData = async () => {
@@ -60,7 +74,7 @@ export default function BuyCreditsPage() {
 
         setIsProcessingPayment(true);
         try {
-            const result = await createPixCharge(userProfile.asaas_customer_id, amount, `Compra de ${amount / 5} créditos`);
+            const result = await createPixCharge(userProfile.asaas_customer_id, amount, `Compra de ${Math.floor(amount / 5)} créditos`);
             if (result.error) {
                 throw new Error(result.error);
             }
@@ -69,6 +83,7 @@ export default function BuyCreditsPage() {
                 payload: result.payload,
                 value: amount
             });
+            setShowPix(true);
         } catch (error: any) {
             toast({
                 variant: 'destructive',
@@ -80,102 +95,99 @@ export default function BuyCreditsPage() {
         }
     }
 
+     const handleCopy = () => {
+        if (!pixData) return;
+        navigator.clipboard.writeText(pixData.payload);
+        setIsCopied(true);
+        toast({
+        title: "Código Copiado!",
+        description: "O código PIX Copia e Cola foi copiado para a área de transferência.",
+        });
+        setTimeout(() => setIsCopied(false), 2000);
+    };
+
     if (isLoading) {
         return <div className="flex flex-1 items-center justify-center p-6"><Loader2 className="h-8 w-8 animate-spin" /></div>
     }
 
+    const credits = Math.floor(amount / 5);
+
     return (
-        <>
-            <div className="flex flex-1 flex-col gap-4 p-4 sm:gap-6 sm:p-10 animate-fade-in">
-                <div className="flex items-center gap-4">
-                    <Button asChild variant="outline" size="icon" className="h-7 w-7">
-                        <Link href="/dashboard">
-                            <ArrowLeft className="h-4 w-4" />
-                            <span className="sr-only">Voltar</span>
-                        </Link>
-                    </Button>
-                    <h1 className="flex-1 shrink-0 whitespace-nowrap text-xl font-semibold tracking-tight sm:grow-0">
-                        Comprar Créditos
-                    </h1>
-                </div>
+        <div className="flex flex-1 justify-center p-4 sm:p-6 md:p-10 animate-fade-in">
+            <div className={cn("relative w-full max-w-5xl transition-all duration-500 ease-in-out", showPix ? "-translate-x-1/4" : "translate-x-0")}>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
+                    {/* Coluna Esquerda - Seleção */}
+                    <div className="space-y-8">
+                         <div className="space-y-2">
+                             <h1 className="text-2xl font-bold">Comprar Créditos</h1>
+                             <p className="text-muted-foreground">Registre quantos clientes quiser, pague somente quando o cliente for ativado com assinatura ou pagamento recorrente.</p>
+                         </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    {/* Coluna Direita - Seleção */}
-                    <div className="lg:col-span-2 space-y-8">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Quantos créditos deseja comprar?</CardTitle>
-                                <CardDescription>Cada R$ 5,00 equivale a 1 crédito para gerenciar 1 cliente por mês.</CardDescription>
-                            </CardHeader>
-                            <CardContent className="flex flex-col items-center gap-6">
-                                <div className="flex items-center gap-4">
-                                    <Button size="icon" variant="outline" onClick={() => handleAmountChange(amount - 5)} disabled={amount <= 5}>
-                                        <Minus className="h-6 w-6" />
-                                    </Button>
-                                    <div className="text-5xl font-bold tracking-tight w-48 text-center">
-                                        <span className="text-3xl text-muted-foreground mr-1">R$</span>{amount.toFixed(2).replace('.', ',')}
-                                    </div>
-                                    <Button size="icon" variant="outline" onClick={() => handleAmountChange(amount + 5)}>
-                                        <Plus className="h-6 w-6" />
-                                    </Button>
+                         <div className="flex flex-col items-center gap-6">
+                            <div className="flex items-center gap-4">
+                                <Button size="icon" variant="outline" onClick={() => handleAmountChange(amount - 5)} disabled={amount <= 5}>
+                                    <Minus className="h-6 w-6" />
+                                </Button>
+                                <div className="text-5xl font-bold tracking-tight w-48 text-center">
+                                    <span className="text-3xl text-muted-foreground mr-1">R$</span>{amount.toFixed(2).replace('.', ',')}
                                 </div>
-                                <div className="flex flex-wrap items-center justify-center gap-2">
-                                    {presetAmounts.map(val => (
-                                        <Button key={val} variant="outline" size="sm" onClick={() => handleAmountChange(val)}>
-                                            R$ {val}
-                                        </Button>
-                                    ))}
-                                </div>
-                            </CardContent>
-                        </Card>
-
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Forma de Pagamento</CardTitle>
-                                <CardDescription>Escolha como deseja pagar.</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <RadioGroupItem value="credit_card" id="credit_card" className="sr-only peer" />
-                                    <label
-                                        htmlFor="credit_card"
-                                        className={cn("flex flex-col gap-2 rounded-lg border-2 p-4 cursor-pointer transition-all", "peer-data-[state=checked]:border-primary peer-data-[state=checked]:shadow-md", "opacity-50 cursor-not-allowed")}
-                                    >
-                                        <div className="flex items-center justify-between">
-                                            <span className="font-bold text-base">Cartão de Crédito (em breve)</span>
-                                            <div className={cn("w-5 h-5 rounded-full border-2 flex items-center justify-center", paymentMethod === 'credit_card' ? "bg-primary border-primary" : "border-muted-foreground")}>
-                                                {paymentMethod === 'credit_card' && <Check className="w-4 h-4 text-white" />}
-                                            </div>
-                                        </div>
-                                    </label>
-                                    <RadioGroupItem value="pix" id="pix" className="sr-only peer" />
+                                <Button size="icon" variant="outline" onClick={() => handleAmountChange(amount + 5)}>
+                                    <Plus className="h-6 w-6" />
+                                </Button>
+                            </div>
+                            <div className="flex flex-wrap items-center justify-center gap-2">
+                                {presetAmounts.map(val => (
+                                    <Button key={val} variant="outline" size="sm" onClick={() => handleAmountChange(val)}>
+                                        R$ {val}
+                                    </Button>
+                                ))}
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <h2 className="text-lg font-semibold mb-4">Forma de Pagamento</h2>
+                            <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                 <RadioGroupItem value="pix" id="pix" className="sr-only peer" />
                                     <label
                                         htmlFor="pix"
-                                        className={cn("flex flex-col gap-2 rounded-lg border-2 p-4 cursor-pointer transition-all", "peer-data-[state=checked]:border-primary peer-data-[state=checked]:shadow-md")}
+                                        className={cn(
+                                            "flex items-start gap-3 rounded-lg border-2 p-4 cursor-pointer transition-all",
+                                            paymentMethod === 'pix' ? "border-green-500 shadow-md" : "border-border"
+                                        )}
                                     >
-                                        <div className="flex items-center justify-between">
+                                        <div className={cn("mt-1 flex h-5 w-5 items-center justify-center rounded-full border-2", paymentMethod === 'pix' ? "border-green-500 bg-green-500" : "border-muted-foreground")}>
+                                            {paymentMethod === 'pix' && <Check className="h-3 w-3 text-white" />}
+                                        </div>
+                                        <div>
                                             <span className="font-bold text-base">PIX</span>
-                                            <div className={cn("w-5 h-5 rounded-full border-2 flex items-center justify-center", paymentMethod === 'pix' ? "bg-primary border-primary" : "border-muted-foreground")}>
-                                                {paymentMethod === 'pix' && <Check className="w-4 h-4 text-white" />}
-                                            </div>
+                                            <p className="text-xs text-muted-foreground mt-1">Aprovação imediata.</p>
                                         </div>
                                     </label>
-                                </RadioGroup>
-                            </CardContent>
-                        </Card>
 
-                        <div className="flex justify-end">
-                            <Button size="lg" className="text-lg py-6" onClick={handlePayment} disabled={isProcessingPayment}>
-                                {isProcessingPayment ? <Loader2 className="h-6 w-6 animate-spin" /> : 'Realizar Pagamento'}
-                            </Button>
+                                <RadioGroupItem value="credit_card" id="credit_card" className="sr-only peer" />
+                                <label
+                                    htmlFor="credit_card"
+                                    className={cn(
+                                        "flex items-start gap-3 rounded-lg border-2 p-4 cursor-pointer transition-all opacity-50 cursor-not-allowed",
+                                        paymentMethod === 'credit_card' ? "border-green-500 shadow-md" : "border-border"
+                                    )}
+                                >
+                                     <div className={cn("mt-1 flex h-5 w-5 items-center justify-center rounded-full border-2", paymentMethod === 'credit_card' ? "border-green-500 bg-green-500" : "border-muted-foreground")}>
+                                        {paymentMethod === 'credit_card' && <Check className="h-3 w-3 text-white" />}
+                                    </div>
+                                    <div>
+                                        <span className="font-bold text-base">Cartão de Crédito</span>
+                                         <p className="text-xs text-muted-foreground mt-1">Em breve.</p>
+                                    </div>
+                                </label>
+                            </RadioGroup>
                         </div>
                     </div>
-
-                    {/* Coluna Esquerda - Resumo */}
+                    {/* Coluna Direita - Resumo */}
                     <div className="lg:col-span-1">
                         <Card className="sticky top-24">
                             <CardHeader>
-                                <CardTitle className="flex items-center gap-2">
+                                <CardTitle className="flex items-center gap-2 text-lg">
                                     <ShoppingCart className="h-5 w-5" />
                                     Resumo do Pedido
                                 </CardTitle>
@@ -195,8 +207,8 @@ export default function BuyCreditsPage() {
                                 )}
                                 <Separator />
                                 <div className="flex justify-between items-center text-sm">
-                                    <span className="text-muted-foreground">Créditos a adicionar:</span>
-                                    <span className="font-semibold">{amount / 5} créditos</span>
+                                    <span className="text-muted-foreground">{credits} crédito{credits > 1 ? 's' : ''}</span>
+                                    <span className="font-semibold">1 crédito = 1 cliente ativo</span>
                                 </div>
                                 <div className="flex justify-between items-center text-lg">
                                     <span className="text-muted-foreground">Valor total:</span>
@@ -204,7 +216,7 @@ export default function BuyCreditsPage() {
                                 </div>
                                 <Separator />
                                 <div>
-                                    <h4 className="font-semibold mb-3">Benefícios inclusos:</h4>
+                                    <h4 className="font-semibold mb-3 text-base">Benefícios inclusos:</h4>
                                     <div className="space-y-2">
                                         {benefitItems.map((item, index) => (
                                             <div key={index} className="flex items-center gap-3 text-sm">
@@ -214,19 +226,47 @@ export default function BuyCreditsPage() {
                                         ))}
                                     </div>
                                 </div>
+                                 <div className="pt-4">
+                                    <Button style={{ width: '40%', backgroundColor: '#4ade80' }} size="lg" className="text-lg py-6" onClick={handlePayment} disabled={isProcessingPayment}>
+                                        {isProcessingPayment ? <Loader2 className="h-6 w-6 animate-spin" /> : 'Realizar Pagamento'}
+                                    </Button>
+                                </div>
                             </CardContent>
                         </Card>
                     </div>
                 </div>
             </div>
-            
-            {pixData && (
-                <PixQRCodeModal 
-                    isOpen={!!pixData}
-                    onClose={() => setPixData(null)}
-                    pixData={pixData}
-                />
-            )}
-        </>
+             <div className={cn("absolute top-0 right-0 h-full w-1/3 flex flex-col items-center justify-center transition-all duration-500 ease-in-out", showPix ? "translate-x-0 opacity-100" : "translate-x-full opacity-0 pointer-events-none")}>
+                {pixData && (
+                    <div className="flex flex-col items-center gap-4 py-4 text-center">
+                        <h2 className="text-xl font-bold">Pague com PIX</h2>
+                        <p className="text-muted-foreground max-w-xs">Abra o app do seu banco e escaneie o QR Code ou use o código abaixo.</p>
+                        <div className="p-2 bg-white rounded-lg border mt-4">
+                            <QRCode value={pixData.payload} size={220} />
+                        </div>
+                         <div className="w-full max-w-sm space-y-2 mt-4">
+                            <p className="text-sm font-medium text-center">PIX Copia e Cola</p>
+                            <div className="relative">
+                                <textarea
+                                    readOnly
+                                    value={pixData.payload}
+                                    className="w-full p-2 pr-10 text-xs border rounded-md bg-muted text-muted-foreground h-20 resize-none"
+                                />
+                                <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    className="absolute top-1/2 right-1 -translate-y-1/2 h-8 w-8"
+                                    onClick={handleCopy}
+                                >
+                                    {isCopied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </div>
+        </div>
     )
 }
+
+    
