@@ -55,15 +55,10 @@ export async function saveProfile(formData: ProfileFormData & { is_completed: bo
     signature: formData.signature,
     sex: formData.sex,
     avatar_url: avatarUrl,
-    phone: formData.phone,
     updated_at: new Date().toISOString(),
     is_completed: formData.is_completed,
-<<<<<<< HEAD
     email: user.email, // Incluindo email para o webhook
     asaas_customer_id: asaasCustomerId, // 2. Salvar a STRING do ID do Asaas
-=======
-    email: user.email,
->>>>>>> 806b9d1cb4f0ce30ac3a48935ca0a1bffcabeb3e
   };
 
   const { data: savedProfile, error } = await supabase.from('profiles').upsert(profileData).select().single();
@@ -73,40 +68,6 @@ export async function saveProfile(formData: ProfileFormData & { is_completed: bo
     return { error: { message: `Não foi possível salvar o perfil: ${error.message}` } }
   }
   
-  // Após salvar o perfil, cria o cliente no Asaas para o próprio usuário/empresa
-  if (savedProfile) {
-    // A função `getOrCreateAsaasCustomer` espera um tipo `Cliente`, mas podemos adaptar
-    // o `Profile` para se parecer com um cliente para essa chamada.
-    const profileAsClientData = {
-        id: savedProfile.id,
-        user_id: savedProfile.id,
-        full_name: savedProfile.full_name,
-        company_name: savedProfile.company_name,
-        email: savedProfile.email,
-        cpf: savedProfile.cpf,
-        cnpj: savedProfile.cnpj,
-        address: savedProfile.address,
-        // Preencha outros campos necessários se a função `getOrCreateAsaasCustomer` exigir
-    };
-    
-    // @ts-ignore
-    const { asaas_customer_id, error: asaasError } = await getOrCreateAsaasCustomer(profileAsClientData, user.id);
-
-    if (asaasError) {
-        console.error(`Falha ao criar/buscar o usuário no Asaas: ${asaasError.message}`);
-        // Considerar como lidar com este erro. Por enquanto, apenas logamos.
-    } else if (asaas_customer_id) {
-        // Salva o ID do cliente Asaas no perfil do usuário no Supabase
-        const { error: updateAsaasIdError } = await supabase
-            .from('profiles')
-            .update({ asaas_customer_id: asaas_customer_id })
-            .eq('id', user.id);
-            
-        if (updateAsaasIdError) {
-            console.error("Falha ao salvar asaas_customer_id no perfil do usuário:", updateAsaasIdError);
-        }
-    }
-  }
     if(savedProfile) {
       try {
           await sendProfileWebhook('update', savedProfile);
@@ -131,7 +92,7 @@ export async function saveProfile(formData: ProfileFormData & { is_completed: bo
       }, 60000); // 1 minuto
   }
 
-  return { data, error: null }
+  return { error: null }
 }
 
 
