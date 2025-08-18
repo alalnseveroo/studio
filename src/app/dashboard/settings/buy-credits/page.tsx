@@ -28,7 +28,12 @@ const benefitItems = [
     { text: "E-mail marketing (em breve)", icon: Star },
 ];
 
-const presetAmounts = [15, 30, 50, 100];
+const presetOptions = [
+    { label: '2 clientes', value: 10 },
+    { label: '5 clientes', value: 25 },
+    { label: '7 clientes', value: 35 },
+    { label: '11 clientes', value: 55 },
+]
 
 interface PixData {
   qrCodeImage: string;
@@ -37,7 +42,7 @@ interface PixData {
 }
 
 export default function BuyCreditsPage() {
-    const [amount, setAmount] = useState(15);
+    const [amount, setAmount] = useState(10);
     const [paymentMethod, setPaymentMethod] = useState('pix');
     const [userProfile, setUserProfile] = useState<Profile & { email?: string } | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -146,9 +151,9 @@ export default function BuyCreditsPage() {
                                 </div>
                             </div>
                             <div className="flex flex-wrap items-center justify-start gap-2 w-full">
-                                {presetAmounts.map(val => (
-                                    <Button key={val} variant="outline" size="sm" onClick={() => handleAmountChange(val)} className="bg-muted hover:bg-muted/80">
-                                        R$ {val}
+                                {presetOptions.map((opt) => (
+                                    <Button key={opt.value} variant="outline" size="sm" onClick={() => handleAmountChange(opt.value)} className="bg-muted hover:bg-muted/80 rounded-full">
+                                        {opt.label}
                                     </Button>
                                 ))}
                             </div>
@@ -215,7 +220,7 @@ export default function BuyCreditsPage() {
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-4">
-                                {userProfile && (
+                                {userProfile && userProfile.email && (
                                     <div className="flex items-center gap-3">
                                         <Avatar>
                                             <AvatarImage src={userProfile.avatar_url || ''} />
