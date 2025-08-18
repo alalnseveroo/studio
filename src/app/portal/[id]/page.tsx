@@ -1,17 +1,17 @@
 
-
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { useParams } from 'next/navigation'
+import { useParams }s from 'next/navigation'
+import Image from 'next/image'
+import Link from 'next/link'
 import { getClientById } from '@/lib/actions/clients'
 import { getContractsForClientPortal } from '@/lib/actions/contratos'
 import { getChargesForClientPortal } from '@/lib/actions/cobrancas'
 import { getProfile } from '@/lib/actions/profile'
-import { sendPortalOtp } from '@/lib/actions/auth'
 import { createClient } from '@/lib/supabase/client'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { AlertCircle, User, FileText, Check, Clock, Verified, Briefcase, Mail, Download, CreditCard, Lock, Loader2, DollarSign, Calendar, CheckCircle, MessageSquare } from 'lucide-react'
+import { AlertCircle, User, FileText, Check, Clock, Verified, Briefcase, Mail, Download, CreditCard, Lock, Loader2, DollarSign, Calendar, CheckCircle, MessageSquare, ArrowUpRight, ChatBubbleIcon } from 'lucide-react'
 import {
   AlertDialog,
   AlertDialogContent,
@@ -24,10 +24,8 @@ import {
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp"
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
-import Link from 'next/link'
 import type { Cliente, Contrato, Profile, Cobranca, Proposta } from '@/lib/types'
 import { Badge } from '@/components/ui/badge'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Separator } from '@/components/ui/separator'
 import { Card, CardHeader, CardContent } from '@/components/ui/card'
 import PixQRCode from '@/components/pix-qrcode'
@@ -36,37 +34,6 @@ import { cn } from '@/lib/utils'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { useToast } from '@/hooks/use-toast'
 import { ChatInterface } from '@/components/chat-interface'
-
-
-interface InfoRowProps {
-  icon: React.ElementType;
-  label: string;
-  value: React.ReactNode;
-  isVerified?: boolean;
-}
-
-const InfoRow: React.FC<InfoRowProps> = ({ icon: Icon, label, value, isVerified }) => (
-  <div className="flex items-start gap-4">
-    <Icon className="h-5 w-5 text-primary mt-1" />
-    <div className="flex-1">
-      <p className="text-sm font-semibold">{label}</p>
-      <div className="text-sm text-muted-foreground flex items-center gap-2">
-        {value}
-        {isVerified && <Badge variant="outline" className="border-green-500 bg-green-500/10 text-green-700 font-normal text-xs px-1.5 py-0">Verificado</Badge>}
-      </div>
-    </div>
-  </div>
-);
-
-const ProposalDetailItem = ({ icon: Icon, label, value }: { icon: React.ElementType, label: string, value: React.ReactNode }) => (
-    <div className="flex items-start">
-        <Icon className="h-5 w-5 text-muted-foreground mt-1 mr-4 flex-shrink-0" />
-        <div className="flex-1">
-            <p className="font-semibold text-sm">{label}</p>
-            <p className="text-sm text-muted-foreground">{value}</p>
-        </div>
-    </div>
-);
 
 
 export default function ClientPortalPage() {
@@ -81,7 +48,6 @@ export default function ClientPortalPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   
-  // States for invoice download verification
   const [isEmailVerifiedForDownload, setIsEmailVerifiedForDownload] = useState(false);
   const [verificationModalOpen, setVerificationModalOpen] = useState(false);
   const [chargeForDownload, setChargeForDownload] = useState<Cobranca | null>(null);
@@ -89,21 +55,23 @@ export default function ClientPortalPage() {
   const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
 
+  const [activeContractTab, setActiveContractTab] = useState<'pending' | 'contracted'>('pending');
+  const [isChatOpen, setIsChatOpen] = useState(false);
+
   const { toast } = useToast()
   
   const getStatusInfo = (status: string, dueDate: string) => {
     if (status === 'pago') {
-      return { text: 'Pago', className: 'border-green-500 bg-green-500/10 text-green-700' };
+      return { text: 'Pago', className: 'bg-green-100 text-green-800' };
     }
     if (isPast(new Date(dueDate))) {
-      return { text: 'Atrasado', className: 'border-red-500 bg-red-500/10 text-red-700' };
+      return { text: 'Atrasado', className: 'bg-red-100 text-red-800' };
     }
-    return { text: 'Pendente', className: 'border-yellow-500 bg-yellow-500/10 text-yellow-700' };
+    return { text: 'Pendente', className: 'bg-yellow-100 text-yellow-800' };
   }
 
   const fetchData = useCallback(async () => {
     if (!clientId) return
-    
     setError(null)
     
     try {
@@ -143,45 +111,8 @@ export default function ClientPortalPage() {
   useEffect(() => {
     setIsLoading(true);
     fetchData()
-  }, [fetchData]) // Initial fetch
+  }, [fetchData]) 
 
-  useEffect(() => {
-    if (!clientId) return;
-
-    const supabase = createClient();
-    const channels = supabase
-      .channel(`portal-${clientId}`)
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'contratos', filter: `cliente_id=eq.${clientId}` },
-        (payload) => {
-          console.log('Realtime update on contratos:', payload)
-          fetchData()
-        }
-      )
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'cobrancas', filter: `cliente_id=eq.${clientId}` },
-        (payload) => {
-          console.log('Realtime update on cobrancas:', payload)
-          fetchData()
-        }
-      )
-       .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'chat_messages', filter: `client_id=eq.${clientId}` },
-        () => {
-          // A interface de chat já tem seu próprio listener,
-          // mas uma revalidação geral pode ser útil se outras partes do portal dependerem disso.
-        }
-      )
-      .subscribe()
-
-    return () => {
-      supabase.removeChannel(channels);
-    }
-  }, [clientId, fetchData]);
-  
   const handleDownloadClick = (charge: Cobranca) => {
     if (isEmailVerifiedForDownload && charge.invoice_url) {
         window.open(charge.invoice_url, '_blank');
@@ -193,61 +124,9 @@ export default function ClientPortalPage() {
     }
   };
 
-  const handleSendVerificationCode = async () => {
-    if (!chargeForDownload) return;
-    setIsVerifyingOtp(true);
-    const { success, error, message } = await sendPortalOtp(chargeForDownload.id);
-    setIsVerifyingOtp(false);
-    if (error) {
-        toast({ variant: 'destructive', title: 'Erro', description: error.message });
-    } else if (success) {
-        toast({ title: 'Código Enviado!', description: message });
-        setOtpSent(true);
-    }
-  };
-  
-  const handleVerifyOtpAndDownload = async () => {
-      if (!chargeForDownload || !chargeForDownload.invoice_url || otp.length < 6) return;
-      
-      const supabase = createClient();
-      setIsVerifyingOtp(true);
-      const { data, error } = await supabase
-        .from('cobrancas')
-        .select('download_otp, download_otp_expires_at')
-        .eq('id', chargeForDownload.id)
-        .single();
-      
-      if (error || !data) {
-           toast({ variant: 'destructive', title: 'Erro', description: 'Não foi possível verificar o código.' });
-           setIsVerifyingOtp(false);
-           return;
-      }
-
-      if (data.download_otp !== otp) {
-          toast({ variant: 'destructive', title: 'Código Inválido', description: 'O código inserido está incorreto.' });
-          setIsVerifyingOtp(false);
-          return;
-      }
-      
-       if (data.download_otp_expires_at && new Date() > new Date(data.download_otp_expires_at)) {
-          toast({ variant: 'destructive', title: 'Código Expirado', description: 'Por favor, solicite um novo código.' });
-          setIsVerifyingOtp(false);
-          setOtpSent(false);
-          setOtp('');
-          return;
-      }
-
-      setIsVerifyingOtp(false);
-      setVerificationModalOpen(false);
-      setIsEmailVerifiedForDownload(true);
-      toast({ title: 'Verificado!', description: 'Seu e-mail foi validado com sucesso.' });
-      window.open(chargeForDownload.invoice_url, '_blank');
-  };
-
-
 
   if (isLoading && !client) {
-    return <div className="flex min-h-screen items-center justify-center"><p>Carregando...</p></div>
+    return <div className="flex min-h-screen items-center justify-center bg-white"><Loader2 className="h-10 w-10 animate-spin text-gray-700"/></div>
   }
 
   if (error || !client) {
@@ -264,268 +143,222 @@ export default function ClientPortalPage() {
      )
   }
 
-  const displayName = client.full_name || client.company_name || 'Cliente'
-  const fallbackLetter = displayName.charAt(0).toUpperCase()
-  const providerName = provider?.full_name || provider?.company_name || 'Assistente Virtual'
-  const providerFallbackLetter = providerName.charAt(0).toUpperCase();
+  const displayName = client.full_name || client.company_name || 'Cliente';
+  const providerName = provider?.full_name || provider?.company_name || 'Assistente Virtual';
   
-  const activeProposal = contracts.length > 0 ? contracts[0].propostas : null;
+  const activeProposal = contracts.length > 0 ? contracts.find(c => c.status === 'signed_by_client')?.propostas || contracts[0].propostas : null;
+  const pendingContracts = contracts.filter(c => c.status === 'signed_by_provider');
+  const contractedContracts = contracts.filter(c => c.status === 'signed_by_client');
 
-
-  const getStatusVariant = (status: string) => {
-    switch (status) {
-      case 'signed_by_provider': return 'outline'
-      case 'signed_by_client': return 'default'
-      default: return 'secondary'
+  const getContractStatusInfo = (status: string) => {
+    switch(status) {
+        case 'signed_by_provider': return { text: 'Pendente', className: 'bg-[#f0f2f5] text-[#111418]'};
+        case 'signed_by_client': return { text: 'Contratado', className: 'bg-green-100 text-green-800'};
+        default: return { text: 'Rascunho', className: 'bg-gray-100 text-gray-800'};
     }
-  }
-
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'draft': return 'Rascunho'
-      case 'signed_by_provider': return 'Aguardando sua Assinatura'
-      case 'signed_by_client': return 'Finalizado'
-      default: return 'Desconhecido'
-    }
-  }
-  
-  const getStatusIcon = (status: string) => {
-     switch (status) {
-      case 'signed_by_provider': return <Clock className="h-4 w-4 text-orange-500" />
-      case 'signed_by_client': return <Check className="h-4 w-4 text-green-500" />
-      default: return <FileText className="h-4 w-4" />
-    }
-  }
-  
-  const getOverallStatus = () => {
-    const hasPending = contracts.some(c => c.status === 'signed_by_provider');
-    if (hasPending) {
-        return <Badge variant="outline" className="border-orange-500 bg-orange-500/10 text-orange-700">Pendente de assinatura</Badge>;
-    }
-     const allSigned = contracts.every(c => c.status === 'signed_by_client');
-    if (contracts.length > 0 && allSigned) {
-        return <Badge variant="outline" className="border-green-500 bg-green-500/10 text-green-700">Ativo</Badge>;
-    }
-    return <Badge variant="secondary">Nenhum contrato ativo</Badge>;
   }
 
 
   return (
     <>
-    <div className="relative min-h-screen w-full bg-background">
-      <div className="absolute left-[60px] top-[60px] flex items-end gap-4">
-        <div className="relative">
-            <Avatar className="h-40 w-40 border-4 border-background shadow-md">
-                <AvatarImage src={client.avatar_url || undefined} alt={`Avatar de ${displayName}`} />
-                <AvatarFallback className="text-6xl">
-                    {fallbackLetter}
-                </AvatarFallback>
+    <div className="relative flex size-full min-h-screen flex-col bg-white group/design-root overflow-x-hidden" style={{fontFamily: 'Inter, "Noto Sans", sans-serif'}}>
+      <div className="layout-container flex h-full grow flex-col">
+        <header className="flex items-center justify-between whitespace-nowrap border-b border-solid border-b-[#f0f2f5] px-10 py-3">
+          <div className="flex items-center gap-4 text-[#111418]">
+            <div className="size-6">
+                 <Image 
+                    src="https://pouynmrblzvwlhrfyins.supabase.co/storage/v1/object/public/icons/imags/Untitled%20folder/Crivo.png" 
+                    alt="Crivo Logo"
+                    width={80}
+                    height={30}
+                />
+            </div>
+            <h2 className="text-[#111418] text-lg font-bold leading-tight tracking-[-0.015em]">Portal do Cliente</h2>
+          </div>
+          <div className="flex flex-1 justify-end gap-8">
+            <div className="flex items-center gap-9">
+              <a className="text-[#111418] text-sm font-medium leading-normal" href="#proposta">Proposta</a>
+              <a className="text-[#111418] text-sm font-medium leading-normal" href="#contratos">Contratos</a>
+              <a className="text-[#111418] text-sm font-medium leading-normal" href="#pagamentos">Pagamentos</a>
+              <a className="text-[#111418] text-sm font-medium leading-normal" href="#chat">Chat</a>
+            </div>
+             <Avatar className="size-10">
+                <AvatarImage src={client.avatar_url || ''} alt={displayName} />
+                <AvatarFallback>{displayName.charAt(0)}</AvatarFallback>
             </Avatar>
-            {provider && (
-              <Avatar className="absolute bottom-0 right-0 h-16 w-16 border-4 border-background">
-                 <AvatarImage src={undefined} alt={`Avatar de ${providerName}`} />
-                 <AvatarFallback>{providerFallbackLetter}</AvatarFallback>
-              </Avatar>
-            )}
-        </div>
-        <div className="space-y-1 pb-2">
-            <h1 className="text-2xl font-bold">{displayName}</h1>
-            <p className="text-muted-foreground">Em parceria com {providerName}</p>
+          </div>
+        </header>
+
+        <div className="px-4 md:px-40 flex flex-1 justify-center py-5">
+          <div className="layout-content-container flex flex-col max-w-[960px] flex-1">
+            <div className="flex flex-wrap justify-between gap-3 p-4">
+              <p className="text-[#111418] tracking-light text-[32px] font-bold leading-tight min-w-72">Bem-vindo(a), {displayName.split(' ')[0]}</p>
+            </div>
+            
+            <h2 id="prestador" className="text-[#111418] text-[22px] font-bold leading-tight tracking-[-0.015em] px-4 pb-3 pt-5">Detalhes da Assistente</h2>
+            <div className="p-4">
+              <div className="flex items-stretch justify-between gap-4 rounded-lg bg-white p-4 shadow-[0_0_4px_rgba(0,0,0,0.1)]">
+                <div className="flex flex-[2_2_0px] flex-col gap-4">
+                  <div className="flex flex-col gap-1">
+                    <p className="text-[#111418] text-base font-bold leading-tight">Assistente: {providerName}</p>
+                    <p className="text-[#60758a] text-sm font-normal leading-normal">Sua assistente dedicada para todas as suas necessidades.</p>
+                  </div>
+                   <Button asChild variant="outline" className="w-fit">
+                        <Link href={`/assistente/${provider?.id}`}> {/* Ajustar para slug se disponível */}
+                            Ver Perfil Público <ArrowUpRight className="ml-2 h-4 w-4"/>
+                        </Link>
+                    </Button>
+                </div>
+                 <Avatar className="w-full rounded-lg flex-1 h-auto aspect-video">
+                    <AvatarImage src={provider?.avatar_url || ''} alt={providerName} className="object-cover"/>
+                    <AvatarFallback>{providerName.charAt(0)}</AvatarFallback>
+                </Avatar>
+              </div>
+            </div>
+
+            <h2 id="proposta" className="text-[#111418] text-[22px] font-bold leading-tight tracking-[-0.015em] px-4 pb-3 pt-5">Proposta de Serviço</h2>
+            <div className="p-4 grid grid-cols-[25%_1fr] gap-x-6">
+              {activeProposal ? (
+                <>
+                 <div className="col-span-2 grid grid-cols-subgrid border-t border-t-[#dbe0e6] py-5">
+                    <p className="text-[#60758a] text-sm font-normal leading-normal">Serviços</p>
+                    <p className="text-[#111418] text-sm font-normal leading-normal">{activeProposal.services.join(', ')}</p>
+                </div>
+                <div className="col-span-2 grid grid-cols-subgrid border-t border-t-[#dbe0e6] py-5">
+                    <p className="text-[#60758a] text-sm font-normal leading-normal">Valores</p>
+                    <p className="text-[#111418] text-sm font-normal leading-normal">R$ {Number(activeProposal.value).toFixed(2)} / {activeProposal.payment_type === 'fixed' ? 'mês' : activeProposal.payment_type}</p>
+                </div>
+                 <div className="col-span-2 grid grid-cols-subgrid border-t border-t-[#dbe0e6] py-5">
+                    <p className="text-[#60758a] text-sm font-normal leading-normal">Vencimento</p>
+                    <p className="text-[#111418] text-sm font-normal leading-normal">Todo dia {activeProposal.payment_day}</p>
+                </div>
+                </>
+              ) : (
+                 <p className="col-span-2 text-sm text-muted-foreground border-t border-t-[#dbe0e6] py-5">Nenhuma proposta ativa vinculada a um contrato.</p>
+              )}
+            </div>
+
+            <h2 id="contratos" className="text-[#111418] text-[22px] font-bold leading-tight tracking-[-0.015em] px-4 pb-3 pt-5">Contratos</h2>
+            <div className="pb-3">
+              <div className="flex border-b border-[#dbe0e6] px-4 gap-8">
+                 <button onClick={() => setActiveContractTab('pending')} className={cn("flex flex-col items-center justify-center border-b-[3px] pb-[13px] pt-4", activeContractTab === 'pending' ? 'border-b-[#111418] text-[#111418]' : 'border-b-transparent text-[#60758a]')}>
+                    <p className="text-sm font-bold leading-normal tracking-[0.015em]">Pendentes ({pendingContracts.length})</p>
+                </button>
+                 <button onClick={() => setActiveContractTab('contracted')} className={cn("flex flex-col items-center justify-center border-b-[3px] pb-[13px] pt-4", activeContractTab === 'contracted' ? 'border-b-[#111418] text-[#111418]' : 'border-b-transparent text-[#60758a]')}>
+                    <p className="text-sm font-bold leading-normal tracking-[0.015em]">Contratados ({contractedContracts.length})</p>
+                </button>
+              </div>
+            </div>
+
+            <div className="px-4 py-3">
+              <div className="flex overflow-hidden rounded-lg border border-[#dbe0e6] bg-white">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-white hover:bg-white">
+                      <TableHead className="w-[400px]">Nome do Contrato</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Ação</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {(activeContractTab === 'pending' ? pendingContracts : contractedContracts).map(contract => {
+                      const status = getContractStatusInfo(contract.status);
+                      return (
+                        <TableRow key={contract.id}>
+                          <TableCell className="font-medium">{contract.propostas?.name || 'Contrato de Serviço'}</TableCell>
+                          <TableCell><Badge variant="outline" className={cn("font-normal", status.className)}>{status.text}</Badge></TableCell>
+                          <TableCell className="text-right">
+                            <Button asChild variant="link" className="text-primary p-0 h-auto">
+                              <Link href={`/portal/${client.id}/contrato/${contract.id}`}>Visualizar</Link>
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      )
+                    })}
+                     {(activeContractTab === 'pending' && pendingContracts.length === 0) && (
+                        <TableRow><TableCell colSpan={3} className="text-center h-24">Nenhum contrato pendente.</TableCell></TableRow>
+                     )}
+                     {(activeContractTab === 'contracted' && contractedContracts.length === 0) && (
+                        <TableRow><TableCell colSpan={3} className="text-center h-24">Nenhum contrato assinado.</TableCell></TableRow>
+                     )}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+
+            <h2 id="pagamentos" className="text-[#111418] text-[22px] font-bold leading-tight tracking-[-0.015em] px-4 pb-3 pt-5">Faturas e Recibos</h2>
+            <div className="px-4 py-3">
+              <div className="flex overflow-hidden rounded-lg border border-[#dbe0e6] bg-white">
+                 <Table>
+                  <TableHeader>
+                    <TableRow className="bg-white hover:bg-white">
+                        <TableHead>Vencimento</TableHead>
+                        <TableHead>Valor</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="text-right">Ações</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {charges.length > 0 ? charges.map(charge => {
+                        const status = getStatusInfo(charge.status, charge.due_date);
+                        const isInvoiceAvailable = charge.status === 'pago' && !!charge.invoice_url;
+                        return (
+                         <TableRow key={charge.id}>
+                            <TableCell>{format(new Date(charge.due_date), 'dd/MM/yyyy')}</TableCell>
+                            <TableCell>R$ {Number(charge.value).toFixed(2)}</TableCell>
+                            <TableCell><Badge variant="outline" className={cn("font-normal", status.className)}>{status.text}</Badge></TableCell>
+                            <TableCell className="text-right space-x-2">
+                               {isInvoiceAvailable ? (
+                                    <Button variant="outline" size="sm" onClick={() => handleDownloadClick(charge)}>Nota Fiscal</Button>
+                               ) : (
+                                    <Button variant="outline" size="sm" disabled>Nota Fiscal</Button>
+                               )}
+                               {charge.status !== 'pago' && (
+                                    <Button size="sm" onClick={() => setSelectedCharge(charge)}>Pagar Agora</Button>
+                               )}
+                            </TableCell>
+                        </TableRow>
+                        )
+                    }) : (
+                        <TableRow><TableCell colSpan={4} className="text-center h-24">Nenhuma cobrança encontrada.</TableCell></TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+            
+            <h2 id="chat" className="text-[#111418] text-[22px] font-bold leading-tight tracking-[-0.015em] px-4 pb-3 pt-5">Chat</h2>
+            <div className="px-4">
+              <ChatInterface clientId={clientId} isUser={false} />
+            </div>
+
+            <div className="flex justify-end overflow-hidden px-5 pb-5 fixed bottom-5 right-5 z-20">
+              <Button onClick={() => setIsChatOpen(true)} className="rounded-full h-14 w-14 p-0 shadow-lg">
+                <MessageSquare className="h-6 w-6"/>
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
-
-      <main className="w-full max-w-4xl space-y-6 px-4 pb-8 pt-48 md:pl-[60px] md:pt-64">
-        <Tabs defaultValue="dados" className="w-full">
-            <TabsList>
-                <TabsTrigger value="dados">Dados</TabsTrigger>
-                <TabsTrigger value="proposta">Proposta</TabsTrigger>
-                <TabsTrigger value="contratos">Contratos</TabsTrigger>
-                <TabsTrigger value="pagamentos">Pagamentos e notas</TabsTrigger>
-                <TabsTrigger value="chat">Chat</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="dados" className="mt-6 space-y-6">
-                <h2 className="text-xl font-bold">Dados Gerais</h2>
-                <div className="space-y-6">
-                    <InfoRow icon={Briefcase} label="Assistente Virtual" value={providerName} />
-                    <InfoRow icon={Mail} label="E-mail" value={provider?.email || 'Não informado'} isVerified={!!provider?.email} />
-                    <InfoRow icon={User} label="CNPJ / CPF" value={provider?.cnpj || provider?.cpf || 'Não informado'} />
-                    <Separator />
-                    <InfoRow icon={FileText} label="Status" value={getOverallStatus()} />
-                    <InfoRow 
-                        icon={Check} 
-                        label="Objetivo" 
-                        value={contracts.length > 0 ? (contracts[0].propostas?.name || 'Serviços de Assistência Virtual') : 'Nenhum contrato ativo'} 
-                    />
-                </div>
-            </TabsContent>
-            
-            <TabsContent value="proposta" className="mt-6 space-y-6">
-                 <h2 className="text-xl font-bold">Proposta de Serviço</h2>
-                {activeProposal ? (
-                  <div className="grid gap-6 md:grid-cols-2">
-                    <Card>
-                        <CardHeader>
-                            <CardContent className="space-y-6 pt-6">
-                                <div>
-                                    <h3 className="font-semibold mb-4 text-base">Serviços Incluídos</h3>
-                                    <div className="space-y-3">
-                                        {activeProposal.services.map((service, index) => (
-                                            <div key={index} className="flex items-center gap-3 text-sm">
-                                                <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
-                                                <span>{service}</span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </CardHeader>
-                    </Card>
-                     <Card>
-                        <CardHeader>
-                            <CardContent className="space-y-4 pt-6">
-                                <h3 className="font-semibold mb-4 text-base">Detalhes Financeiros</h3>
-                                 <ProposalDetailItem 
-                                    icon={DollarSign} 
-                                    label="Tipo de Remuneração" 
-                                    value={
-                                        activeProposal.payment_type === 'fixed' ? 'Valor Fixo Mensal' :
-                                        activeProposal.payment_type === 'hourly' ? 'Valor por Hora' : 'Valor por Projeto'
-                                    }
-                                />
-                                <ProposalDetailItem 
-                                    icon={DollarSign} 
-                                    label="Valor" 
-                                    value={`R$ ${activeProposal.value?.toFixed(2) || '0.00'}`} 
-                                />
-                                 <ProposalDetailItem 
-                                    icon={Calendar} 
-                                    label="Dia do Vencimento" 
-                                    value={`Todo dia ${activeProposal.payment_day}`}
-                                />
-                                 <ProposalDetailItem 
-                                    icon={FileText} 
-                                    label="Método de Pagamento" 
-                                    value={activeProposal.payment_method || 'Não definido'}
-                                />
-                            </CardContent>
-                        </CardHeader>
-                    </Card>
-                  </div>
-                ) : (
-                    <Alert variant="default">
-                        <FileText className="h-4 w-4" />
-                        <AlertTitle>Nenhuma Proposta Ativa</AlertTitle>
-                        <AlertDescription>
-                           Não há uma proposta de serviço vinculada a um contrato ativo no momento.
-                        </AlertDescription>
-                    </Alert>
-                )}
-            </TabsContent>
-
-            <TabsContent value="contratos" className="mt-6 space-y-6">
-                <h2 className="text-xl font-bold">Meus Contratos</h2>
-                {contracts.length === 0 ? (
-                    <Alert variant="default">
-                        <FileText className="h-4 w-4" />
-                        <AlertTitle>Nenhum Contrato</AlertTitle>
-                        <AlertDescription>
-                           Você ainda não possui contratos disponíveis para visualização.
-                        </AlertDescription>
-                    </Alert>
-                ) : (
-                    <div className="space-y-4">
-                        {contracts.map(contract => (
-                             <Card key={contract.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4">
-                                <div className="flex items-center gap-4">
-                                    {getStatusIcon(contract.status)}
-                                    <div>
-                                        <p className="font-semibold">Contrato {contract.contract_code}</p>
-                                        <Badge variant={getStatusVariant(contract.status) as any} className="mt-1">
-                                          {getStatusText(contract.status)}
-                                        </Badge>
-                                    </div>
-                                </div>
-                                <Button asChild variant="outline" size="sm" className="mt-4 sm:mt-0 w-full sm:w-auto">
-                                    <Link href={`/portal/${client.id}/contrato/${contract.id}`}>
-                                        Visualizar
-                                    </Link>
-                                </Button>
-                            </Card>
-                        ))}
-                    </div>
-                )}
-            </TabsContent>
-            
-             <TabsContent value="pagamentos" className="mt-6 space-y-6">
-                <h2 className="text-xl font-bold">Pagamentos e Notas Fiscais</h2>
-                 {charges.length > 0 ? (
-                     <Card>
-                        <CardContent className="p-0">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Vencimento</TableHead>
-                                        <TableHead>Valor</TableHead>
-                                        <TableHead>Status</TableHead>
-                                        <TableHead className="text-right">Ações</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {charges.map(charge => {
-                                        const status = getStatusInfo(charge.status, charge.due_date);
-                                        const isInvoiceAvailable = charge.status === 'pago' && !!charge.invoice_url;
-                                        return (
-                                        <TableRow key={charge.id}>
-                                            <TableCell>{format(new Date(charge.due_date), 'dd/MM/yyyy')}</TableCell>
-                                            <TableCell>R$ {Number(charge.value).toFixed(2)}</TableCell>
-                                            <TableCell>
-                                                <Badge variant="outline" className={cn("font-normal", status.className)}>{status.text}</Badge>
-                                            </TableCell>
-                                            <TableCell className="text-right space-x-2">
-                                                {isInvoiceAvailable ? (
-                                                     <Button variant="outline" size="sm" onClick={() => handleDownloadClick(charge)}>
-                                                        <Download className="mr-2 h-4 w-4" />
-                                                        Nota Fiscal
-                                                     </Button>
-                                                ) : (
-                                                    <Button variant="outline" size="sm" disabled>
-                                                        <Lock className="mr-2 h-4 w-4" />
-                                                        Nota Fiscal
-                                                    </Button>
-                                                )}
-
-                                                {charge.status !== 'pago' && (
-                                                    <Button size="sm" onClick={() => setSelectedCharge(charge)}>
-                                                         <CreditCard className="mr-2 h-4 w-4" />
-                                                         Pagar com PIX
-                                                    </Button>
-                                                )}
-                                            </TableCell>
-                                        </TableRow>
-                                    )})}
-                                </TableBody>
-                            </Table>
-                        </CardContent>
-                     </Card>
-                ) : (
-                    <Alert variant="default">
-                        <FileText className="h-4 w-4" />
-                        <AlertTitle>Nenhuma Cobrança</AlertTitle>
-                        <AlertDescription>
-                           Ainda não há cobranças geradas para este contrato.
-                        </AlertDescription>
-                    </Alert>
-                )}
-            </TabsContent>
-            <TabsContent value="chat" className="mt-6">
-                 <h2 className="text-xl font-bold mb-6">Fale com {providerName}</h2>
-                 <ChatInterface clientId={clientId} isUser={false} />
-            </TabsContent>
-        </Tabs>
-      </main>
     </div>
-    
+
+     {isChatOpen && (
+        <div className="fixed bottom-24 right-5 z-50 w-80 h-[500px] shadow-2xl rounded-xl bg-white">
+            <Card className="h-full flex flex-col">
+                <CardHeader className="flex flex-row items-center justify-between p-4 border-b">
+                    <CardContent className="flex items-center gap-2 p-0">
+                        <MessageSquare className="h-5 w-5"/>
+                        <p className="font-semibold">Fale com {providerName}</p>
+                    </CardContent>
+                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setIsChatOpen(false)}><X className="h-4 w-4"/></Button>
+                </CardHeader>
+                <CardContent className="p-0 flex-1">
+                    <ChatInterface clientId={clientId} isUser={false} />
+                </CardContent>
+            </Card>
+        </div>
+     )}
+
      <AlertDialog open={!!selectedCharge} onOpenChange={() => setSelectedCharge(null)}>
         <AlertDialogContent>
             <AlertDialogHeader>
@@ -542,50 +375,6 @@ export default function ClientPortalPage() {
                  )}
             <AlertDialogFooter>
                 <AlertDialogCancel>Fechar</AlertDialogCancel>
-            </AlertDialogFooter>
-        </AlertDialogContent>
-    </AlertDialog>
-    
-     <AlertDialog open={verificationModalOpen} onOpenChange={setVerificationModalOpen}>
-        <AlertDialogContent>
-            <AlertDialogHeader>
-                <AlertDialogTitle>Verificação de E-mail</AlertDialogTitle>
-                <AlertDialogDescription>
-                    Para baixar a nota fiscal, precisamos confirmar seu acesso ao e-mail cadastrado.
-                </AlertDialogDescription>
-            </AlertDialogHeader>
-            <div className="py-4 space-y-4">
-                {!otpSent ? (
-                    <p className="text-sm text-center text-muted-foreground">Clique no botão abaixo para receber um código de 6 dígitos no seu e-mail.</p>
-                ) : (
-                    <div className="flex flex-col items-center gap-4">
-                        <p className="text-sm text-center">Digite o código que enviamos para <strong>{client?.email}</strong>.</p>
-                         <InputOTP maxLength={6} value={otp} onChange={(value) => setOtp(value)}>
-                            <InputOTPGroup>
-                                <InputOTPSlot index={0} />
-                                <InputOTPSlot index={1} />
-                                <InputOTPSlot index={2} />
-                                <InputOTPSlot index={3} />
-                                <InputOTPSlot index={4} />
-                                <InputOTPSlot index={5} />
-                            </InputOTPGroup>
-                        </InputOTP>
-                    </div>
-                )}
-            </div>
-            <AlertDialogFooter>
-                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                 {!otpSent ? (
-                    <Button onClick={handleSendVerificationCode} disabled={isVerifyingOtp}>
-                        {isVerifyingOtp && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Enviar Código
-                    </Button>
-                 ) : (
-                    <Button onClick={handleVerifyOtpAndDownload} disabled={isVerifyingOtp || otp.length < 6}>
-                        {isVerifyingOtp && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Verificar e Baixar
-                    </Button>
-                 )}
             </AlertDialogFooter>
         </AlertDialogContent>
     </AlertDialog>
