@@ -53,7 +53,7 @@ export function CreateContractTooltip({ client, onOpenCreateContractModal }: Cre
         >
           <p className="text-sm font-medium">Gerar novo contrato</p>
           <ContractIcon />
-           <Button variant="outline" size="sm" className="mt-2 bg-transparent text-white hover:bg-white hover:text-black">
+           <Button variant="secondary" size="sm" className="mt-2 bg-gray-700 text-white hover:bg-gray-600 h-8 px-3">
                 Criar Contrato
            </Button>
         </div>
