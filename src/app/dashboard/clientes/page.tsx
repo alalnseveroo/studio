@@ -37,17 +37,19 @@ import {
 import { Checkbox } from "@/components/ui/checkbox"
 import { AddClientSheet } from '@/components/add-client-sheet'
 import { getClients, deleteClient, deleteMultipleClients } from '@/lib/actions/clients'
-import type { Cliente, Proposta, Profile } from '@/lib/types'
+import type { Cliente, Proposta, Profile, Contrato } from '@/lib/types'
 import { getProposals } from '@/lib/actions/propostas'
+import { getContracts } from '@/lib/actions/contratos'
 import { getProfile } from '@/lib/actions/profile'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import Link from 'next/link'
-import { PlusCircle, Loader2, FilePen, Trash2, Check, FileText, CreditCard } from 'lucide-react'
+import { PlusCircle, Loader2, FilePen, Trash2, Check, FileText, CreditCard, Clock } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useToast } from '@/hooks/use-toast'
 import { CreateContractModal } from '@/components/create-contract-modal'
 import { ConfigureBillingModal } from '@/components/configure-billing-modal'
 import { UpgradePlanModal } from '@/components/upgrade-plan-modal'
+import { CreateContractTooltip } from '@/components/create-contract-tooltip'
 
 
 const ITEMS_PER_PAGE = 10;
@@ -74,6 +76,7 @@ export default function ClientesPage() {
   
   const [clients, setClients] = useState<Cliente[]>([])
   const [proposals, setProposals] = useState<Proposta[]>([])
+  const [contracts, setContracts] = useState<Contrato[]>([])
   const [profile, setProfile] = useState<Profile | null>(null);
 
   const [isLoading, setIsLoading] = useState(true)
@@ -84,18 +87,22 @@ export default function ClientesPage() {
   
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [newlyCreatedClient, setNewlyCreatedClient] = useState<Cliente | null>(null);
+  const [clientForContract, setClientForContract] = useState<Cliente | null>(null);
+
 
   const { toast } = useToast()
 
   const fetchInitialData = async () => {
     setIsLoading(true)
-    const [{ data: clientData }, { data: proposalData }, { data: profileData }] = await Promise.all([
+    const [{ data: clientData }, { data: proposalData }, { data: profileData }, { data: contractsData }] = await Promise.all([
       getClients(),
       getProposals(),
-      getProfile()
+      getProfile(),
+      getContracts()
     ]);
     setClients(clientData || [])
     setProposals(proposalData || [])
+    setContracts(contractsData || []);
     setProfile(profileData as Profile | null);
     setIsLoading(false)
   }
@@ -161,7 +168,7 @@ export default function ClientesPage() {
 
 
   const handleClientAdded = (newClient: Cliente) => {
-    setClients((prevClients) => [newClient, ...prevClients]);
+    fetchInitialData();
     setIsSheetOpen(false);
     setNewlyCreatedClient(newClient);
     setShowSuccessModal(true);
@@ -204,17 +211,24 @@ export default function ClientesPage() {
     }
   };
 
-  const getStatusClass = (status: string) => {
-    switch (status) {
-      case 'Ativo':
-        return 'border-green-500 bg-green-500/10 text-green-700'
-      case 'Inativo':
-        return 'border-red-500 bg-red-500/10 text-red-700'
-      case 'Pendente':
-        return 'border-orange-500 bg-orange-500/10 text-orange-700'
-      default:
-        return 'border-gray-500 bg-gray-500/10 text-gray-700'
-    }
+  const getContractStatusInfo = (clientContracts: Contrato[]) => {
+      if (clientContracts.length === 0) {
+        return { text: 'Inativo', className: 'border-gray-500 bg-gray-500/10 text-gray-700' };
+      }
+      const hasPending = clientContracts.some(c => c.status === 'signed_by_provider');
+      if (hasPending) {
+        return { text: 'Aguard. Cliente', className: 'border-orange-500 bg-orange-500/10 text-orange-700' };
+      }
+      const hasActive = clientContracts.some(c => c.status === 'signed_by_client');
+      if (hasActive) {
+        return { text: 'Ativo', className: 'border-green-500 bg-green-500/10 text-green-700' };
+      }
+      return { text: 'Rascunho', className: 'border-gray-500 bg-gray-500/10 text-gray-700' };
+  }
+
+  const openContractModalForClient = (client: Cliente) => {
+    setClientForContract(client);
+    setIsContractModalOpen(true);
   }
 
   return (
@@ -264,43 +278,8 @@ export default function ClientesPage() {
         ) : (
           <Card>
             <CardContent className="p-0">
-              {/* Mobile View - Cards */}
-              <div className="divide-y divide-border md:hidden">
-                {paginatedClients.map((client) => (
-                  <div key={client.id} className="p-4 space-y-3">
-                    <div className="flex items-center gap-3">
-                       <Avatar className="h-10 w-10 border">
-                          <AvatarImage src={client.avatar_url || ''} alt="Avatar do Cliente" />
-                          <AvatarFallback>{(client.full_name || client.company_name || 'C').charAt(0)}</AvatarFallback>
-                       </Avatar>
-                       <div className="flex-1">
-                          <p className="font-semibold text-sm truncate">{client.full_name || client.company_name}</p>
-                          <p className="text-xs text-muted-foreground">{client.client_id}</p>
-                       </div>
-                       <div className="flex gap-2">
-                        <Button asChild variant="outline" size="icon" className="h-8 w-8">
-                            <Link href={`/dashboard/clientes/${client.id}`}>
-                                <FilePen className="h-4 w-4" />
-                                <span className="sr-only">Ver / Editar</span>
-                            </Link>
-                        </Button>
-                        <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setClientToDelete(client)}>
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                            <span className="sr-only">Excluir</span>
-                        </Button>
-                      </div>
-                    </div>
-                     <div className="text-xs space-y-1 text-muted-foreground">
-                        <p><span className="font-medium text-foreground">E-mail:</span> {client.email || 'Não informado'}</p>
-                        <p><span className="font-medium text-foreground">Profissão:</span> {client.profession || 'Não informado'}</p>
-                        <div className="flex items-center gap-1.5"><span className="font-medium text-foreground">Status:</span> <Badge variant="outline" className={cn("font-normal text-xs px-1.5 py-0", getStatusClass('Ativo'))}>Ativo</Badge></div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
               {/* Desktop View - Table */}
-              <Table className="hidden md:table">
+              <Table>
                 <TableHeader>
                   <TableRow className="bg-muted/50 hover:bg-muted/50">
                     <TableHead className="w-[60px] border-r">
@@ -310,55 +289,65 @@ export default function ClientesPage() {
                         aria-label="Selecionar todos"
                       />
                     </TableHead>
-                    <TableHead className="w-[120px] border-r">Código</TableHead>
                     <TableHead className="border-r">Cliente</TableHead>
-                    <TableHead className="hidden xl:table-cell border-r">Profissão</TableHead>
                     <TableHead className="hidden lg:table-cell border-r">E-mail</TableHead>
+                    <TableHead className="w-[120px] border-r">Contrato</TableHead>
                     <TableHead className="w-[100px] border-r">Status</TableHead>
                     <TableHead className="w-[120px] text-center">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {paginatedClients.map((client) => (
-                    <TableRow key={client.id} data-state={selectedClients.includes(client.id) ? 'selected' : ''} className="h-12">
-                      <TableCell className="py-1 border-r">
-                         <Checkbox
-                          checked={selectedClients.includes(client.id)}
-                          onCheckedChange={(checked) => handleSelectClient(client.id, !!checked)}
-                          aria-label={`Selecionar cliente ${client.full_name}`}
-                        />
-                      </TableCell>
-                      <TableCell className="py-1 border-r">{client.client_id}</TableCell>
-                      <TableCell className="font-medium py-1 border-r">
-                         <div className="flex items-center gap-3">
-                           <Avatar className="h-6 w-6">
-                              <AvatarImage src={client.avatar_url || ''} alt="Avatar do Cliente" />
-                              <AvatarFallback>{(client.full_name || client.company_name || 'C').charAt(0)}</AvatarFallback>
-                           </Avatar>
-                           <span>{client.full_name || client.company_name}</span>
-                         </div>
-                      </TableCell>
-                       <TableCell className="hidden xl:table-cell py-1 border-r">{client.profession || 'Não informado'}</TableCell>
-                       <TableCell className="hidden lg:table-cell py-1 border-r">{client.email || 'Não informado'}</TableCell>
-                      <TableCell className="py-1 border-r">
-                         <Badge variant="outline" className={cn("font-normal", getStatusClass('Ativo'))}>Ativo</Badge>
-                      </TableCell>
-                      <TableCell className="py-1 text-center">
-                         <div className="flex items-center justify-center gap-2">
-                             <Button asChild variant="outline" size="icon" className="h-8 w-8">
-                                <Link href={`/dashboard/clientes/${client.id}`}>
-                                    <FilePen className="h-4 w-4" />
-                                    <span className="sr-only">Editar</span>
-                                </Link>
-                            </Button>
-                            <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setClientToDelete(client)}>
-                                <Trash2 className="h-4 w-4 text-destructive" />
-                                <span className="sr-only">Excluir</span>
-                            </Button>
-                         </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {paginatedClients.map((client) => {
+                     const clientContracts = contracts.filter(c => c.cliente_id === client.id);
+                     const status = getContractStatusInfo(clientContracts);
+                    return (
+                        <TableRow key={client.id} data-state={selectedClients.includes(client.id) ? 'selected' : ''} className="h-12">
+                          <TableCell className="py-1 border-r">
+                            <Checkbox
+                              checked={selectedClients.includes(client.id)}
+                              onCheckedChange={(checked) => handleSelectClient(client.id, !!checked)}
+                              aria-label={`Selecionar cliente ${client.full_name}`}
+                            />
+                          </TableCell>
+                          <TableCell className="font-medium py-1 border-r">
+                            <div className="flex items-center gap-3">
+                              <Avatar className="h-6 w-6">
+                                  <AvatarImage src={client.avatar_url || ''} alt="Avatar do Cliente" />
+                                  <AvatarFallback>{(client.full_name || client.company_name || 'C').charAt(0)}</AvatarFallback>
+                              </Avatar>
+                              <span>{client.full_name || client.company_name}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="hidden lg:table-cell py-1 border-r">{client.email || 'Não informado'}</TableCell>
+                          <TableCell className="py-1 border-r">
+                             <div className="flex items-center gap-2">
+                                {clientContracts.length > 0 ? (
+                                   <Link href={`/dashboard/contratos/${clientContracts[0].id}`} className="text-sm hover:underline">{clientContracts[0].contract_code}</Link>
+                                ) : (
+                                   <CreateContractTooltip client={client} onOpenCreateContractModal={() => openContractModalForClient(client)} />
+                                )}
+                             </div>
+                          </TableCell>
+                          <TableCell className="py-1 border-r">
+                            <Badge variant="outline" className={cn("font-normal", status.className)}>{status.text}</Badge>
+                          </TableCell>
+                          <TableCell className="py-1 text-center">
+                            <div className="flex items-center justify-center gap-2">
+                                <Button asChild variant="outline" size="icon" className="h-8 w-8">
+                                    <Link href={`/dashboard/clientes/${client.id}`}>
+                                        <FilePen className="h-4 w-4" />
+                                        <span className="sr-only">Editar</span>
+                                    </Link>
+                                </Button>
+                                <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setClientToDelete(client)}>
+                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                    <span className="sr-only">Excluir</span>
+                                </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                    )
+                  })}
                 </TableBody>
               </Table>
             </CardContent>
@@ -414,11 +403,12 @@ export default function ClientesPage() {
           onClose={() => {
               setIsContractModalOpen(false);
               setNewlyCreatedClient(null);
+              setClientForContract(null);
           }}
           clients={clients}
           proposals={proposals}
           onClientListChange={setClients}
-          selectedClientId={newlyCreatedClient?.id}
+          selectedClientId={clientForContract?.id || newlyCreatedClient?.id}
           onContractAdded={() => fetchInitialData()} 
       />
 
