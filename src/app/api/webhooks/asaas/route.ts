@@ -8,6 +8,7 @@ import { getSupabaseAdminClient } from '@/lib/supabase/admin';
 
 export async function POST(req: NextRequest) {
   try {
+    const supabase = getSupabaseAdminClient();
     const body = await req.json();
     const eventType = body.event;
 
@@ -31,8 +32,6 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: true, message: 'Nenhum crédito a adicionar.' });
       }
       
-      const supabase = getSupabaseAdminClient();
-
       // Encontra o perfil do usuário no nosso banco de dados usando o ID do cliente do Asaas
       // A busca pode ser tanto na tabela de profiles (para o dono da conta) quanto na de clientes
       const { data: profile, error: profileError } = await supabase
