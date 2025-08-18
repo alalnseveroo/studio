@@ -5,16 +5,19 @@ import { useState, useEffect, useCallback } from 'react';
 import { QRCodeCanvas } from 'qrcode.react';
 import { Button } from './ui/button';
 import { useToast } from '@/hooks/use-toast';
+<<<<<<< HEAD
 import { Copy, RefreshCw } from 'lucide-react';
 import Image from 'next/image';
+=======
+import { Copy, RefreshCw, Loader2 } from 'lucide-react';
+import { getAsaasPixCharge } from '@/lib/asaas';
+>>>>>>> 806b9d1cb4f0ce30ac3a48935ca0a1bffcabeb3e
 
 interface PixQRCodeProps {
-    pixKey: string;
-    value: number;
-    beneficiaryName: string;
-    beneficiaryCity: string;
+    paymentId: string;
 }
 
+<<<<<<< HEAD
 // NOTE: This component is currently UNUSED. The logic was replaced by pix-qrcode-modal.tsx
 // which gets the QR code directly from the Asaas API to prevent validation errors.
 // This file is kept for historical purposes but can be removed.
@@ -77,47 +80,82 @@ const gerarPixCopiaCola = (chave: string, nome: string, cidade: string, valor: n
 
 
 const PixQRCode: React.FC<PixQRCodeProps> = ({ pixKey, value, beneficiaryName, beneficiaryCity }) => {
+=======
+const PixQRCode: React.FC<PixQRCodeProps> = ({ paymentId }) => {
+>>>>>>> 806b9d1cb4f0ce30ac3a48935ca0a1bffcabeb3e
     const { toast } = useToast();
-    const [brCode, setBrCode] = useState('');
-    const [transactionId, setTransactionId] = useState('***');
+    const [qrCode, setQrCode] = useState<string | null>(null);
+    const [payload, setPayload] = useState<string | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
-    const generateNewCode = useCallback(() => {
-        if (pixKey && value > 0 && beneficiaryName && beneficiaryCity) {
-            const newTxId = `TX${Date.now()}`.substring(0, 25);
-            setTransactionId(newTxId);
-            const code = gerarPixCopiaCola(
-                pixKey,
-                beneficiaryName,
-                beneficiaryCity,
-                value,
-                newTxId
-            );
-            setBrCode(code);
+    const fetchCharge = useCallback(async () => {
+        setIsLoading(true);
+        setError(null);
+        try {
+            const { qrCode: fetchedQrCode, payload: fetchedPayload, error } = await getAsaasPixCharge(paymentId);
+            if (error) {
+                throw new Error(error.message);
+            }
+            setQrCode(fetchedQrCode);
+            setPayload(fetchedPayload);
+        } catch (err: any) {
+            setError(err.message || 'Não foi possível carregar os dados da cobrança.');
+            toast({
+                variant: 'destructive',
+                title: 'Erro ao Carregar Cobrança',
+                description: err.message || 'Verifique se a cobrança é válida e tente novamente.'
+            })
+        } finally {
+            setIsLoading(false);
         }
-    }, [pixKey, value, beneficiaryName, beneficiaryCity]);
+    }, [paymentId, toast]);
 
     useEffect(() => {
-        generateNewCode();
-    }, [generateNewCode]);
-    
+        fetchCharge();
+    }, [fetchCharge]);
 
-    if (!brCode) {
-        return <p className="text-sm text-muted-foreground">Não foi possível gerar o QR Code para pagamento. Verifique se os dados do contrato e da contratada estão completos.</p>;
+    const handleCopy = () => {
+        if (payload) {
+            navigator.clipboard.writeText(payload);
+            toast({
+                title: "Código Copiado!",
+                description: "O código PIX Copia e Cola foi copiado para a área de transferência.",
+            });
+        }
+    };
+
+    if (isLoading) {
+        return (
+            <div className="flex flex-col items-center justify-center gap-4 rounded-lg border p-6 min-h-[350px]">
+                <Loader2 className="h-8 w-8 animate-spin" />
+                <p>Carregando dados do pagamento...</p>
+            </div>
+        )
+    }
+
+    if (error) {
+         return (
+            <div className="flex flex-col items-center justify-center gap-4 rounded-lg border border-destructive bg-destructive/10 p-6 min-h-[350px]">
+                <h3 className="font-semibold text-destructive">Erro na Cobrança</h3>
+                <p className="text-center text-sm text-destructive">{error}</p>
+                 <Button onClick={fetchCharge} variant="destructive">
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                    Tentar Novamente
+                </Button>
+            </div>
+        )
     }
     
-    const handleCopy = () => {
-        navigator.clipboard.writeText(brCode);
-        toast({
-            title: "Código Copiado!",
-            description: "O código PIX Copia e Cola foi copiado para a área de transferência.",
-        });
-    };
+    if (!qrCode || !payload) {
+        return <p className="text-sm text-muted-foreground">Não foi possível gerar o QR Code para pagamento.</p>;
+    }
 
     return (
         <div className="flex flex-col items-center gap-4 rounded-lg border p-6">
             <h3 className="font-semibold">Pagar com PIX</h3>
              <QRCodeCanvas
-                value={brCode}
+                value={qrCode}
                 size={200}
                 bgColor={"#ffffff"}
                 fgColor={"#000000"}
@@ -128,10 +166,6 @@ const PixQRCode: React.FC<PixQRCodeProps> = ({ pixKey, value, beneficiaryName, b
                  <Button onClick={handleCopy} variant="outline" className="w-full">
                     <Copy className="mr-2 h-4 w-4" />
                     Copiar Código
-                </Button>
-                <Button onClick={generateNewCode} variant="secondary" className="w-full">
-                    <RefreshCw className="mr-2 h-4 w-4" />
-                    Gerar Novo Código
                 </Button>
             </div>
             <p className="text-center text-sm text-muted-foreground mt-2">

@@ -150,6 +150,7 @@ export default function ContratoPortalPage() {
   
   const isReviewComplete = isReadyToSign;
   const isSignComplete = isSignedByClient;
+  const firstCharge = contract.clientes?.Cobranca?.[0];
 
   return (
     <>
@@ -328,15 +329,10 @@ export default function ContratoPortalPage() {
                                 </AlertDescription>
                             </Alert>
                              <div className="flex justify-center">
-                                {provider ? (
-                                        <PixQRCode
-                                        pixKey={provider.cpf || provider.cnpj || ''}
-                                        value={contract.propostas?.value || 0}
-                                        beneficiaryName={provider.full_name || provider.company_name || 'Beneficiário'}
-                                        beneficiaryCity={provider.address?.split(',').slice(-2, -1)[0]?.trim() || 'CIDADE'}
-                                    />
+                                {firstCharge && firstCharge.asaas_payment_id ? (
+                                    <PixQRCode paymentId={firstCharge.asaas_payment_id} />
                                 ) : (
-                                    <p>Carregando informações de pagamento...</p>
+                                    <p className="text-center text-sm text-destructive py-4">Não foi possível carregar a cobrança. Contacte o prestador de serviço.</p>
                                 )}
                             </div>
                             <p className="text-xs text-muted-foreground text-center w-full">

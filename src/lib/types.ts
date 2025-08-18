@@ -1,5 +1,4 @@
 
-
 export type Cliente = {
   id: string;
   user_id: string;
@@ -30,8 +29,14 @@ export type Cliente = {
   payment_day?: number | null;
   first_charge_date?: string | null;
 
-  propostas?: Proposta; 
   asaas_customer_id?: string | null;
+
+  propostas?: Proposta; 
+<<<<<<< HEAD
+  asaas_customer_id?: string | null;
+=======
+  Cobranca?: Cobranca[];
+>>>>>>> 806b9d1cb4f0ce30ac3a48935ca0a1bffcabeb3e
 };
 
 export type Proposta = {
@@ -117,6 +122,9 @@ export type Cobranca = {
     updated_at: string | null;
     download_otp: string | null;
     download_otp_expires_at: string | null;
+    
+    asaas_payment_id?: string | null;
+
     clientes: Cliente; // Join com clientes
 }
     
