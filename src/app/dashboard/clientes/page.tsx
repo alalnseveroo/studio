@@ -1,5 +1,4 @@
 
-
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -43,7 +42,7 @@ import { getContracts } from '@/lib/actions/contratos'
 import { getProfile } from '@/lib/actions/profile'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import Link from 'next/link'
-import { PlusCircle, Loader2, FilePen, Trash2, Check, FileText, CreditCard, Clock } from 'lucide-react'
+import { PlusCircle, Loader2, FilePen, Trash2, Check, FileText, CreditCard, Clock, Link2, Copy } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useToast } from '@/hooks/use-toast'
 import { CreateContractModal } from '@/components/create-contract-modal'
@@ -88,6 +87,7 @@ export default function ClientesPage() {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [newlyCreatedClient, setNewlyCreatedClient] = useState<Cliente | null>(null);
   const [clientForContract, setClientForContract] = useState<Cliente | null>(null);
+  const [copiedClientId, setCopiedClientId] = useState<string | null>(null);
 
 
   const { toast } = useToast()
@@ -110,6 +110,17 @@ export default function ClientesPage() {
   useEffect(() => {
     fetchInitialData()
   }, [])
+
+  const handleCopyLink = (clientId: string) => {
+    const portalUrl = new URL(`/portal/${clientId}`, window.location.origin).toString();
+    navigator.clipboard.writeText(portalUrl);
+    toast({
+      title: "Link Copiado!",
+      description: "O link do portal do cliente foi copiado para a área de transferência.",
+    });
+    setCopiedClientId(clientId);
+    setTimeout(() => setCopiedClientId(null), 2000);
+  };
 
   const handleAddClientClick = () => {
     const clientCount = clients.length;
@@ -293,6 +304,7 @@ export default function ClientesPage() {
                     <TableHead className="hidden lg:table-cell border-r">E-mail</TableHead>
                     <TableHead className="w-[120px] border-r">Contrato</TableHead>
                     <TableHead className="w-[100px] border-r">Status</TableHead>
+                    <TableHead className="w-[120px] border-r text-center">Portal</TableHead>
                     <TableHead className="w-[120px] text-center">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -330,6 +342,20 @@ export default function ClientesPage() {
                           </TableCell>
                           <TableCell className="py-1 border-r">
                             <Badge variant="outline" className={cn("font-normal", status.className)}>{status.text}</Badge>
+                          </TableCell>
+                          <TableCell className="py-1 border-r text-center">
+                            <div className="flex items-center justify-center gap-2">
+                              <Button asChild variant="ghost" size="icon" className="h-8 w-8">
+                                <Link href={`/portal/${client.id}`} target="_blank">
+                                  <Link2 className="h-4 w-4" />
+                                  <span className="sr-only">Abrir portal</span>
+                                </Link>
+                              </Button>
+                              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleCopyLink(client.id)}>
+                                {copiedClientId === client.id ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                                <span className="sr-only">Copiar link</span>
+                              </Button>
+                            </div>
                           </TableCell>
                           <TableCell className="py-1 text-center">
                             <div className="flex items-center justify-center gap-2">
