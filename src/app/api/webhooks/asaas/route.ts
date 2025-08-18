@@ -1,6 +1,6 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase/admin';
+import { getSupabaseAdminClient } from '@/lib/supabase/admin';
 
 // Este endpoint irá receber as notificações de webhook do Asaas.
 // Você precisa configurar esta URL no seu painel do Asaas:
@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: true, message: 'Nenhum crédito a adicionar.' });
       }
       
-      const supabase = supabaseAdmin;
+      const supabase = getSupabaseAdminClient();
 
       // Encontra o perfil do usuário no nosso banco de dados usando o ID do cliente do Asaas
       // A busca pode ser tanto na tabela de profiles (para o dono da conta) quanto na de clientes
