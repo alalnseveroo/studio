@@ -114,18 +114,26 @@ export default function BuyCreditsPage() {
 
     return (
         <div className="flex flex-1 justify-center p-4 sm:p-6 md:p-10 animate-fade-in">
-            <div className={cn("relative w-full max-w-5xl transition-all duration-500 ease-in-out", showPix ? "-translate-x-1/4" : "translate-x-0")}>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
+            <div className={cn("relative w-full max-w-5xl transition-all duration-500 ease-in-out", showPix ? "lg:-translate-x-1/4" : "translate-x-0")}>
+                 <div className="absolute -top-4 -left-4">
+                     <Button asChild variant="ghost" size="icon">
+                        <Link href="/dashboard/settings/profile">
+                            <ArrowLeft className="h-5 w-5"/>
+                            <span className="sr-only">Voltar</span>
+                        </Link>
+                    </Button>
+                </div>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-12 gap-y-8 items-start">
                     {/* Coluna Direita - Seleção (agora na esquerda no código) */}
-                    <div className="space-y-8">
+                    <div className="space-y-8 lg:order-2">
                          <div className="space-y-2">
                              <h1 className="text-2xl font-bold">Comprar Créditos</h1>
                              <p className="text-muted-foreground">Registre quantos clientes quiser, pague somente quando o cliente for ativado com assinatura ou pagamento recorrente.</p>
                          </div>
                          
-                        <div className="flex flex-col items-center gap-6">
-                            <div className="flex items-center gap-4 w-full justify-end">
-                                <div className="text-5xl font-bold tracking-tight w-48 text-right">
+                        <div className="flex flex-col items-start gap-6">
+                            <div className="flex items-center gap-4 w-full justify-start">
+                                <div className="text-5xl font-bold tracking-tight w-48 text-left">
                                     <span className="text-3xl text-muted-foreground mr-1">R$</span>{amount.toFixed(2).replace('.', ',')}
                                 </div>
                                 <div className="flex flex-col gap-2">
@@ -148,7 +156,7 @@ export default function BuyCreditsPage() {
                         
                         <div>
                             <h2 className="text-lg font-semibold mb-4">Forma de Pagamento</h2>
-                            <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod} className="grid grid-cols-2 gap-4">
                                  <RadioGroupItem value="pix" id="pix" className="sr-only peer" />
                                     <label
                                         htmlFor="pix"
@@ -196,7 +204,7 @@ export default function BuyCreditsPage() {
                         </div>
                     </div>
                     {/* Coluna Esquerda - Resumo (agora na direita no código) */}
-                    <div className="lg:col-span-1">
+                    <div className="lg:col-span-1 lg:order-1">
                         <Card className="sticky top-24">
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2 text-lg">
@@ -243,7 +251,7 @@ export default function BuyCreditsPage() {
                     </div>
                 </div>
             </div>
-             <div className={cn("absolute top-0 right-0 h-full w-1/3 flex flex-col items-center justify-center transition-all duration-500 ease-in-out", showPix ? "translate-x-0 opacity-100" : "translate-x-full opacity-0 pointer-events-none")}>
+             <div className={cn("absolute top-0 right-0 h-full w-full lg:w-1/3 flex flex-col items-center justify-center transition-all duration-500 ease-in-out", showPix ? "translate-x-0 opacity-100" : "translate-x-full opacity-0 pointer-events-none")}>
                 {pixData && (
                     <div className="flex flex-col items-center gap-4 py-4 text-center">
                         <h2 className="text-xl font-bold">Pague com PIX</h2>
