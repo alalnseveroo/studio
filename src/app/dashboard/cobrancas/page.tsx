@@ -23,7 +23,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
-import { UploadInvoiceModal } from '@/components/upload-invoice-modal'
 import { getProfile } from '@/lib/actions/profile'
 import { InvoiceTooltip } from '@/components/invoice-tooltip'
 import Link from 'next/link'
@@ -33,7 +32,6 @@ export default function CobrancasPage() {
   const [charges, setCharges] = useState<Cobranca[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isSending, setIsSending] = useState<string | null>(null);
-  const [selectedChargeForInvoice, setSelectedChargeForInvoice] = useState<Cobranca | null>(null)
   const [providerProfile, setProviderProfile] = useState<Profile | null>(null)
   const { toast } = useToast()
 
@@ -252,9 +250,9 @@ export default function CobrancasPage() {
                                         </Button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="end">
-                                        <DropdownMenuItem onSelect={() => setSelectedChargeForInvoice(charge)}>
+                                        <DropdownMenuItem onSelect={() => { /* This will be handled by the tooltip now */ }}>
                                             <Upload className="mr-2 h-4 w-4" />
-                                            Substituir NF-e
+                                            Anexar/Substituir NF-e
                                         </DropdownMenuItem>
                                         {charge.status === 'pendente' && (
                                             <DropdownMenuItem onSelect={() => handleMarkAsPaid(charge.id)}>
@@ -292,15 +290,6 @@ export default function CobrancasPage() {
             </TabsContent>
         </Tabs>
     </div>
-
-    {selectedChargeForInvoice && (
-        <UploadInvoiceModal
-            isOpen={!!selectedChargeForInvoice}
-            onClose={() => setSelectedChargeForInvoice(null)}
-            charge={selectedChargeForInvoice}
-            onUploadSuccess={fetchData}
-        />
-    )}
     </>
   )
 }

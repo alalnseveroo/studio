@@ -3,14 +3,10 @@
 
 import { useState, useRef } from 'react'
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-  DialogTrigger,
-} from '@/components/ui/dialog'
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover'
 import {
   Tooltip,
   TooltipContent,
@@ -19,13 +15,11 @@ import {
 } from '@/components/ui/tooltip'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { useToast } from '@/hooks/use-toast'
 import { createClient } from '@/lib/supabase/client'
 import { saveInvoiceUrl } from '@/lib/actions/cobrancas'
-import { Loader2, File, CheckCircle, Upload, Trash2, PlusCircle } from 'lucide-react'
+import { Loader2, Upload, Trash2, PlusCircle } from 'lucide-react'
 import type { Cobranca } from '@/lib/types'
-import Link from 'next/link'
 
 interface InvoiceTooltipProps {
   charge: Cobranca
@@ -116,51 +110,43 @@ export function InvoiceTooltip({ charge, onUploadSuccess }: InvoiceTooltipProps)
       })
       onUploadSuccess()
       setIsOpen(false)
+      setFile(null);
     }
   }
-  
-  const clientName = charge.clientes?.full_name || charge.clientes?.company_name || 'Cliente';
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <DialogTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full">
-                    <PlusCircle className="h-5 w-5 text-muted-foreground hover:text-primary transition-colors"/>
-                    <span className="sr-only">Anexar nota fiscal</span>
-                </Button>
-            </DialogTrigger>
-          </TooltipTrigger>
-          <TooltipContent className="bg-black text-white">
-            <p>Anexar nota fiscal</p>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Anexar Nota Fiscal (NF-e)</DialogTitle>
-          <DialogDescription>
-            Envie o arquivo PDF da nota fiscal para a cobrança de{' '}
-            {clientName}.
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="py-4 space-y-4">
-          <div 
-            className="flex items-center justify-center w-full p-6 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted/50"
+    <Popover open={isOpen} onOpenChange={setIsOpen}>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <PopoverTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full">
+                      <PlusCircle className="h-5 w-5 text-muted-foreground hover:text-primary transition-colors"/>
+                      <span className="sr-only">Anexar nota fiscal</span>
+                  </Button>
+              </PopoverTrigger>
+            </TooltipTrigger>
+            <TooltipContent className="bg-black text-white border-black">
+              <p>Anexar nota fiscal</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      <PopoverContent className="w-80" align="end">
+        <div className="grid gap-4">
+          <div className="space-y-2">
+            <h4 className="font-medium leading-none">Entregar nota fiscal</h4>
+            <p className="text-sm text-muted-foreground">
+              Anexe o arquivo PDF da nota fiscal para esta cobrança.
+            </p>
+          </div>
+           <div 
+            className="flex items-center justify-center w-full p-4 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted/50"
             onClick={() => fileInputRef.current?.click()}
           >
             <div className="text-center">
-                <Upload className="mx-auto h-10 w-10 text-muted-foreground"/>
-                <p className="mt-2 text-sm text-muted-foreground">
-                    {file ? 'Arquivo selecionado:' : 'Entregue a nota fiscal'}
-                </p>
-                {file && <p className="font-semibold text-sm">{file.name}</p>}
-                 <p className="text-xs text-muted-foreground">
-                    Clique para pegar o PDF e subir
+                <Upload className="mx-auto h-8 w-8 text-muted-foreground"/>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {file ? file.name : 'Clique para pegar o PDF'}
                 </p>
             </div>
             <Input 
@@ -171,26 +157,20 @@ export function InvoiceTooltip({ charge, onUploadSuccess }: InvoiceTooltipProps)
                 accept="application/pdf"
             />
           </div>
-          {file && (
-             <div className="flex justify-end">
-                <Button variant="ghost" size="sm" onClick={() => setFile(null)}>
-                    <Trash2 className="mr-2 h-4 w-4"/>
-                    Remover arquivo
+           {file && (
+             <div className="flex justify-end -mt-2">
+                <Button variant="ghost" size="sm" className="h-auto py-1 px-2 text-xs" onClick={() => setFile(null)}>
+                    <Trash2 className="mr-1 h-3 w-3"/>
+                    Remover
                 </Button>
              </div>
           )}
-        </div>
-
-        <DialogFooter>
-          <Button variant="ghost" onClick={() => setIsOpen(false)}>
-            Cancelar
-          </Button>
-          <Button onClick={handleUpload} disabled={isLoading || !file}>
+           <Button onClick={handleUpload} disabled={isLoading || !file}>
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {charge.invoice_url ? 'Substituir NF-e' : 'Enviar NF-e'}
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </div>
+      </PopoverContent>
+    </Popover>
   )
 }
