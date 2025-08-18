@@ -31,7 +31,7 @@ const nextConfig: NextConfig = {
     BREVO_API_KEY: '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',
     NEXT_PUBLIC_SITE_URL: process.env.NODE_ENV === 'production' ? 'https://crivo.pro' : 'http://localhost:9002',
     ASAAS_API_URL: 'https://api.asaas.com/v3',
-    ASAAS_API_KEY: 'c97014ff-d600-4d0c-9584-3a78f824b1b6',
+    ASAAS_API_KEY: '$aact_prod_000MzkwODA2MWY2OGM3MWRlMDU2NWM3MzJlNzZmNGZhZGY6Ojk0OTI5YTA4LWMwNGEtNDUwMy04YmU0LWZhZWU2MWQyOTAwNDo6JGFhY2hfMjgxN2I2NTktYmIyNi00Y2Y3LWExMmItM2RjODNiODUxODg2',
   }
 };
 

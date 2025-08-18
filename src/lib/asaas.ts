@@ -5,9 +5,8 @@ import type { Profile } from "./types";
 import { createClient } from "./supabase/server";
 import type { Cliente } from "./types";
 
-const ASAAS_API_URL = 'https://api.asaas.com/v3';
-// A chave de API está definida diretamente para garantir o funcionamento.
-const ASAAS_API_KEY = '$aact_prod_000MzkwODA2MWY2OGM3MWRlMDU2NWM3MzJlNzZmNGZhZGY6Ojk0OTI5YTA4LWMwNGEtNDUwMy04YmU0LWZhZWU2MWQyOTAwNDo6JGFhY2hfMjgxN2I2NTktYmIyNi00Y2Y3LWExMmItM2RjODNiODUxODg2';
+const ASAAS_API_URL = process.env.ASAAS_API_URL;
+const ASAAS_API_KEY = process.env.ASAAS_API_KEY;
 
 type AsaasCustomer = {
     id: string;
@@ -18,8 +17,8 @@ type AsaasCustomer = {
 };
 
 async function getOrCreateAsaasCustomer(profile: Partial<Profile & Cliente & { fullName?: string, personType?: string, companyName?: string }>, userId?: string): Promise<AsaasCustomer> {
-    if (!ASAAS_API_KEY) {
-        throw new Error("A chave da API do Asaas não está configurada.");
+    if (!ASAAS_API_KEY || !ASAAS_API_URL) {
+        throw new Error("As credenciais da API do Asaas não estão configuradas nas variáveis de ambiente.");
     }
     
     if (!profile.email) {
@@ -124,8 +123,8 @@ async function getOrCreateAsaasCustomer(profile: Partial<Profile & Cliente & { f
 
 
 export async function createPixCharge(customerId: string, value: number, description: string) {
-    if (!ASAAS_API_KEY) {
-        return { error: "A chave da API do Asaas não está configurada." };
+    if (!ASAAS_API_KEY || !ASAAS_API_URL) {
+        return { error: "As credenciais da API do Asaas não estão configuradas nas variáveis de ambiente." };
     }
 
     const today = new Date();
@@ -190,6 +189,10 @@ export async function createAsaasCharge(chargeDetails: {
     dueDate: string;
     description: string;
 }) {
+    if (!ASAAS_API_KEY || !ASAAS_API_URL) {
+        return { payment: null, error: { message: "As credenciais da API do Asaas não estão configuradas." } };
+    }
+
     try {
         const payload = {
             billingType: 'UNDEFINED', // Permite PIX e Cartão
@@ -200,7 +203,7 @@ export async function createAsaasCharge(chargeDetails: {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'access_token': ASAAS_API_KEY || ''
+                'access_token': ASAAS_API_KEY
             },
             body: JSON.stringify(payload)
         });
@@ -220,12 +223,15 @@ export async function createAsaasCharge(chargeDetails: {
 }
 
 export async function createAsaasPaymentLink(paymentId: string) {
+    if (!ASAAS_API_KEY || !ASAAS_API_URL) {
+        return { link: null, error: { message: "As credenciais da API do Asaas não estão configuradas." } };
+    }
     try {
         const response = await fetch(`${ASAAS_API_URL}/payments/${paymentId}/identificationField`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
-                'access_token': ASAAS_API_KEY || ''
+                'access_token': ASAAS_API_KEY
             }
         });
 
@@ -250,9 +256,12 @@ export async function createAsaasPaymentLink(paymentId: string) {
 }
 
 export async function getAsaasPixCharge(paymentId: string) {
+    if (!ASAAS_API_KEY || !ASAAS_API_URL) {
+        return { qrCode: null, payload: null, error: { message: "As credenciais da API do Asaas não estão configuradas." } };
+    }
     try {
         const pixResponse = await fetch(`${ASAAS_API_URL}/payments/${paymentId}/pixQrCode`, {
-            headers: { 'access_token': ASAAS_API_KEY || '' }
+            headers: { 'access_token': ASAAS_API_KEY }
         });
 
         const pixData = await pixResponse.json();
