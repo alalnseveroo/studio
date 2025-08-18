@@ -101,7 +101,7 @@ export function DaysOffCalendar() {
       <div className="w-full">
         <Calendar
           locale={ptBR}
-          className="w-full"
+          className="w-full p-0"
           month={month}
           onMonthChange={setMonth}
           modifiers={{
