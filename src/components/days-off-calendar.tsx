@@ -14,7 +14,7 @@ async function getHolidays(): Promise<Holiday[]> {
   const supabase = createClient()
   const { data, error } = await supabase.from('holidays').select('*')
   if (error) {
-    console.error('Error fetching holidays:', error)
+    console.error('Error fetching holidays:', error.message)
     return []
   }
   return data
@@ -27,7 +27,7 @@ async function getDaysOff(): Promise<DayOff[]> {
 
   const { data, error } = await supabase.from('days_off').select('*').eq('user_id', user.id)
   if (error) {
-    console.error('Error fetching days off:', error)
+    console.error('Error fetching days off:', error.message)
     return []
   }
   return data
@@ -54,7 +54,7 @@ async function addDayOff(date: Date): Promise<DayOff | null> {
         const { data: existingData } = await supabase.from('days_off').select().eq('user_id', user.id).eq('date', dateString).single();
         return existingData;
     }
-    console.error('Error adding day off:', error)
+    console.error('Error adding day off:', error.message)
     return null
   }
   return data
