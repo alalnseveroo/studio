@@ -371,9 +371,8 @@ export default function ClientPortalPage() {
 
     <AlertDialog open={!!selectedCharge} onOpenChange={() => setSelectedCharge(null)}>
         <AlertDialogContent>
-            <AlertDialogHeader>
-            <AlertDialogTitle>Realizar Pagamento</AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogHeader className="space-y-4">
+                <AlertDialogTitle>Realizar Pagamento</AlertDialogTitle>
                 <Alert>
                   <Info className="h-4 w-4" />
                   <AlertTitle>Instruções de Pagamento</AlertTitle>
@@ -381,7 +380,6 @@ export default function ClientPortalPage() {
                       Por favor, entre em contato com <strong>{provider?.full_name || 'a contratada'}</strong> pelo e-mail <strong>{provider?.email || '[e-mail não disponível]'}</strong> para receber a chave PIX e realizar o pagamento.
                   </AlertDescription>
               </Alert>
-            </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
                 <AlertDialogCancel>Fechar</AlertDialogCancel>
