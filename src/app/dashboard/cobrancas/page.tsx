@@ -1,5 +1,4 @@
 
-
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -13,7 +12,7 @@ import {
 } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Loader2, Send, FileWarning, UserPlus, FilePlus, Link2, MoreVertical, BadgeCheck, Upload } from 'lucide-react'
+import { Loader2, Send, FileWarning, UserPlus, FilePlus, Link2, MoreVertical, BadgeCheck, Upload, Download } from 'lucide-react'
 import { getCharges, markChargeAsPaid } from '@/lib/actions/cobrancas'
 import type { Cobranca, Profile } from '@/lib/types'
 import { format, isPast } from 'date-fns'
@@ -26,6 +25,8 @@ import { cn } from '@/lib/utils'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { UploadInvoiceModal } from '@/components/upload-invoice-modal'
 import { getProfile } from '@/lib/actions/profile'
+import { InvoiceTooltip } from '@/components/invoice-tooltip'
+import Link from 'next/link'
 
 
 export default function CobrancasPage() {
@@ -232,11 +233,16 @@ export default function CobrancasPage() {
                                 <Badge variant="outline" className={cn("font-normal", status.className)}>{status.text}</Badge>
                             </TableCell>
                             <TableCell>
-                                {charge.invoice_url ? (
-                                    <Badge variant="secondary" className="border-blue-500 bg-blue-500/10 text-blue-700">Anexada</Badge>
-                                ) : (
-                                    <Badge variant="outline">Pendente</Badge>
-                                )}
+                                <div className="flex items-center gap-2">
+                                    {charge.invoice_url ? (
+                                        <Link href={charge.invoice_url} target="_blank" rel="noopener noreferrer">
+                                            <Badge variant="secondary" className="border-blue-500 bg-blue-500/10 text-blue-700 hover:bg-blue-500/20">Anexada</Badge>
+                                        </Link>
+                                    ) : (
+                                        <Badge variant="outline">Pendente</Badge>
+                                    )}
+                                    <InvoiceTooltip charge={charge} onUploadSuccess={fetchData} />
+                                </div>
                             </TableCell>
                             <TableCell className="text-center">
                                 <DropdownMenu>
@@ -248,7 +254,7 @@ export default function CobrancasPage() {
                                     <DropdownMenuContent align="end">
                                         <DropdownMenuItem onSelect={() => setSelectedChargeForInvoice(charge)}>
                                             <Upload className="mr-2 h-4 w-4" />
-                                            Anexar NF-e
+                                            Substituir NF-e
                                         </DropdownMenuItem>
                                         {charge.status === 'pendente' && (
                                             <DropdownMenuItem onSelect={() => handleMarkAsPaid(charge.id)}>
