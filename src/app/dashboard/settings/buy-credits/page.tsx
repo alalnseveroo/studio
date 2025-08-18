@@ -8,7 +8,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Separator } from '@/components/ui/separator'
 import { getProfile } from '@/lib/actions/profile'
 import type { Profile } from '@/lib/types'
-import { ArrowLeft, CreditCard, Gift, Loader2, Minus, Plus, ShieldCheck, ShoppingCart, Check, CheckCircle, FileText, Globe, BarChart3, Star, Copy } from 'lucide-react'
+import { ArrowLeft, CreditCard, Gift, Loader2, Minus, Plus, ShieldCheck, ShoppingCart, Check, CheckCircle, FileText, Globe, BarChart3, Star, Copy, Info, Users } from 'lucide-react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -16,6 +16,8 @@ import { createPixCharge } from '@/lib/asaas'
 import { useToast } from '@/hooks/use-toast'
 import Image from 'next/image'
 import QRCode from "qrcode.react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+
 
 const benefitItems = [
     { text: "Contratos ilimitados", icon: FileText },
@@ -56,7 +58,7 @@ export default function BuyCreditsPage() {
         const fetchProfileData = async () => {
             setIsLoading(true);
             const { data } = await getProfile();
-            setUserProfile(data as Profile | null);
+            setUserProfile(data as Profile & { email?: string } | null);
             setIsLoading(false);
         };
         fetchProfileData();
@@ -133,7 +135,7 @@ export default function BuyCreditsPage() {
                     <div className="space-y-8 lg:order-1">
                          <div className="space-y-2">
                              <h1 className="text-2xl font-bold">Comprar Créditos</h1>
-                             <p className="text-muted-foreground">Registre quantos clientes quiser, pague somente quando o cliente for ativado com assinatura ou pagamento recorrente.</p>
+                             <p className="text-muted-foreground">Registre quantos clientes quiser, <strong>pague somente quando o cliente for ativado com assinatura ou pagamento recorrente.</strong></p>
                          </div>
                          
                         <div className="flex flex-col items-start gap-6">
@@ -161,9 +163,10 @@ export default function BuyCreditsPage() {
                         
                         <div>
                             <h2 className="text-lg font-semibold mb-4">Forma de Pagamento</h2>
-                            <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod} className="grid grid-cols-2 gap-4 max-w-xs">
-                                 <RadioGroupItem value="pix" id="pix" className="sr-only peer" />
-                                    <label
+                             <div className="grid grid-cols-2 gap-4 max-w-xs">
+                                <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod}>
+                                     <RadioGroupItem value="pix" id="pix" className="sr-only peer" />
+                                     <label
                                         htmlFor="pix"
                                         className={cn(
                                             "flex flex-col justify-between rounded-lg border-2 p-4 cursor-pointer transition-all aspect-square relative",
@@ -181,8 +184,8 @@ export default function BuyCreditsPage() {
                                             <p className="text-xs text-muted-foreground mt-1">Aprovação imediata.</p>
                                         </div>
                                     </label>
-
-                                <RadioGroupItem value="credit_card" id="credit_card" className="sr-only peer" />
+                                </RadioGroup>
+                                 <RadioGroupItem value="credit_card" id="credit_card" className="sr-only peer" />
                                 <label
                                     htmlFor="credit_card"
                                     className={cn(
@@ -201,7 +204,7 @@ export default function BuyCreditsPage() {
                                          <p className="text-xs text-muted-foreground mt-1">Em breve.</p>
                                     </div>
                                 </label>
-                            </RadioGroup>
+                            </div>
                         </div>
                         
                          <div className="pt-4">
@@ -235,7 +238,6 @@ export default function BuyCreditsPage() {
                                 <Separator />
                                 <div className="flex justify-between items-center text-sm">
                                     <span className="text-muted-foreground">{credits} crédito{credits !== 1 ? 's' : ''}</span>
-                                    <span className="font-semibold">1 crédito = 1 cliente ativo</span>
                                 </div>
                                 <div className="flex justify-between items-center text-lg">
                                     <span className="text-muted-foreground">Valor total:</span>
@@ -245,6 +247,20 @@ export default function BuyCreditsPage() {
                                 <div>
                                     <h4 className="font-semibold mb-3 text-base">Benefícios inclusos:</h4>
                                     <div className="space-y-2">
+                                        <div className="flex items-center gap-3 text-sm">
+                                            <Users className="h-4 w-4 text-green-500 flex-shrink-0" />
+                                            <span>{credits} cliente{credits !== 1 ? 's' : ''} ativo{credits !== 1 ? 's' : ''}</span>
+                                            <TooltipProvider>
+                                                <Tooltip>
+                                                    <TooltipTrigger asChild>
+                                                        <Button variant="ghost" size="icon" className="h-5 w-5 opacity-50 hover:opacity-100"><Info className="h-4 w-4" /></Button>
+                                                    </TooltipTrigger>
+                                                    <TooltipContent className="max-w-xs">
+                                                        <p>Cadastre quantos clientes desejar, envie propostas e tenha portal do cliente ativo, pague por esse cliente somente quando ele assinar um contrato ou estiver no fluxo de pagamento recorrente.</p>
+                                                    </TooltipContent>
+                                                </Tooltip>
+                                            </TooltipProvider>
+                                        </div>
                                         {benefitItems.map((item, index) => (
                                             <div key={index} className="flex items-center gap-3 text-sm">
                                                 <item.icon className="h-4 w-4 text-green-500 flex-shrink-0" />
@@ -290,3 +306,5 @@ export default function BuyCreditsPage() {
         </div>
     )
 }
+
+    
