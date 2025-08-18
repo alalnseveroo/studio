@@ -9,6 +9,7 @@ import {
   BadgeCent,
   AlertTriangle,
   ClipboardList,
+  CalendarDays,
 } from 'lucide-react'
 
 import {
@@ -40,6 +41,7 @@ import { getProfile } from '@/lib/actions/profile'
 import { format, isPast } from 'date-fns'
 import { cn } from '@/lib/utils'
 import type { Profile } from '@/lib/types'
+import { DaysOffCalendar } from '@/components/days-off-calendar'
 
 const getStatusClass = (status: string) => {
     switch (status) {
@@ -152,9 +154,9 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
       </div>
-      <div className="grid gap-4 md:gap-8 lg:grid-cols-2 xl:grid-cols-3">
+      <div className="grid gap-4 md:gap-8 lg:grid-cols-3">
         <Card
-          className="xl:col-span-2"
+          className="lg:col-span-2"
         >
           <CardHeader className="flex flex-row items-center">
             <div className="grid gap-2">
@@ -239,56 +241,69 @@ export default async function DashboardPage() {
              )}
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>Cobranças Recentes</CardTitle>
-             <CardDescription>
-                As últimas cobranças geradas ou pagas.
-              </CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-8">
-            {recentCharges.length > 0 ? (
-                recentCharges.map(charge => {
-                    const status = getChargeStatusInfo(charge.status, charge.due_date);
-                    return (
-                     <div key={charge.id} className="flex items-center gap-4">
-                        <Avatar className="hidden h-9 w-9 sm:flex">
-                            <AvatarImage src={charge.clientes?.avatar_url || ''} alt="Avatar" />
-                            <AvatarFallback>{(charge.clientes?.full_name || charge.clientes?.company_name || 'C').charAt(0)}</AvatarFallback>
-                        </Avatar>
-                        <div className="grid gap-1">
-                            <p className="text-sm font-medium leading-none">
-                            {charge.clientes?.full_name || charge.clientes?.company_name}
-                            </p>
-                            <p className="text-sm text-muted-foreground">
-                            Vence em: {format(new Date(charge.due_date), 'dd/MM/yyyy')}
-                            </p>
+        <div className="grid gap-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Cobranças Recentes</CardTitle>
+                 <CardDescription>
+                    As últimas cobranças geradas ou pagas.
+                  </CardDescription>
+              </CardHeader>
+              <CardContent className="grid gap-8">
+                {recentCharges.length > 0 ? (
+                    recentCharges.map(charge => {
+                        const status = getChargeStatusInfo(charge.status, charge.due_date);
+                        return (
+                         <div key={charge.id} className="flex items-center gap-4">
+                            <Avatar className="hidden h-9 w-9 sm:flex">
+                                <AvatarImage src={charge.clientes?.avatar_url || ''} alt="Avatar" />
+                                <AvatarFallback>{(charge.clientes?.full_name || charge.clientes?.company_name || 'C').charAt(0)}</AvatarFallback>
+                            </Avatar>
+                            <div className="grid gap-1">
+                                <p className="text-sm font-medium leading-none">
+                                {charge.clientes?.full_name || charge.clientes?.company_name}
+                                </p>
+                                <p className="text-sm text-muted-foreground">
+                                Vence em: {format(new Date(charge.due_date), 'dd/MM/yyyy')}
+                                </p>
+                            </div>
+                            <div className="ml-auto flex flex-col items-end">
+                                <div className="font-medium">R$ {charge.value.toFixed(2)}</div>
+                                 <Badge variant="outline" className={cn("text-xs font-normal mt-1", status.className)}>{status.text}</Badge>
+                            </div>
                         </div>
-                        <div className="ml-auto flex flex-col items-end">
-                            <div className="font-medium">R$ {charge.value.toFixed(2)}</div>
-                             <Badge variant="outline" className={cn("text-xs font-normal mt-1", status.className)}>{status.text}</Badge>
-                        </div>
-                    </div>
-                )})
-            ) : (
-                 <div className="flex flex-col items-center justify-center gap-2 text-center py-12">
-                    <ClipboardList className="h-8 w-8 text-muted-foreground" />
-                    <p className="text-sm text-muted-foreground">Nenhuma cobrança encontrada.</p>
-                     {isProfileComplete ? (
-                        <Button asChild size="sm" className="mt-2">
-                            <Link href="/dashboard/clientes">
+                    )})
+                ) : (
+                     <div className="flex flex-col items-center justify-center gap-2 text-center py-12">
+                        <ClipboardList className="h-8 w-8 text-muted-foreground" />
+                        <p className="text-sm text-muted-foreground">Nenhuma cobrança encontrada.</p>
+                         {isProfileComplete ? (
+                            <Button asChild size="sm" className="mt-2">
+                                <Link href="/dashboard/clientes">
+                                    Adicionar Cliente
+                                </Link>
+                            </Button>
+                         ) : (
+                            <Button size="sm" className="mt-2" disabled>
                                 Adicionar Cliente
-                            </Link>
-                        </Button>
-                     ) : (
-                        <Button size="sm" className="mt-2" disabled>
-                            Adicionar Cliente
-                        </Button>
-                     )}
-                </div>
-            )}
-          </CardContent>
-        </Card>
+                            </Button>
+                         )}
+                    </div>
+                )}
+              </CardContent>
+            </Card>
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                        <CalendarDays className="h-5 w-5" />
+                        Folgas e Feriados
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <DaysOffCalendar />
+                </CardContent>
+            </Card>
+        </div>
       </div>
     </div>
   )

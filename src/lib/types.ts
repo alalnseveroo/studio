@@ -1,4 +1,5 @@
 
+
 export type Cliente = {
   id: string;
   user_id: string;
@@ -123,6 +124,20 @@ export type Cobranca = {
 
     clientes: Cliente; // Join com clientes
 }
+
+export type Holiday = {
+  id: string;
+  date: string; // YYYY-MM-DD
+  name: string;
+  type: string;
+};
+
+export type DayOff = {
+  id: string;
+  user_id: string;
+  date: string; // YYYY-MM-DD
+  created_at: string;
+};
     
 
     
@@ -130,4 +145,5 @@ export type Cobranca = {
     
 
     
+
 
