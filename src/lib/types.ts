@@ -32,11 +32,7 @@ export type Cliente = {
   asaas_customer_id?: string | null;
 
   propostas?: Proposta; 
-<<<<<<< HEAD
-  asaas_customer_id?: string | null;
-=======
   Cobranca?: Cobranca[];
->>>>>>> 806b9d1cb4f0ce30ac3a48935ca0a1bffcabeb3e
 };
 
 export type Proposta = {

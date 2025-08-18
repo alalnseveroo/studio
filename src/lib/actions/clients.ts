@@ -8,11 +8,7 @@ import type { Cliente, Profile, Proposta } from '@/lib/types';
 import { format } from 'date-fns'
 import { sendClientWebhook } from './webhook';
 import { addOrUpdateContact, sendTransactionalEmail } from '../brevo';
-<<<<<<< HEAD
-import { getOrCreateAsaasCustomer } from '../asaas';
-=======
 import { createAsaasCharge, getOrCreateAsaasCustomer } from '../asaas';
->>>>>>> 806b9d1cb4f0ce30ac3a48935ca0a1bffcabeb3e
 
 
 const AVATARS_CLIENT_MALE = [
@@ -36,11 +32,7 @@ export async function createFullClient(formData: any) {
   // Buscar o perfil da contratada (usuário) para obter asaas_customer_id
   const { data: providerProfile, error: profileError } = await supabase
     .from('profiles')
-<<<<<<< HEAD
     .select('*') // Busca o perfil completo
-=======
-    .select('full_name, company_name, asaas_customer_id')
->>>>>>> 806b9d1cb4f0ce30ac3a48935ca0a1bffcabeb3e
     .eq('id', user.id)
     .single();
 
@@ -76,11 +68,7 @@ export async function createFullClient(formData: any) {
   };
 
 
-<<<<<<< HEAD
-  const { data, error } = await supabase.from('clientes').insert(clientDataForDb).select().single()
-=======
-  const { data: newClient, error } = await supabase.from('clientes').insert(clientData).select().single()
->>>>>>> 806b9d1cb4f0ce30ac3a48935ca0a1bffcabeb3e
+  const { data: newClient, error } = await supabase.from('clientes').insert(clientDataForDb).select().single()
 
   if (error) {
     console.error('Supabase error:', error)
@@ -97,34 +85,7 @@ export async function createFullClient(formData: any) {
      }
   }
   
-<<<<<<< HEAD
-  // Após criar o cliente no nosso DB, cria no Asaas
-  try {
-    const clientForAsaas = {
-        ...data,
-        // Garante que o nome e cpf/cnpj corretos sejam enviados
-        name: data.full_name || data.company_name,
-        cpfCnpj: data.cpf || data.cnpj,
-    };
-    const asaasCustomer = await getOrCreateAsaasCustomer(clientForAsaas as Cliente);
-
-    // Salva o ID do Asaas de volta no nosso cliente
-    if (asaasCustomer && asaasCustomer.id) {
-        await supabase
-            .from('clientes')
-            .update({ asaas_customer_id: asaasCustomer.id })
-            .eq('id', data.id);
-    }
-  } catch (asaasError: any) {
-      console.error(`Falha ao criar cliente no Asaas para o cliente ${data.id}: ${asaasError.message}`);
-      // Não retorna erro fatal, mas loga. O app pode continuar funcionando.
-  }
-
-  
-    if (data && data.email) {
-=======
     if (newClient && newClient.email) {
->>>>>>> 806b9d1cb4f0ce30ac3a48935ca0a1bffcabeb3e
         try {
             const portalUrl = new URL(`/portal/${newClient.id}`, process.env.NEXT_PUBLIC_SITE_URL).toString();
             const providerName = providerProfile.full_name || providerProfile.company_name;

@@ -5,84 +5,14 @@ import { useState, useEffect, useCallback } from 'react';
 import { QRCodeCanvas } from 'qrcode.react';
 import { Button } from './ui/button';
 import { useToast } from '@/hooks/use-toast';
-<<<<<<< HEAD
-import { Copy, RefreshCw } from 'lucide-react';
-import Image from 'next/image';
-=======
 import { Copy, RefreshCw, Loader2 } from 'lucide-react';
 import { getAsaasPixCharge } from '@/lib/asaas';
->>>>>>> 806b9d1cb4f0ce30ac3a48935ca0a1bffcabeb3e
 
 interface PixQRCodeProps {
     paymentId: string;
 }
 
-<<<<<<< HEAD
-// NOTE: This component is currently UNUSED. The logic was replaced by pix-qrcode-modal.tsx
-// which gets the QR code directly from the Asaas API to prevent validation errors.
-// This file is kept for historical purposes but can be removed.
-
-const calcularCRC16 = (payload: string): string => {
-    let crc = 0xFFFF;
-    const polynomial = 0x1021;
-    for (let i = 0; i < payload.length; i++) {
-        let byte = payload.charCodeAt(i);
-        crc ^= (byte << 8);
-        for (let j = 0; j < 8; j++) {
-            crc = (crc & 0x8000) ? (crc << 1) ^ polynomial : crc << 1;
-        }
-    }
-    return (crc & 0xFFFF).toString(16).toUpperCase().padStart(4, '0');
-};
-
-
-const gerarPixCopiaCola = (chave: string, nome: string, cidade: string, valor: number, txid: string) => {
-    const sanitize = (text: string, maxLength: number) => {
-        return text
-            .normalize("NFD")
-            .replace(/[\u0300-\u036f]/g, "") 
-            .replace(/[^a-zA-Z0-9 ]/g, '')
-            .substring(0, maxLength)
-            .toUpperCase()
-            .trim();
-    };
-
-    const chaveSanitizada = chave.replace(/\D/g, '');
-    const nomeSanitizado = sanitize(nome, 25);
-    const cidadeSanitizada = sanitize(cidade, 15);
-    const txidSanitizado = sanitize(txid, 25).replace(/\s/g, '');
-    const valorFormatado = valor.toFixed(2);
-
-    const formatField = (id: string, val: string) => {
-        const len = val.length.toString().padStart(2, '0');
-        return `${id}${len}${val}`;
-    };
-
-    const merchantAccountInfo = formatField('00', 'br.gov.bcb.pix') + formatField('01', chaveSanitizada);
-    const additionalData = formatField('05', txidSanitizado);
-    
-    let payload = [
-        formatField('00', '01'),
-        formatField('26', merchantAccountInfo),
-        formatField('52', '0000'),
-        formatField('53', '986'),
-        formatField('54', valorFormatado),
-        formatField('58', 'BR'),
-        formatField('59', nomeSanitizado),
-        formatField('60', cidadeSanitizada),
-        formatField('62', additionalData),
-    ].join('') + "6304";
-    
-    const crc = calcularCRC16(payload);
-
-    return `${payload}${crc}`;
-};
-
-
-const PixQRCode: React.FC<PixQRCodeProps> = ({ pixKey, value, beneficiaryName, beneficiaryCity }) => {
-=======
 const PixQRCode: React.FC<PixQRCodeProps> = ({ paymentId }) => {
->>>>>>> 806b9d1cb4f0ce30ac3a48935ca0a1bffcabeb3e
     const { toast } = useToast();
     const [qrCode, setQrCode] = useState<string | null>(null);
     const [payload, setPayload] = useState<string | null>(null);

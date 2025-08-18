@@ -3,11 +3,7 @@
 
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
-<<<<<<< HEAD
-import { Check, ArrowLeft, CreditCard, Users, Briefcase, Loader2 } from 'lucide-react'
-=======
 import { Check, ArrowLeft, CreditCard, Users, Briefcase, Loader2, RefreshCw } from 'lucide-react'
->>>>>>> 806b9d1cb4f0ce30ac3a48935ca0a1bffcabeb3e
 import Image from 'next/image'
 import {
   Dialog,
@@ -23,15 +19,11 @@ import { getProfile, saveProfile } from '@/lib/actions/profile'
 import { getOrCreateAsaasCustomer } from '@/lib/asaas'
 import type { Profile } from '@/lib/types'
 import confetti from "canvas-confetti";
-<<<<<<< HEAD
-import { useToast } from '@/hooks/use-toast'
-import { useRouter } from 'next/navigation'
-
-=======
 import { createAsaasCharge, createAsaasPaymentLink, getAsaasPixCharge } from '@/lib/asaas'
 import PixQRCode from './pix-qrcode'
 import { useToast } from '@/hooks/use-toast'
->>>>>>> 806b9d1cb4f0ce30ac3a48935ca0a1bffcabeb3e
+import { useRouter } from 'next/navigation'
+
 
 export const triggerConfetti = () => {
     const end = Date.now() + 3 * 1000; // 3 seconds
@@ -163,17 +155,7 @@ interface UpgradePlanModalProps {
     onClose: () => void;
 }
 
-<<<<<<< HEAD
-type Step = 'selection' | 'offer' | 'credits' | 'checkout';
-type ButtonState = 'idle' | 'loading' | 'success';
-
-const BASE_LINK_MENSAL = "https://pay.kirvano.com/7d7c5149-41dd-4bd1-b269-36500fb5c0e4";
-const BASE_LINK_SEMESTRAL = "https://pay.kirvano.com/87f87449-a348-4a15-ad42-f2d9b717fe52";
-const BASE_LINK_2_CREDITS = "https://pay.kirvano.com/bbf1923d-e307-4319-9cb4-9ae4ee4d5a87";
-const BASE_LINK_4_CREDITS = "https://pay.kirvano.com/1d926d20-3ae9-403b-9acb-8882bdd898dd";
-=======
 type Step = 'selection' | 'checkout' | 'loading' | 'error';
->>>>>>> 806b9d1cb4f0ce30ac3a48935ca0a1bffcabeb3e
 
 interface CheckoutData {
   paymentId: string;
@@ -184,16 +166,10 @@ export function UpgradePlanModal({ isOpen, onClose }: UpgradePlanModalProps) {
   const [selectedPlan, setSelectedPlan] = useState('professional');
   const [step, setStep] = useState<Step>('selection');
   const [userProfile, setUserProfile] = useState<Profile | null>(null);
-<<<<<<< HEAD
-  const [buttonState, setButtonState] = useState<ButtonState>('idle');
-  const [checkoutUrl, setCheckoutUrl] = useState<string>('');
-  const { toast } = useToast();
-  const router = useRouter();
-=======
   const [checkoutData, setCheckoutData] = useState<CheckoutData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
->>>>>>> 806b9d1cb4f0ce30ac3a48935ca0a1bffcabeb3e
+  const router = useRouter();
 
   useEffect(() => {
     if (isOpen) {
@@ -206,72 +182,12 @@ export function UpgradePlanModal({ isOpen, onClose }: UpgradePlanModalProps) {
   }, [isOpen]);
   
   const handleContinue = async () => {
-<<<<<<< HEAD
-    if (!userProfile) {
-      toast({ variant: 'destructive', title: "Erro", description: "Perfil do usuário não encontrado. Por favor, recarregue a página." });
+    if (selectedPlan === 'flexible') {
+      onClose();
+      router.push('/dashboard/settings/buy-credits');
       return;
     }
-    setButtonState('loading');
     
-    try {
-      // Garante que o usuário existe como cliente no Asaas.
-      const asaasCustomer = await getOrCreateAsaasCustomer(userProfile);
-      
-      // Se o perfil local não tiver o ID do Asaas, atualiza-o.
-      if (asaasCustomer && userProfile.asaas_customer_id !== asaasCustomer.id) {
-          const profileUpdateData = { ...userProfile, asaas_customer_id: asaasCustomer.id };
-          await saveProfile(profileUpdateData as any); // A 'is_completed' field might be missing, casting to any for now
-          setUserProfile(profileUpdateData); // Update local state
-      }
-
-      setButtonState('success');
-      
-      setTimeout(() => {
-         if (selectedPlan === 'professional') {
-            setStep('offer');
-         } else {
-            // Se o plano for flexível, redireciona para a página de compra de créditos
-            handleClose(); // Fecha o modal
-            router.push('/dashboard/settings/buy-credits');
-         }
-        setButtonState('idle'); // Reset button for the next screen
-      }, 1000); // Wait 1 second to show the success checkmark
-
-    } catch (error: any) {
-        setButtonState('idle');
-        toast({ variant: 'destructive', title: "Erro de Sincronização", description: error.message });
-    }
-  };
-
-  const handleClose = () => {
-    onClose();
-    setTimeout(() => {
-        setStep('selection');
-        setSelectedPlan('professional');
-        setButtonState('idle');
-    }, 300);
-  }
-  
-  const buildPaymentLink = (baseUrl: string) => {
-    if (!userProfile) return baseUrl;
-
-    const params = new URLSearchParams();
-    if (userProfile.full_name || userProfile.company_name) {
-        params.append('customer.name', userProfile.full_name || userProfile.company_name!);
-    }
-    if (userProfile.email) {
-        params.append('customer.email', userProfile.email);
-    }
-    if (userProfile.cpf || userProfile.cnpj) {
-        params.append('customer.document', userProfile.cpf || userProfile.cnpj!);
-    }
-    if (userProfile.phone) {
-        params.append('customer.phone', userProfile.phone.replace(/\D/g, ''));
-    }
-
-    const queryString = params.toString();
-    return queryString ? `${baseUrl}?${queryString}` : baseUrl;
-=======
     setStep('loading');
     setError(null);
     setCheckoutData(null);
@@ -333,7 +249,6 @@ export function UpgradePlanModal({ isOpen, onClose }: UpgradePlanModalProps) {
         setCheckoutData(null);
         setError(null);
     }, 300);
->>>>>>> 806b9d1cb4f0ce30ac3a48935ca0a1bffcabeb3e
   }
 
   const renderContent = () => {
@@ -345,8 +260,6 @@ export function UpgradePlanModal({ isOpen, onClose }: UpgradePlanModalProps) {
                     <p className="text-muted-foreground">Gerando seu checkout seguro...</p>
                 </div>
             );
-<<<<<<< HEAD
-=======
         case 'error':
              return (
                 <div className="flex flex-col justify-center items-center p-8 md:p-16 bg-background h-full text-center">
@@ -370,7 +283,6 @@ export function UpgradePlanModal({ isOpen, onClose }: UpgradePlanModalProps) {
                      )}
                  </div>
             );
->>>>>>> 806b9d1cb4f0ce30ac3a48935ca0a1bffcabeb3e
         case 'selection':
         default:
              return (
@@ -415,15 +327,8 @@ export function UpgradePlanModal({ isOpen, onClose }: UpgradePlanModalProps) {
                             />
                         </div>
                         <div className="mt-6 flex justify-end">
-<<<<<<< HEAD
-                             <Button size="lg" className="text-base py-6 w-40" onClick={handleContinue} disabled={buttonState !== 'idle'}>
-                                {buttonState === 'loading' && <Loader2 className="h-6 w-6 animate-spin" />}
-                                {buttonState === 'success' && <Check className="h-6 w-6" />}
-                                {buttonState === 'idle' && 'Continuar'}
-=======
                             <Button size="lg" className="text-base py-6" onClick={handleContinue}>
                                 Continuar para o Pagamento
->>>>>>> 806b9d1cb4f0ce30ac3a48935ca0a1bffcabeb3e
                             </Button>
                         </div>
                     </div>
