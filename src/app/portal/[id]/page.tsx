@@ -11,7 +11,7 @@ import { getChargesForClientPortal } from '@/lib/actions/cobrancas'
 import { getProfile } from '@/lib/actions/profile'
 import { createClient } from '@/lib/supabase/client'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { AlertCircle, User, FileText, Check, Clock, Verified, Briefcase, Mail, Download, CreditCard, Lock, Loader2, DollarSign, Calendar, CheckCircle, MessageSquare, ArrowUpRight, ChatBubbleIcon } from 'lucide-react'
+import { AlertCircle, User, FileText, Check, Clock, Verified, Briefcase, Mail, Download, CreditCard, Lock, Loader2, DollarSign, Calendar, CheckCircle, MessageSquare, ArrowUpRight, X } from 'lucide-react'
 import {
   AlertDialog,
   AlertDialogContent,
