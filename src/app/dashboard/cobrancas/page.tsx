@@ -22,7 +22,6 @@ import { sendTransactionalEmail } from '@/lib/brevo'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { getProfile } from '@/lib/actions/profile'
 import { InvoiceTooltip } from '@/components/invoice-tooltip'
 import Link from 'next/link'
@@ -243,29 +242,18 @@ export default function CobrancasPage() {
                                 </div>
                             </TableCell>
                             <TableCell className="text-center">
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <Button variant="ghost" size="icon" disabled={isSending === charge.id}>
-                                            {isSending === charge.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <MoreVertical className="h-4 w-4" />}
+                                 <div className="flex items-center justify-center">
+                                    <Button variant="ghost" size="icon" disabled={isSending === charge.id} onClick={() => handleSendReminder(charge)}>
+                                        {isSending === charge.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                                        <span className="sr-only">Enviar Lembrete</span>
+                                    </Button>
+                                     {charge.status === 'pendente' && (
+                                         <Button variant="ghost" size="icon" onClick={() => handleMarkAsPaid(charge.id)}>
+                                            <BadgeCheck className="h-4 w-4" />
+                                            <span className="sr-only">Marcar como pago</span>
                                         </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end">
-                                        <DropdownMenuItem onSelect={() => { /* This will be handled by the tooltip now */ }}>
-                                            <Upload className="mr-2 h-4 w-4" />
-                                            Anexar/Substituir NF-e
-                                        </DropdownMenuItem>
-                                        {charge.status === 'pendente' && (
-                                            <DropdownMenuItem onSelect={() => handleMarkAsPaid(charge.id)}>
-                                                <BadgeCheck className="mr-2 h-4 w-4" />
-                                                Marcar como pago
-                                            </DropdownMenuItem>
-                                        )}
-                                        <DropdownMenuItem onSelect={() => handleSendReminder(charge)} disabled={!providerProfile}>
-                                            <Send className="mr-2 h-4 w-4" />
-                                            Enviar lembrete
-                                        </DropdownMenuItem>
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
+                                     )}
+                                 </div>
                             </TableCell>
                             </TableRow>
                          )
