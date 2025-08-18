@@ -4,9 +4,9 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import type { Cliente, Profile, Proposta } from '@/lib/types';
-import { format } from 'date-fns'
+import { format, addMonths } from 'date-fns'
 import { sendClientWebhook } from './webhook';
-import { addOrUpdateContact, sendTransactionalEmail } from '../brevo';
+import { sendTransactionalEmail } from '../brevo';
 import { createAsaasCharge, getOrCreateAsaasCustomer } from '../asaas';
 
 
@@ -197,10 +197,10 @@ export async function updateClientProfile(id: string, formData: any) {
 export async function updateClientFinancials(id: string, financials: { 
     billing_status: 'active' | 'inactive'; 
     proposal_id: string | null; 
-    value: number,
-    payment_day: number,
-    first_charge_date?: string | null,
-    send_charge_now?: boolean,
+    value: string | number | null;
+    payment_day: string | number | null;
+    first_charge_date?: string | null;
+    send_charge_now?: boolean;
 }) {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -208,13 +208,8 @@ export async function updateClientFinancials(id: string, financials: {
     return { error: { message: 'Usuário não autenticado.' } };
   }
   
-  const { data: client, error: clientError } = await supabase
-    .from('clientes')
-    .select('*')
-    .eq('id', id)
-    .single();
-
-  if (clientError || !client) {
+  const client = await getClientById(id);
+  if (client.error || !client.data) {
     return { error: { message: 'Cliente não encontrado.' } };
   }
 
@@ -228,34 +223,67 @@ export async function updateClientFinancials(id: string, financials: {
     return { error: { message: 'Perfil da contratada não encontrado.' } };
   }
   
-  const { asaas_customer_id, error: asaasError } = await getOrCreateAsaasCustomer(client, user.id);
+  const { asaas_customer_id, error: asaasError } = await getOrCreateAsaasCustomer(client.data, user.id);
   if (asaasError) {
       return { error: { message: `Erro ao integrar com Asaas: ${asaasError.message}` } };
   }
 
-  if (asaas_customer_id && client.asaas_customer_id !== asaas_customer_id) {
-    const { error: updateAsaasIdError } = await supabase
-        .from('clientes')
-        .update({ asaas_customer_id })
-        .eq('id', client.id);
-    if (updateAsaasIdError) console.error("Failed to save Asaas customer ID", updateAsaasIdError);
+  if (asaas_customer_id && client.data.asaas_customer_id !== asaas_customer_id) {
+    await supabase.from('clientes').update({ asaas_customer_id }).eq('id', client.data.id);
   }
 
+  // Lógica de cobrança imediata
+  if (financials.send_charge_now && financials.value && asaas_customer_id) {
+    const chargeValue = Number(financials.value);
+    const dueDate = new Date();
+    
+    const { payment, error: asaasChargeError } = await createAsaasCharge({
+        customer: asaas_customer_id,
+        value: chargeValue,
+        dueDate: format(dueDate, 'yyyy-MM-dd'),
+        description: `Cobrança de serviços - ${providerProfile.full_name || providerProfile.company_name}`
+    });
+
+    if (asaasChargeError) {
+      return { error: { message: `Configurações salvas, mas não foi possível gerar a cobrança no Asaas: ${asaasChargeError.message}`}};
+    }
+
+    const { error: chargeError } = await supabase.from('cobrancas').insert({
+      user_id: user.id,
+      cliente_id: id,
+      due_date: format(dueDate, 'yyyy-MM-dd'),
+      value: chargeValue,
+      status: 'pendente',
+      asaas_payment_id: payment.id
+    });
+
+    if (chargeError) {
+      return { error: { message: `Cobrança gerada no Asaas, mas não foi possível salvar no sistema: ${chargeError.message}`}};
+    }
+  }
+
+  // Define a data da próxima cobrança recorrente
+  let nextChargeDate = financials.first_charge_date;
+  if (financials.send_charge_now && financials.payment_day) {
+    const today = new Date();
+    // A próxima cobrança será no próximo mês, no dia de pagamento
+    const nextMonthDate = addMonths(today, 1);
+    nextChargeDate = format(new Date(nextMonthDate.getFullYear(), nextMonthDate.getMonth(), Number(financials.payment_day)), 'yyyy-MM-dd');
+  }
 
   const financialUpdateData = {
-      billing_status: financials.billing_status,
-      proposal_id: financials.proposal_id,
-      value: financials.value,
-      payment_day: financials.payment_day,
-      first_charge_date: financials.first_charge_date || null,
-      updated_at: new Date().toISOString(),
-    };
+    billing_status: financials.billing_status,
+    proposal_id: financials.proposal_id,
+    value: financials.value ? Number(financials.value) : null,
+    payment_day: financials.payment_day ? Number(financials.payment_day) : null,
+    first_charge_date: nextChargeDate || null,
+    updated_at: new Date().toISOString(),
+  };
 
   const { data: updatedClient, error } = await supabase
     .from('clientes')
     .update(financialUpdateData)
     .eq('id', id)
-    .eq('user_id', user.id)
     .select('*, propostas(*)')
     .single();
 
@@ -264,8 +292,7 @@ export async function updateClientFinancials(id: string, financials: {
     return { error: { message: `Não foi possível atualizar as configurações financeiras: ${error.message}` } };
   }
   
-  // Enviar webhook com dados atualizados
-   try {
+  try {
     if (updatedClient) {
         const portalUrl = new URL(`/portal/${updatedClient.id}`, process.env.NEXT_PUBLIC_SITE_URL).toString();
         const providerName = providerProfile.full_name || providerProfile.company_name;
@@ -274,7 +301,6 @@ export async function updateClientFinancials(id: string, financials: {
             ...updatedClient,
             portal_url: portalUrl,
             provider_name: providerName,
-            // Adiciona a proposta completa se existir
             proposta: updatedClient.propostas 
         };
         await sendClientWebhook('update', dataWithContext);
@@ -282,37 +308,6 @@ export async function updateClientFinancials(id: string, financials: {
   } catch (webhookError: any) {
     console.warn(`Falha ao enviar webhook de atualização financeira: ${webhookError.message}`);
   }
-
-  
-  if (financials.send_charge_now && financials.value && asaas_customer_id) {
-      const dueDate = new Date();
-      
-       const { payment, error: asaasChargeError } = await createAsaasCharge({
-            customer: asaas_customer_id,
-            value: financials.value,
-            dueDate: format(dueDate, 'yyyy-MM-dd'),
-            description: `Cobrança de serviços - ${providerProfile.full_name || providerProfile.company_name}`
-        });
-
-        if (asaasChargeError) {
-             return { error: { message: `Configurações salvas, mas não foi possível gerar a cobrança no Asaas: ${asaasChargeError.message}`}};
-        }
-
-      const { data: chargeData, error: chargeError } = await supabase.from('cobrancas').insert({
-          user_id: user.id,
-          cliente_id: id,
-          due_date: dueDate.toISOString().split('T')[0],
-          value: financials.value,
-          status: 'pendente',
-          asaas_payment_id: payment.id
-      }).select().single();
-
-      if (chargeError) {
-          console.error('Supabase error creating immediate charge:', chargeError);
-          return { error: { message: `Cobrança gerada no Asaas, mas não foi possível salvar no sistema: ${chargeError.message}`}};
-      }
-  }
-
 
   revalidatePath(`/dashboard/clientes/${id}`);
   revalidatePath('/dashboard/cobrancas');
