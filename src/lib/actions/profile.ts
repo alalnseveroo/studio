@@ -1,4 +1,5 @@
 
+
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
@@ -68,28 +69,19 @@ export async function saveProfile(formData: ProfileFormData & { is_completed: bo
     return { error: { message: `Não foi possível salvar o perfil: ${error.message}` } }
   }
   
-    if(savedProfile) {
+    if(savedProfile && formData.is_completed) {
       try {
-          await sendProfileWebhook('update', savedProfile);
-      } catch (webhookError: any) {
-          console.warn(`Falha ao enviar webhook de atualização de perfil: ${webhookError.message}`);
-      }
-
-      // Agendar e-mail após 1 minuto
-      setTimeout(async () => {
-        try {
           await sendTransactionalEmail({
             toEmail: user.email!,
-            templateId: 65,
+            templateId: 65, // Template de Boas-vindas para a Contratada
             params: {
               CONTRATADA_NOME: savedProfile.full_name || savedProfile.company_name
             },
             userId: user.id
-          })
-        } catch (emailError: any) {
-          console.error('Falha ao enviar e-mail agendado de perfil completo:', emailError.message);
-        }
-      }, 60000); // 1 minuto
+          });
+      } catch (emailError: any) {
+          console.error('Falha ao enviar e-mail de perfil completo:', emailError.message);
+      }
   }
 
   return { error: null }

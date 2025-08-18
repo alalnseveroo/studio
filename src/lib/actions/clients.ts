@@ -90,16 +90,19 @@ export async function createFullClient(formData: any) {
             const portalUrl = new URL(`/portal/${newClient.id}`, process.env.NEXT_PUBLIC_SITE_URL).toString();
             const providerName = providerProfile.full_name || providerProfile.company_name;
 
-            const dataWithContext = { 
-                ...newClient, 
-                portal_url: portalUrl,
-                provider_name: providerName 
-            };
+            await sendTransactionalEmail({
+                toEmail: newClient.email,
+                templateId: 62,
+                params: { 
+                    CLIENTE_NOME: newClient.full_name || newClient.company_name,
+                    CONTRATADA_NOME: providerName,
+                    LINK_PORTAL: portalUrl,
+                },
+                userId: user.id
+            });
 
-            await sendClientWebhook('create', dataWithContext);
-
-        } catch (webhookError: any) {
-            console.warn(`Falha ao enviar webhook de criação de cliente: ${webhookError.message}`);
+        } catch (emailError: any) {
+            console.warn(`Falha ao enviar e-mail de boas-vindas: ${emailError.message}`);
         }
     }
 

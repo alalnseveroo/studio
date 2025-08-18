@@ -1,4 +1,5 @@
 
+
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
@@ -241,6 +242,25 @@ export async function signContractAsProvider(contractId: string, otp: string) {
         console.error('Supabase update error:', updateError);
         return { data: null, error: { message: `Não foi possível assinar o contrato: ${updateError.message}` } };
     }
+
+    if (contract.clientes?.email) {
+        try {
+            const portalUrl = new URL(`/portal/${contract.cliente_id}/contrato/${contract.id}`, process.env.NEXT_PUBLIC_SITE_URL).toString();
+            await sendTransactionalEmail({
+                toEmail: contract.clientes.email,
+                templateId: 58, 
+                params: {
+                    CONTRATADA_NOME: contratada.full_name || contratada.company_name,
+                    CLIENTE_NOME: contract.clientes.full_name || contract.clientes.company_name,
+                    LINK_PORTAL: portalUrl,
+                },
+                userId: user.id
+            });
+        } catch (emailError: any) {
+            console.warn(`Falha ao enviar e-mail de notificação de assinatura: ${emailError.message}`);
+        }
+    }
+
 
     revalidatePath(`/dashboard/contratos/${contractId}`);
     revalidatePath(`/portal/${contract.cliente_id}/contrato/${contract.id}`);
