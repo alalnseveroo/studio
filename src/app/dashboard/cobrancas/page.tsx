@@ -82,6 +82,34 @@ export default function CobrancasPage() {
     setIsLoading(false);
   }
 
+  const handleSendReminder = async (charge: Cobranca) => {
+    if (!charge.clientes?.email || !providerProfile) {
+      toast({ variant: 'destructive', title: 'Erro', description: 'Informações do cliente ou do prestador de serviço estão faltando.' });
+      return;
+    }
+    setIsSending(charge.id);
+    try {
+      const portalUrl = new URL(`/portal/${charge.cliente_id}`, process.env.NEXT_PUBLIC_SITE_URL).toString();
+      await sendTransactionalEmail({
+        toEmail: charge.clientes.email,
+        templateId: 61,
+        params: {
+          CLIENTE_NOME: charge.clientes.full_name || charge.clientes.company_name,
+          CONTRATADA_NOME: providerProfile.full_name || providerProfile.company_name,
+          COBRANCA_VALOR: (charge.value || 0).toFixed(2).replace('.', ','),
+          COBRANCA_VENCIMENTO: format(new Date(charge.due_date + 'T00:00:00'), 'dd/MM/yyyy'),
+          LINK_PORTAL: portalUrl,
+        },
+        userId: charge.user_id,
+      });
+      toast({ title: 'Lembrete Enviado!', description: `E-mail de lembrete enviado para ${charge.clientes.email}.` });
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: 'Erro ao Enviar', description: error.message });
+    } finally {
+      setIsSending(null);
+    }
+  };
+
   return (
     <>
     <div className="flex flex-1 flex-col gap-4 p-4 sm:gap-6 sm:p-10">
@@ -201,6 +229,12 @@ export default function CobrancasPage() {
                             </TableCell>
                             <TableCell className="text-center">
                                  <div className="flex items-center justify-center">
+                                     {charge.status === 'pendente' && (
+                                        <Button variant="ghost" size="icon" onClick={() => handleSendReminder(charge)} disabled={isSending === charge.id}>
+                                            {isSending === charge.id ? <Loader2 className="h-4 w-4 animate-spin"/> : <Send className="h-4 w-4" />}
+                                            <span className="sr-only">Enviar Lembrete</span>
+                                        </Button>
+                                     )}
                                      {charge.status === 'pendente' && (
                                          <Button variant="ghost" size="icon" onClick={() => handleMarkAsPaid(charge.id)}>
                                             <BadgeCheck className="h-4 w-4" />

@@ -1,8 +1,9 @@
-
 import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { format } from 'https://deno.land/std@0.208.0/datetime/mod.ts';
 
 const BREVO_API_KEY = Deno.env.get('BREVO_API_KEY');
+const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
 async function sendEmailViaBrevo(toEmail: string, templateId: number, params: object) {
   if (!BREVO_API_KEY) {
@@ -49,10 +50,12 @@ async function getProviderProfile(supabase: SupabaseClient, userId: string): Pro
 
 Deno.serve(async (_req) => {
   try {
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
+    
+    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+      throw new Error("Supabase credentials not found in environment variables.");
+    }
+
+    const supabaseClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
     const today = new Date();
     const tomorrow = new Date(today);
