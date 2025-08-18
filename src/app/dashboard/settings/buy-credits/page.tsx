@@ -124,8 +124,8 @@ export default function BuyCreditsPage() {
                     </Button>
                 </div>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-12 gap-y-8 items-start">
-                    {/* Coluna Direita - Seleção (agora na esquerda no código) */}
-                    <div className="space-y-8 lg:order-2">
+                    {/* Coluna Esquerda - Seleção */}
+                    <div className="space-y-8 lg:order-1">
                          <div className="space-y-2">
                              <h1 className="text-2xl font-bold">Comprar Créditos</h1>
                              <p className="text-muted-foreground">Registre quantos clientes quiser, pague somente quando o cliente for ativado com assinatura ou pagamento recorrente.</p>
@@ -133,7 +133,7 @@ export default function BuyCreditsPage() {
                          
                         <div className="flex flex-col items-start gap-6">
                             <div className="flex items-center gap-4 w-full justify-start">
-                                <div className="text-5xl font-bold tracking-tight w-48 text-left">
+                                <div className="text-5xl font-bold tracking-tight text-left">
                                     <span className="text-3xl text-muted-foreground mr-1">R$</span>{amount.toFixed(2).replace('.', ',')}
                                 </div>
                                 <div className="flex flex-col gap-2">
@@ -203,8 +203,8 @@ export default function BuyCreditsPage() {
                             </Button>
                         </div>
                     </div>
-                    {/* Coluna Esquerda - Resumo (agora na direita no código) */}
-                    <div className="lg:col-span-1 lg:order-1">
+                    {/* Coluna Direita - Resumo */}
+                    <div className="lg:col-span-1 lg:order-2">
                         <Card className="sticky top-24">
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2 text-lg">
