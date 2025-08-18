@@ -11,20 +11,6 @@ import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 
 // --- Início da Lógica de Geração do Payload PIX (Adaptada para TS) ---
 
-const ID_PAYLOAD_FORMAT_INDICATOR = '00';
-const ID_MERCHANT_ACCOUNT_INFORMATION = '26';
-const ID_MERCHANT_ACCOUNT_INFORMATION_GUI = '00';
-const ID_MERCHANT_ACCOUNT_INFORMATION_KEY = '01';
-const ID_MERCHANT_CATEGORY_CODE = '52';
-const ID_TRANSACTION_CURRENCY = '53';
-const ID_TRANSACTION_AMOUNT = '54';
-const ID_COUNTRY_CODE = '58';
-const ID_MERCHANT_NAME = '59';
-const ID_MERCHANT_CITY = '60';
-const ID_ADDITIONAL_DATA_FIELD_TEMPLATE = '62';
-const ID_ADDITIONAL_DATA_FIELD_TEMPLATE_TXID = '05';
-const ID_CRC16 = '63';
-
 const formatValue = (id: string, value: string): string => {
     const size = String(value.length).padStart(2, '0');
     return id + size + value;
@@ -33,14 +19,20 @@ const formatValue = (id: string, value: string): string => {
 const calcularCRC16 = (payload: string): string => {
     let crc = 0xFFFF;
     const polynomial = 0x1021;
-    for (let i = 0; i < payload.length; i++) {
-        crc ^= payload.charCodeAt(i) << 8;
-        for (let j = 0; j < 8; j++) {
-            crc = (crc & 0x8000) ? (crc << 1) ^ polynomial : crc << 1;
+
+    for (const char of payload) {
+        crc ^= char.charCodeAt(0) << 8;
+        for (let i = 0; i < 8; i++) {
+            if ((crc & 0x8000) !== 0) {
+                crc = ((crc << 1) & 0xFFFF) ^ polynomial;
+            } else {
+                crc = (crc << 1) & 0xFFFF;
+            }
         }
     }
-    return (crc & 0xFFFF).toString(16).toUpperCase().padStart(4, '0');
+    return crc.toString(16).toUpperCase().padStart(4, '0');
 };
+
 
 const gerarPixCopiaCola = (
     chave: string,
@@ -49,15 +41,31 @@ const gerarPixCopiaCola = (
     valor: number,
     txid: string
 ): string => {
-    const valorFormatado = valor.toFixed(2);
-    const nomeFormatado = nome.substring(0, 25);
-    const cidadeFormatada = cidade.substring(0, 15);
     
+    const valorFormatado = valor.toFixed(2);
+    // Remove acentos e caracteres especiais, e limita o tamanho
+    const nomeFormatado = nome.normalize("NFD").replace(/[\u0300-\u036f]/g, "").substring(0, 25);
+    const cidadeFormatada = cidade.normalize("NFD").replace(/[\u0300-\u036f]/g, "").substring(0, 15);
+    
+    const ID_PAYLOAD_FORMAT_INDICATOR = '00';
+    const ID_MERCHANT_ACCOUNT_INFORMATION = '26';
+    const ID_MERCHANT_ACCOUNT_INFORMATION_GUI = '00';
+    const ID_MERCHANT_ACCOUNT_INFORMATION_KEY = '01';
+    const ID_MERCHANT_CATEGORY_CODE = '52';
+    const ID_TRANSACTION_CURRENCY = '53';
+    const ID_TRANSACTION_AMOUNT = '54';
+    const ID_COUNTRY_CODE = '58';
+    const ID_MERCHANT_NAME = '59';
+    const ID_MERCHANT_CITY = '60';
+    const ID_ADDITIONAL_DATA_FIELD_TEMPLATE = '62';
+    const ID_ADDITIONAL_DATA_FIELD_TEMPLATE_TXID = '05';
+    const ID_CRC16 = '63';
+
     // Merchant Account Info (ID do BACEN + chave Pix)
     const gui = "br.gov.bcb.pix";
     const guiFormatado = formatValue(ID_MERCHANT_ACCOUNT_INFORMATION_GUI, gui);
     const chaveFormatada = formatValue(ID_MERCHANT_ACCOUNT_INFORMATION_KEY, chave);
-    const merchantAccountInfo = guiFormatado + chaveFormatada;
+    const merchantAccountInfo = formatValue(ID_MERCHANT_ACCOUNT_INFORMATION, guiFormatado + chaveFormatada);
 
     const txidFormatado = formatValue(ID_ADDITIONAL_DATA_FIELD_TEMPLATE_TXID, txid);
     const campoAdicional = formatValue(ID_ADDITIONAL_DATA_FIELD_TEMPLATE, txidFormatado);
@@ -73,9 +81,9 @@ const gerarPixCopiaCola = (
         formatValue(ID_MERCHANT_CITY, cidadeFormatada) +
         campoAdicional;
         
-    payload += formatValue(ID_CRC16, calcularCRC16(payload));
-
-    return payload;
+    const crc = calcularCRC16(payload + ID_CRC16 + '04');
+    
+    return payload + formatValue(ID_CRC16, crc);
 };
 
 // --- Fim da Lógica ---

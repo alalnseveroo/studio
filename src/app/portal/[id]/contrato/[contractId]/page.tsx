@@ -7,7 +7,7 @@ import { getContractForClientById, signContractAsClient } from '@/lib/actions/co
 import { getProfile } from '@/lib/actions/profile'
 import { sendClientVerificationCode } from '@/lib/actions/auth'
 import { useToast } from '@/hooks/use-toast'
-import type { Contrato, Profile } from '@/lib/types'
+import type { Contrato, Profile, Cobranca } from '@/lib/types'
 import { Loader2, ArrowLeft, UserCheck, ShieldCheck, Download, Edit, Send, Info, MailCheck, FileText, Lock, CreditCard, CheckCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
@@ -19,6 +19,7 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp
 import SignatureCanvas from 'react-signature-canvas'
 import { cn } from '@/lib/utils'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
+import { StaticPixQRCode } from '@/components/static-pix-qrcode'
 
 
 type StepId = 'review' | 'sign' | 'payment';
@@ -149,7 +150,21 @@ export default function ContratoPortalPage() {
   
   const isReviewComplete = isReadyToSign;
   const isSignComplete = isSignedByClient;
-  const firstCharge = contract.clientes?.Cobranca?.[0];
+  const firstCharge: Cobranca | undefined = isSignComplete ? {
+      id: contract.id, // Use contract ID as a unique TXID
+      created_at: contract.created_at,
+      user_id: contract.user_id,
+      cliente_id: contract.cliente_id,
+      due_date: new Date().toISOString(), // First payment is due now
+      value: contract.propostas.value || 0,
+      status: 'pendente',
+      paid_at: null,
+      invoice_url: null,
+      updated_at: null,
+      download_otp: null,
+      download_otp_expires_at: null,
+      clientes: contract.clientes,
+  } : undefined;
 
   return (
     <>
@@ -324,17 +339,21 @@ export default function ContratoPortalPage() {
                                 <ShieldCheck className="h-4 w-4 text-green-600" />
                                 <AlertTitle className="text-green-800">Contrato Assinado com Sucesso!</AlertTitle>
                                 <AlertDescription className="text-green-700">
-                                Obrigado! Sua assinatura foi registrada. Para iniciar os serviços, realize o pagamento da primeira parcela.
+                                Obrigado! Sua assinatura foi registrada. Para iniciar os serviços, realize o pagamento da primeira parcela via PIX.
                                 </AlertDescription>
                             </Alert>
                              <div className="flex justify-center">
-                                 <Alert>
-                                    <Info className="h-4 w-4" />
-                                    <AlertTitle>Instruções de Pagamento</AlertTitle>
-                                    <AlertDescription>
-                                        Por favor, entre em contato com <strong>{provider?.full_name || 'a contratada'}</strong> pelo e-mail <strong>{provider?.email || '[e-mail não disponível]'}</strong> para receber a chave PIX e realizar o pagamento.
-                                    </AlertDescription>
-                                </Alert>
+                                 {provider && firstCharge ? (
+                                    <StaticPixQRCode provider={provider} charge={firstCharge} />
+                                 ) : (
+                                    <Alert>
+                                        <Info className="h-4 w-4" />
+                                        <AlertTitle>Instruções de Pagamento</AlertTitle>
+                                        <AlertDescription>
+                                            Não foi possível gerar o QR Code. Por favor, entre em contato com <strong>{provider?.full_name || 'a contratada'}</strong> pelo e-mail <strong>{provider?.email || '[e-mail não disponível]'}</strong> para receber a chave PIX e realizar o pagamento.
+                                        </AlertDescription>
+                                    </Alert>
+                                 )}
                             </div>
                             <p className="text-xs text-muted-foreground text-center w-full">
                                 Após o pagamento, a contratada será notificada para dar início aos trabalhos.

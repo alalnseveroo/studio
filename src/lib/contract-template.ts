@@ -81,11 +81,11 @@ function getRemunerationInfo(proposta: Proposta): string {
 function getPrazoInfo(proposta: Proposta): string {
     let text;
     if (proposta.contract_duration_type === 'definite') {
-        const startDate = proposta.start_date ? format(new Date(proposta.start_date), 'dd/MM/yyyy') : '[Data de Início]';
-        const endDate = proposta.end_date ? format(new Date(proposta.end_date), 'dd/MM/yyyy') : '[Data de Término]';
+        const startDate = proposta.start_date ? format(new Date(proposta.start_date + 'T00:00:00'), 'dd/MM/yyyy', { locale: ptBR }) : '[Data de Início]';
+        const endDate = proposta.end_date ? format(new Date(proposta.end_date + 'T00:00:00'), 'dd/MM/yyyy', { locale: ptBR }) : '[Data de Término]';
         text = `O presente contrato vigorará por prazo determinado, pelo período de <strong>${proposta.contract_duration_months || '[Número]'} meses</strong>, com início em <strong>${startDate}</strong> e término em <strong>${endDate}</strong>, podendo ser prorrogado mediante acordo entre as partes.`;
     } else { // indefinite
-        const startDate = proposta.start_date ? format(new Date(proposta.start_date), 'dd/MM/yyyy') : '[Data de Início]';
+        const startDate = proposta.start_date ? format(new Date(proposta.start_date + 'T00:00:00'), 'dd/MM/yyyy', { locale: ptBR }) : '[Data de Início]';
         text = `O presente contrato vigorará por prazo indeterminado, a partir de <strong>${startDate}</strong>, podendo ser rescindido por qualquer uma das partes conforme a Cláusula 9ª.`;
     }
     return `<p>5.1. ${text}</p>`;

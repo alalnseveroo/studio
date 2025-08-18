@@ -34,6 +34,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useToast } from '@/hooks/use-toast'
 import { ChatInterface } from '@/components/chat-interface'
 import { PortalCalendar } from '@/components/portal-calendar'
+import { StaticPixQRCode } from '@/components/static-pix-qrcode'
 
 
 export default function ClientPortalPage() {
@@ -372,14 +373,20 @@ export default function ClientPortalPage() {
     <AlertDialog open={!!selectedCharge} onOpenChange={() => setSelectedCharge(null)}>
         <AlertDialogContent>
             <AlertDialogHeader className="space-y-4">
-                <AlertDialogTitle>Realizar Pagamento</AlertDialogTitle>
-                <Alert>
-                  <Info className="h-4 w-4" />
-                  <AlertTitle>Instruções de Pagamento</AlertTitle>
-                  <AlertDescription>
-                      Por favor, entre em contato com <strong>{provider?.full_name || 'a contratada'}</strong> pelo e-mail <strong>{provider?.email || '[e-mail não disponível]'}</strong> para receber a chave PIX e realizar o pagamento.
-                  </AlertDescription>
-              </Alert>
+                <AlertDialogTitle className="text-center">Realizar Pagamento</AlertDialogTitle>
+                <AlertDialogDescription>
+                    {provider && selectedCharge ? (
+                        <StaticPixQRCode provider={provider} charge={selectedCharge} />
+                    ) : (
+                        <Alert>
+                            <Info className="h-4 w-4" />
+                            <AlertTitle>Instruções de Pagamento</AlertTitle>
+                            <AlertDescription>
+                                Não foi possível gerar o QR Code. Por favor, entre em contato com <strong>{provider?.full_name || 'a contratada'}</strong> pelo e-mail <strong>{provider?.email || '[e-mail não disponível]'}</strong> para receber a chave PIX e realizar o pagamento.
+                            </AlertDescription>
+                        </Alert>
+                    )}
+                </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
                 <AlertDialogCancel>Fechar</AlertDialogCancel>

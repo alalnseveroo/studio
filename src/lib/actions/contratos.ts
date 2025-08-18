@@ -138,7 +138,7 @@ export async function getContractForClientById(contractId: string) {
         .from('contratos')
         .select(`
             *,
-            clientes (*),
+            clientes (*, Cobranca(*)),
             propostas (*)
         `)
         .eq('id', contractId)
