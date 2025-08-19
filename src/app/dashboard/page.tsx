@@ -82,12 +82,12 @@ const getChargeStatusInfo = (status: string, dueDate: string) => {
 }
 
 const QuickActionButton = ({ href, icon: Icon, label }: { href: string, icon: React.ElementType, label: string }) => (
-  <Button asChild variant="outline" className="flex flex-col items-center justify-center h-24 w-24 gap-2 rounded-lg shadow-sm hover:shadow-md transition-shadow">
-    <Link href={href}>
-      <Icon className="h-6 w-6 text-primary" />
-      <span className="text-xs font-normal">{label}</span>
-    </Link>
-  </Button>
+    <Button asChild variant="outline" className="h-10 shadow-sm hover:shadow-md transition-all group">
+        <Link href={href} className="flex items-center gap-2">
+            <Icon className="h-0 w-0 opacity-0 transition-all duration-300 group-hover:h-4 group-hover:w-4 group-hover:opacity-100" />
+            <span className="text-sm font-normal">{label}</span>
+        </Link>
+    </Button>
 );
 
 
@@ -114,30 +114,10 @@ export default async function DashboardPage() {
       <div className="flex items-center">
         <h1 className="text-lg font-semibold md:text-2xl">Dashboard</h1>
          <div className="ml-auto flex items-center gap-2">
-            <Button asChild variant="outline" className="h-10 w-10 p-0 shadow-sm hover:shadow-md transition-shadow">
-               <Link href="/dashboard/clientes">
-                <PlusCircle className="h-5 w-5" />
-                <span className="sr-only">Criar Cliente</span>
-               </Link>
-            </Button>
-            <Button asChild variant="outline" className="h-10 w-10 p-0 shadow-sm hover:shadow-md transition-shadow">
-               <Link href="/dashboard/cobrancas">
-                <PlusCircle className="h-5 w-5" />
-                <span className="sr-only">Criar Cobrança</span>
-               </Link>
-            </Button>
-            <Button asChild variant="outline" className="h-10 w-10 p-0 shadow-sm hover:shadow-md transition-shadow">
-               <Link href="/dashboard/contratos">
-                <PlusCircle className="h-5 w-5" />
-                <span className="sr-only">Criar Contrato</span>
-               </Link>
-            </Button>
-             <Button asChild variant="outline" className="h-10 w-10 p-0 shadow-sm hover:shadow-md transition-shadow">
-               <Link href="/dashboard/propostas/nova">
-                <PlusCircle className="h-5 w-5" />
-                <span className="sr-only">Criar Proposta</span>
-               </Link>
-            </Button>
+            <QuickActionButton href="/dashboard/clientes" icon={PlusCircle} label="Criar Cliente" />
+            <QuickActionButton href="/dashboard/cobrancas" icon={PlusCircle} label="Criar Cobrança" />
+            <QuickActionButton href="/dashboard/contratos" icon={PlusCircle} label="Criar Contrato" />
+            <QuickActionButton href="/dashboard/propostas/nova" icon={PlusCircle} label="Criar Proposta" />
         </div>
       </div>
 
