@@ -114,10 +114,10 @@ export default async function DashboardPage() {
       <div className="flex items-center">
         <h1 className="text-lg font-semibold md:text-2xl">Dashboard</h1>
          <div className="ml-auto flex items-center gap-2">
-            <QuickActionButton href="/dashboard/clientes" icon={PlusCircle} label="Criar Cliente" />
-            <QuickActionButton href="/dashboard/cobrancas" icon={PlusCircle} label="Criar Cobrança" />
-            <QuickActionButton href="/dashboard/contratos" icon={PlusCircle} label="Criar Contrato" />
-            <QuickActionButton href="/dashboard/propostas/nova" icon={PlusCircle} label="Criar Proposta" />
+            <QuickActionButton href="/dashboard/clientes" icon={UserPlus} label="Criar Cliente" />
+            <QuickActionButton href="/dashboard/contratos" icon={FileSignature} label="Criar Contrato" />
+            <QuickActionButton href="/dashboard/propostas/nova" icon={FilePlus} label="Criar Proposta" />
+            <QuickActionButton href="/dashboard/settings/profile" icon={Settings} label="Configurações" />
         </div>
       </div>
 
