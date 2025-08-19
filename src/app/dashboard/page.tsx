@@ -13,6 +13,8 @@ import {
   UserPlus,
   FilePlus,
   Receipt,
+  Settings,
+  PlusCircle,
 } from 'lucide-react'
 
 import {
@@ -45,6 +47,7 @@ import { format, isPast } from 'date-fns'
 import { cn } from '@/lib/utils'
 import type { Profile } from '@/lib/types'
 import { DaysOffCalendar } from '@/components/days-off-calendar'
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert'
 
 const getStatusClass = (status: string) => {
     switch (status) {
@@ -79,12 +82,12 @@ const getChargeStatusInfo = (status: string, dueDate: string) => {
 }
 
 const QuickActionButton = ({ href, icon: Icon, label }: { href: string, icon: React.ElementType, label: string }) => (
-  <Button asChild variant="outline" className="flex flex-col items-center justify-center h-24 w-24 gap-2 rounded-lg shadow-sm hover:shadow-md transition-shadow">
-    <Link href={href}>
-      <Icon className="h-6 w-6 text-primary" />
-      <span className="text-xs font-normal">{label}</span>
-    </Link>
-  </Button>
+    <Button asChild variant="outline" className="h-10 shadow-sm hover:shadow-md transition-all group">
+        <Link href={href} className="flex items-center gap-2">
+            <Icon className="h-0 w-0 opacity-0 transition-all duration-300 group-hover:h-4 group-hover:w-4 group-hover:opacity-100" />
+            <span className="text-sm font-normal">{label}</span>
+        </Link>
+    </Button>
 );
 
 
@@ -110,14 +113,23 @@ export default async function DashboardPage() {
     <div className="flex flex-1 flex-col gap-4 sm:gap-6">
       <div className="flex items-center">
         <h1 className="text-lg font-semibold md:text-2xl">Dashboard</h1>
+         <div className="ml-auto flex items-center gap-2">
+            <QuickActionButton href="/dashboard/clientes" icon={PlusCircle} label="Criar Cliente" />
+            <QuickActionButton href="/dashboard/cobrancas" icon={PlusCircle} label="Criar Cobrança" />
+            <QuickActionButton href="/dashboard/contratos" icon={PlusCircle} label="Criar Contrato" />
+            <QuickActionButton href="/dashboard/propostas/nova" icon={PlusCircle} label="Criar Proposta" />
+        </div>
       </div>
 
-       <div className="flex items-center gap-4">
-          <QuickActionButton href="/dashboard/clientes" icon={UserPlus} label="Criar Cliente" />
-          <QuickActionButton href="/dashboard/cobrancas" icon={Receipt} label="Criar Cobrança" />
-          <QuickActionButton href="/dashboard/contratos" icon={FileSignature} label="Criar Contrato" />
-          <QuickActionButton href="/dashboard/propostas/nova" icon={FilePlus} label="Criar Proposta" />
-        </div>
+      {isProfileComplete && !profile?.pix_key && (
+        <Alert variant="destructive" className="border-red-500/50 bg-red-500/10 text-red-700">
+          <Settings className="h-4 w-4 text-red-700" />
+          <AlertTitle className="font-bold">Ação Necessária!</AlertTitle>
+          <AlertDescription className="text-red-700">
+            Para garantir que você receba pagamentos via PIX, por favor, <Link href="/dashboard/settings/profile" className="underline font-semibold hover:text-red-800">configure sua Chave PIX principal</Link> em seu perfil.
+          </AlertDescription>
+        </Alert>
+      )}
       
       <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
         <Card>

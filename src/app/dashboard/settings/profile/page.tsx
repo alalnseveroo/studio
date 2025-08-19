@@ -1,4 +1,5 @@
 
+
 'use client'
 
 import { useState, useRef, useEffect, useCallback } from 'react'
@@ -18,7 +19,7 @@ import {
 } from '@/components/ui/form'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { CheckCircle, Loader2, ArrowLeft, ArrowRight, User, Building, MapPin, PencilLine, PartyPopper, Search, Info, Check, ChevronsUpDown, XCircle, CreditCard } from 'lucide-react'
+import { CheckCircle, Loader2, ArrowLeft, ArrowRight, User, Building, MapPin, PencilLine, PartyPopper, Search, Info, Check, ChevronsUpDown, XCircle, CreditCard, KeyRound } from 'lucide-react'
 import SignatureCanvas from 'react-signature-canvas'
 import { saveProfile, getProfile } from '@/lib/actions/profile'
 import { useToast } from '@/hooks/use-toast'
@@ -47,6 +48,7 @@ const profileSchema = z.object({
   nationality: z.string().min(3, 'A nacionalidade é obrigatória.'),
   cpf: z.string().min(11, 'O CPF é obrigatório.'),
   phone: z.string().min(10, 'O telefone é obrigatório.'),
+  pix_key: z.string().min(3, 'A chave PIX é obrigatória para receber pagamentos.'),
   
   // PJ Fields
   companyName: z.string().optional(),
@@ -155,6 +157,7 @@ export default function ProfilePage() {
       nationality: 'Brasileira',
       cpf: '',
       phone: '',
+      pix_key: '',
       companyName: '',
       cnpj: '',
       cep: '',
@@ -176,6 +179,7 @@ export default function ProfilePage() {
       nationality: data.nationality || 'Brasileira',
       cpf: data.cpf || '',
       phone: data.phone || '',
+      pix_key: data.pix_key || data.cpf || data.cnpj || '',
       companyName: data.company_name || '',
       cnpj: data.cnpj || '',
       cep: data.address?.match(/CEP: ([\d-]+)/)?.[1].replace(/\D/g, '') || '',
@@ -214,8 +218,8 @@ export default function ProfilePage() {
   
   const stepFields: Record<number, (keyof ProfileFormData)[]> = {
     [STEPS.TYPE]: ['personType'],
-    [STEPS.PERSONAL]: ['sex', 'fullName', 'nationality', 'cpf', 'phone'],
-    [STEPS.COMPANY]: ['companyName', 'cnpj'],
+    [STEPS.PERSONAL]: ['sex', 'fullName', 'nationality', 'cpf', 'phone', 'pix_key'],
+    [STEPS.COMPANY]: ['companyName', 'cnpj', 'pix_key'],
     [STEPS.ADDRESS]: ['cep', 'street', 'number', 'neighborhood', 'city', 'state'],
     [STEPS.SIGNATURE]: ['signature'],
   };
@@ -499,8 +503,18 @@ const PersonalStep = ({ form }: { form: any }) => (
                     <FormItem><FormLabel>CPF</FormLabel><ValidatedInput field={field} fieldState={fieldState} placeholder="000.000.000-00" /><FormMessage /></FormItem>
                 )} />
             </div>
-             <FormField control={form.control} name="phone" render={({ field, fieldState }) => (
+            <FormField control={form.control} name="phone" render={({ field, fieldState }) => (
                 <FormItem><FormLabel>Telefone (com DDD)</FormLabel><ValidatedInput field={field} fieldState={fieldState} placeholder="(11) 99999-9999" /><FormMessage /></FormItem>
+            )} />
+            <FormField control={form.control} name="pix_key" render={({ field, fieldState }) => (
+                <FormItem>
+                    <FormLabel>Chave PIX Principal</FormLabel>
+                    <div className="relative">
+                        <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <ValidatedInput field={field} fieldState={fieldState} placeholder="Digite sua chave (e-mail, celular, CPF, etc.)" />
+                    </div>
+                    <FormMessage />
+                </FormItem>
             )} />
              <FormField
                 control={form.control}
@@ -551,6 +565,7 @@ const CompanyStep = ({ form }: { form: any }) => {
             form.setValue('city', data.municipio, { shouldValidate: true });
             form.setValue('state', data.uf, { shouldValidate: true });
             form.setValue('cep', data.cep.replace(/\D/g, ''), { shouldValidate: true });
+            form.setValue('pix_key', data.cnpj, { shouldValidate: true }); // Preenche a chave PIX com o CNPJ
             toast({ title: 'Sucesso!', description: 'Dados da empresa preenchidos.' });
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Erro ao buscar CNPJ', description: error.message });
@@ -577,6 +592,16 @@ const CompanyStep = ({ form }: { form: any }) => {
                 )} />
                 <FormField control={form.control} name="companyName" render={({ field, fieldState }) => (
                     <FormItem><FormLabel>Nome da Empresa (Razão Social)</FormLabel><ValidatedInput field={field} fieldState={fieldState} placeholder="Minha Empresa LTDA" /><FormMessage /></FormItem>
+                )} />
+                 <FormField control={form.control} name="pix_key" render={({ field, fieldState }) => (
+                    <FormItem>
+                        <FormLabel>Chave PIX Principal</FormLabel>
+                        <div className="relative">
+                            <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <ValidatedInput field={field} fieldState={fieldState} placeholder="Digite sua chave (e-mail, celular, CNPJ, etc.)" />
+                        </div>
+                        <FormMessage />
+                    </FormItem>
                 )} />
             </div>
         </div>
