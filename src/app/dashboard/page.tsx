@@ -13,6 +13,7 @@ import {
   UserPlus,
   FilePlus,
   Receipt,
+  Settings,
 } from 'lucide-react'
 
 import {
@@ -45,6 +46,7 @@ import { format, isPast } from 'date-fns'
 import { cn } from '@/lib/utils'
 import type { Profile } from '@/lib/types'
 import { DaysOffCalendar } from '@/components/days-off-calendar'
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert'
 
 const getStatusClass = (status: string) => {
     switch (status) {
@@ -111,6 +113,16 @@ export default async function DashboardPage() {
       <div className="flex items-center">
         <h1 className="text-lg font-semibold md:text-2xl">Dashboard</h1>
       </div>
+
+      {!profile?.pix_key && (
+        <Alert>
+          <Settings className="h-4 w-4" />
+          <AlertTitle className="font-bold">Ação Necessária!</AlertTitle>
+          <AlertDescription>
+            Para garantir que você receba pagamentos via PIX, por favor, <Link href="/dashboard/settings/profile" className="underline font-semibold hover:text-primary">configure sua Chave PIX principal</Link> em seu perfil.
+          </AlertDescription>
+        </Alert>
+      )}
 
        <div className="flex items-center gap-4">
           <QuickActionButton href="/dashboard/clientes" icon={UserPlus} label="Criar Cliente" />

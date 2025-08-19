@@ -101,9 +101,9 @@ export function StaticPixQRCode({ provider, charge }: StaticPixQRCodeProps) {
 
     useEffect(() => {
         setIsLoading(true);
-        const pixKey = provider.pix_key || provider.cpf || provider.cnpj;
+        const pixKey = provider.pix_key; // Use a chave PIX do perfil
         if (!pixKey) {
-            console.error("Chave PIX (CPF/CNPJ do prestador) não encontrada.");
+            console.error("Chave PIX do prestador não encontrada no perfil.");
             setIsLoading(false);
             return;
         }
@@ -144,7 +144,7 @@ export function StaticPixQRCode({ provider, charge }: StaticPixQRCodeProps) {
                 <AlertCircle className="h-4 w-4" />
                 <AlertTitle>Erro ao Gerar PIX</AlertTitle>
                 <AlertDescription>
-                   Não foi possível gerar o código PIX. Verifique se uma chave PIX (CPF/CNPJ) está configurada no perfil do prestador.
+                   Não foi possível gerar o código PIX. Verifique se uma <strong>Chave PIX</strong> está configurada no seu perfil.
                 </AlertDescription>
             </Alert>
          )
