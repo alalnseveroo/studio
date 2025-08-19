@@ -47,7 +47,6 @@ import { cn } from '@/lib/utils'
 import { useToast } from '@/hooks/use-toast'
 import { CreateContractModal } from '@/components/create-contract-modal'
 import { ConfigureBillingModal } from '@/components/configure-billing-modal'
-import { UpgradePlanModal } from '@/components/upgrade-plan-modal'
 import { CreateContractTooltip } from '@/components/create-contract-tooltip'
 
 
@@ -71,7 +70,6 @@ export default function ClientesPage() {
   const [isSheetOpen, setIsSheetOpen] = useState(false)
   const [isContractModalOpen, setIsContractModalOpen] = useState(false)
   const [isBillingModalOpen, setIsBillingModalOpen] = useState(false)
-  const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false)
   
   const [clients, setClients] = useState<Cliente[]>([])
   const [proposals, setProposals] = useState<Proposta[]>([])
@@ -123,14 +121,7 @@ export default function ClientesPage() {
   };
 
   const handleAddClientClick = () => {
-    const clientCount = clients.length;
-    const creditLimit = profile?.credits ?? 1;
-
-    if (profile?.plan_type === 'free_tier' && clientCount >= creditLimit) {
-      setIsUpgradeModalOpen(true);
-    } else {
-      setIsSheetOpen(true);
-    }
+    setIsSheetOpen(true);
   };
   
   const handleDeleteClient = async () => {
@@ -449,11 +440,6 @@ export default function ClientesPage() {
         onBillingConfigured={() => fetchInitialData()}
       />
       
-      <UpgradePlanModal 
-        isOpen={isUpgradeModalOpen}
-        onClose={() => setIsUpgradeModalOpen(false)}
-      />
-
 
       <AlertDialog open={!!clientToDelete} onOpenChange={() => setClientToDelete(null)}>
         <AlertDialogContent>

@@ -42,32 +42,42 @@ export default function ContratoPortalPage() {
   const { toast } = useToast()
 
   const fetchContract = useCallback(async () => {
-    if (!contractId || !clientId) return
-    setIsLoading(true)
-    const { data, error } = await getContractForClientById(contractId)
-    if (error || !data || data.cliente_id !== clientId) {
-      setContract(null)
-      setProvider(null)
-      notFound()
-    } else {
-      setContract(data)
-       if (data.user_id) {
-        const { data: providerData, error: providerError } = await getProfile(data.user_id);
-        if (providerError) {
-          console.error("Could not fetch provider profile for contract portal", providerError);
-           setProvider(null);
-        } else {
-          setProvider(providerData as Profile & { email: string });
-        }
-      }
-      if (data.client_signature_data) {
-        setActiveStep('payment'); 
-      } else if (data.provider_signature_data) {
-        setActiveStep('review');
-      }
+    if (!contractId || !clientId) {
+        setIsLoading(false);
+        return;
     }
-    setIsLoading(false)
-  }, [contractId, clientId])
+    
+    setIsLoading(true);
+    const { data: contractData, error: contractError } = await getContractForClientById(contractId);
+
+    if (contractError || !contractData || contractData.cliente_id !== clientId) {
+      console.error("Error fetching contract or invalid contract for client", contractError);
+      setContract(null);
+      setProvider(null);
+      setIsLoading(false);
+      // notFound() não pode ser usado dentro do useCallback/useEffect.
+      // A UI tratará o estado nulo do contrato.
+      return;
+    }
+
+    setContract(contractData);
+
+    const { data: providerData, error: providerError } = await getProfile(contractData.user_id);
+    if (providerError || !providerData) {
+      console.error("Could not fetch provider profile for contract portal", providerError);
+      setProvider(null);
+    } else {
+      setProvider(providerData as Profile & { email: string });
+    }
+
+    if (contractData.client_signature_data) {
+        setActiveStep('payment'); 
+    } else if (contractData.provider_signature_data) {
+        setActiveStep('review');
+    }
+    setIsLoading(false);
+  }, [contractId, clientId]);
+
 
   useEffect(() => {
     fetchContract()
@@ -136,12 +146,22 @@ export default function ContratoPortalPage() {
     }
   }
 
-  if (isLoading && !contract) {
+  if (isLoading) {
     return <div className="flex min-h-screen items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>
   }
 
   if (!contract) {
-    return notFound()
+    return (
+         <div className="flex min-h-screen items-center justify-center p-4">
+            <Alert variant="destructive" className="max-w-lg">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Contrato não encontrado</AlertTitle>
+                <AlertDescription>
+                    O contrato que você está tentando acessar não existe, foi removido ou não pertence a este portal. Por favor, verifique o link ou entre em contato com o prestador de serviço.
+                </AlertDescription>
+            </Alert>
+        </div>
+    )
   }
 
   const isSignedByProvider = !!contract.provider_signature_data
@@ -155,7 +175,7 @@ export default function ContratoPortalPage() {
       created_at: contract.created_at,
       user_id: contract.user_id,
       cliente_id: contract.cliente_id,
-      due_date: new Date().toISOString(), // First payment is due now
+      due_date: new Date().toISOString(), // First payment is due due now
       value: contract.propostas.value || 0,
       status: 'pendente',
       paid_at: null,
