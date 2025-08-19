@@ -1,15 +1,14 @@
 
-
 'use client'
 
 import * as React from 'react'
 import { Calendar } from '@/components/ui/calendar'
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { useToast } from '@/hooks/use-toast'
 import type { Holiday, DayOff } from '@/lib/types'
 import { createClient } from '@/lib/supabase/client'
 import { format, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
+import { cn } from '@/lib/utils'
 
 async function getHolidays(): Promise<Holiday[]> {
   const supabase = createClient()
@@ -39,7 +38,6 @@ async function addDayOff(date: Date): Promise<DayOff | null> {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return null
 
-  // Normaliza a data para evitar problemas com fuso horário
   const dateString = format(date, 'yyyy-MM-dd')
 
   const { data, error } = await supabase
@@ -49,7 +47,6 @@ async function addDayOff(date: Date): Promise<DayOff | null> {
     .single()
 
   if (error) {
-    // Ignora o erro se a data já existir
     if (error.code === '23505') { 
         console.log(`Day off for ${dateString} already exists.`);
         const { data: existingData } = await supabase.from('days_off').select().eq('user_id', user.id).eq('date', dateString).single();
@@ -76,7 +73,23 @@ export function DaysOffCalendar() {
     fetchData()
   }, [])
 
-  const handleSetDayOff = async (day: Date) => {
+  const handleSetDayOff = async (day: Date | undefined) => {
+    if (!day) return;
+    
+    // Check if the day is already a day off
+    const isAlreadyDayOff = daysOff.some(
+        d => format(parseISO(d.date), 'yyyy-MM-dd') === format(day, 'yyyy-MM-dd')
+    );
+
+    if (isAlreadyDayOff) {
+        // Here you could implement logic to remove the day off, for now we just toast
+        toast({
+            title: 'Dia já registrado',
+            description: 'Este dia já está marcado como folga.',
+        })
+        return;
+    }
+
     const newDayOff = await addDayOff(day)
     if (newDayOff) {
       setDaysOff((prev) => [...prev, newDayOff])
@@ -97,76 +110,46 @@ export function DaysOffCalendar() {
   const dayOffDates = React.useMemo(() => daysOff.map(d => parseISO(d.date)), [daysOff])
 
   return (
-    <TooltipProvider>
-      <div className="w-full p-4">
+      <div className="w-full">
         <Calendar
           locale={ptBR}
-          className="w-full"
+          mode="single"
           month={month}
           onMonthChange={setMonth}
-          onDayClick={handleSetDayOff}
+          onSelect={handleSetDayOff}
+          captionLayout="dropdown-buttons"
+          fromYear={new Date().getFullYear()}
+          toYear={new Date().getFullYear() + 2}
           modifiers={{
             holiday: holidayDates,
             dayOff: dayOffDates,
           }}
-          classNames={{
-            root: '[--day-bg:transparent] [--day-fg:white] [--day-border:transparent] [--day-today-bg:transparent] [--day-today-fg:white] [--day-today-border:white] [--day-active-bg:#000] [--day-active-fg:#fff] [--day-disabled-fg:#fff5] [--day-disabled-bg:transparent] [--day-outside-fg:#fff5] [--day-outside-bg:transparent] [--day-hover-bg:#0005] [--day-hover-fg:white] [--day-range-fg:#fff] [--day-range-bg:#0005] [--head-fg:white] [--nav-fg:white] [--nav-disabled-fg:#fff5] w-full border-none p-0',
-            table: 'w-full',
-            row: 'flex w-full mt-1',
-            head_row: 'flex w-full',
-            head_cell: 'w-full text-center text-xs font-light text-[var(--head-fg)]',
-            cell: 'w-full text-center',
-            day: 'h-8 w-8 rounded-full text-[var(--day-fg)] bg-[var(--day-bg)] border border-[var(--day-border)] hover:text-[var(--day-hover-fg)] hover:bg-[var(--day-hover-bg)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white',
-            day_today: '!border-[var(--day-today-border)]',
-            day_selected: '!text-[var(--day-active-fg)] !bg-[var(--day-active-bg)]',
-            day_disabled: '!text-[var(--day-disabled-fg)] !bg-[var(--day-disabled-bg)] cursor-not-allowed',
-            day_outside: '!text-[var(--day-outside-fg)] !bg-[var(--day-outside-bg)]',
-            day_range_middle: '!text-[var(--day-range-fg)] !bg-[var(--day-range-bg)]',
-            nav_button: 'h-6 w-6 text-[var(--nav-fg)] hover:text-white hover:bg-[#0005] disabled:text-[var(--nav-disabled-fg)]',
-            caption: 'flex justify-between items-center px-2 py-1',
-            caption_label: 'text-sm font-medium',
-            nav: 'flex items-center gap-1',
-          }}
           modifiersClassNames={{
-            holiday: 'relative',
-            dayOff: '!bg-black/90 !text-white',
+            dayOff: 'bg-green-900 text-white hover:bg-green-800 focus:bg-green-800',
+            holiday: 'text-green-700',
           }}
-          components={{
-            DayContent: (props) => {
-              const holidayInfo = holidays.find(
-                (h) => new Date(h.date + 'T00:00:00').toDateString() === props.date.toDateString()
-              );
-
-              if (holidayInfo) {
-                return (
-                  <Tooltip delayDuration={100}>
-                    <TooltipTrigger asChild>
-                      <div className="relative w-full h-full flex items-center justify-center">
-                        {props.date.getDate()}
-                        <div className="absolute bottom-1 w-1 h-1 bg-white rounded-full" />
-                      </div>
-                    </TooltipTrigger>
-                    <TooltipContent className="w-auto bg-black text-white border-none">
-                      <p className="font-semibold">{holidayInfo?.name}</p>
-                    </TooltipContent>
-                  </Tooltip>
-                )
-              }
-              return <div className="relative flex items-center justify-center w-full h-full">{props.date.getDate()}</div>
-            },
+          classNames={{
+            root: "p-3",
+            caption_label: "text-sm font-medium text-green-900",
+            nav_button: "h-7 w-7",
+            nav_button_previous: "absolute left-1",
+            nav_button_next: "absolute right-1",
+            head_cell: "text-green-800 rounded-md w-9 font-normal text-[0.8rem]",
+            day: "h-9 w-9 p-0 font-normal aria-selected:opacity-100",
+            day_selected: "bg-green-900 text-white hover:bg-green-900 hover:text-white focus:bg-green-900 focus:text-white",
+            day_today: "bg-green-200 text-green-900",
           }}
         />
-        <div className="pt-4 text-xs text-white space-y-2">
+        <div className="p-4 pt-2 text-xs text-green-800 space-y-2">
             <div className="flex items-center gap-2">
-                <div className="w-2.5 h-2.5 rounded-full bg-white" />
+                <div className="w-2.5 h-2.5 rounded-full bg-green-700" />
                 <span>Feriados e pontos facultativos</span>
             </div>
             <div className="flex items-center gap-2">
-                <div className="w-2.5 h-2.5 bg-black/90 rounded-sm border border-white" />
-                <span>Optou por folga</span>
+                <div className="w-2.5 h-2.5 rounded-sm bg-green-900" />
+                <span>Folga registrada por você</span>
             </div>
         </div>
       </div>
-    </TooltipProvider>
   )
 }
