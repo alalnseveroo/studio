@@ -82,7 +82,6 @@ export function DaysOffCalendar() {
     );
 
     if (isAlreadyDayOff) {
-        // Here you could implement logic to remove the day off, for now we just toast
         toast({
             title: 'Dia já registrado',
             description: 'Este dia já está marcado como folga.',
@@ -125,28 +124,49 @@ export function DaysOffCalendar() {
             dayOff: dayOffDates,
           }}
           modifiersClassNames={{
-            dayOff: 'bg-green-900 text-white hover:bg-green-800 focus:bg-green-800',
-            holiday: 'text-green-700',
+            dayOff: 'bg-pink-100 text-pink-800 rounded-md !text-pink-800 font-semibold',
+            holiday: 'relative text-muted-foreground',
           }}
           classNames={{
             root: "p-3",
-            caption_label: "text-sm font-medium text-green-900",
+            caption_label: "text-sm font-medium text-white",
             nav_button: "h-7 w-7",
-            nav_button_previous: "absolute left-1",
-            nav_button_next: "absolute right-1",
-            head_cell: "text-green-800 rounded-md w-9 font-normal text-[0.8rem]",
-            day: "h-9 w-9 p-0 font-normal aria-selected:opacity-100",
-            day_selected: "bg-green-900 text-white hover:bg-green-900 hover:text-white focus:bg-green-900 focus:text-white",
-            day_today: "bg-green-200 text-green-900",
+            nav_button_previous: "absolute left-1 text-white",
+            nav_button_next: "absolute right-1 text-white",
+            head_cell: "text-white/80 rounded-md w-9 font-normal text-[0.8rem]",
+            day: "h-9 w-9 p-0 font-normal aria-selected:opacity-100 text-white",
+            day_selected: "bg-pink-200 text-pink-800 hover:bg-pink-300 focus:bg-pink-300",
+            day_today: "bg-white/20 text-white",
+            caption_dropdowns: "flex gap-2",
+            dropdown: "text-black",
+          }}
+           components={{
+            DayContent: (props) => {
+              const isHoliday = holidayDates.some(
+                (holidayDate) => holidayDate.getDate() === props.date.getDate() && 
+                                 holidayDate.getMonth() === props.date.getMonth() &&
+                                 holidayDate.getFullYear() === props.date.getFullYear()
+              );
+
+              if (isHoliday) {
+                return (
+                  <div className="relative w-full h-full flex items-center justify-center">
+                    {props.date.getDate()}
+                    <div className="absolute bottom-1 w-1 h-1 bg-white rounded-full" />
+                  </div>
+                )
+              }
+              return <div className="relative flex items-center justify-center w-full h-full">{props.date.getDate()}</div>
+            },
           }}
         />
-        <div className="p-4 pt-2 text-xs text-green-800 space-y-2">
+        <div className="p-4 pt-2 text-xs text-white/80 space-y-2">
             <div className="flex items-center gap-2">
-                <div className="w-2.5 h-2.5 rounded-full bg-green-700" />
+                <div className="w-2.5 h-2.5 rounded-full bg-white" />
                 <span>Feriados e pontos facultativos</span>
             </div>
             <div className="flex items-center gap-2">
-                <div className="w-2.5 h-2.5 rounded-sm bg-green-900" />
+                <div className="w-2.5 h-2.5 bg-pink-100 rounded-sm" />
                 <span>Folga registrada por você</span>
             </div>
         </div>

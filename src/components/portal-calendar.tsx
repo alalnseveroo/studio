@@ -44,8 +44,8 @@ export function PortalCalendar({ providerId }: PortalCalendarProps) {
             dayOff: dayOffDates,
           }}
           modifiersClassNames={{
-            holiday: 'relative text-muted-foreground',
             dayOff: 'bg-pink-100 text-pink-800 rounded-md !text-pink-800 font-semibold',
+            holiday: 'relative text-muted-foreground',
           }}
            components={{
             DayContent: (props) => {

@@ -271,7 +271,7 @@ export default async function DashboardPage() {
              )}
           </CardContent>
         </Card>
-        <Card className="bg-[#d1fae5] text-green-900">
+        <Card className="bg-black text-white">
             <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-base font-semibold">
                     <CalendarDays className="h-5 w-5" />
