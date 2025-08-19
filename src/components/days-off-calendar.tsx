@@ -5,7 +5,6 @@
 import * as React from 'react'
 import { Calendar } from '@/components/ui/calendar'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
-import { Button } from '@/components/ui/button'
 import { useToast } from '@/hooks/use-toast'
 import type { Holiday, DayOff } from '@/lib/types'
 import { createClient } from '@/lib/supabase/client'
@@ -105,6 +104,7 @@ export function DaysOffCalendar() {
           className="w-full"
           month={month}
           onMonthChange={setMonth}
+          onDayClick={handleSetDayOff}
           modifiers={{
             holiday: holidayDates,
             dayOff: dayOffDates,
@@ -129,20 +129,15 @@ export function DaysOffCalendar() {
           }}
           modifiersClassNames={{
             holiday: 'relative',
-            dayOff: '!bg-black !text-white',
+            dayOff: '!bg-black/90 !text-white',
           }}
           components={{
             DayContent: (props) => {
-              const isHoliday = holidayDates.some(
-                (holidayDate) => holidayDate.getDate() === props.date.getDate() && 
-                                 holidayDate.getMonth() === props.date.getMonth() &&
-                                 holidayDate.getFullYear() === props.date.getFullYear()
-              );
               const holidayInfo = holidays.find(
                 (h) => new Date(h.date + 'T00:00:00').toDateString() === props.date.toDateString()
               );
 
-              if (isHoliday) {
+              if (holidayInfo) {
                 return (
                   <Tooltip delayDuration={100}>
                     <TooltipTrigger asChild>
@@ -152,10 +147,7 @@ export function DaysOffCalendar() {
                       </div>
                     </TooltipTrigger>
                     <TooltipContent className="w-auto bg-black text-white border-none">
-                      <div className="flex items-center gap-4">
-                          <p className="font-semibold">{holidayInfo?.name}</p>
-                          <Button size="sm" onClick={() => handleSetDayOff(props.date)}>Folga</Button>
-                      </div>
+                      <p className="font-semibold">{holidayInfo?.name}</p>
                     </TooltipContent>
                   </Tooltip>
                 )
@@ -170,7 +162,7 @@ export function DaysOffCalendar() {
                 <span>Feriados e pontos facultativos</span>
             </div>
             <div className="flex items-center gap-2">
-                <div className="w-2.5 h-2.5 bg-black rounded-sm border border-white" />
+                <div className="w-2.5 h-2.5 bg-black/90 rounded-sm border border-white" />
                 <span>Optou por folga</span>
             </div>
         </div>
