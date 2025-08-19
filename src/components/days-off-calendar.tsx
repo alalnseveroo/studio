@@ -98,7 +98,7 @@ export function DaysOffCalendar() {
 
   return (
     <TooltipProvider>
-      <div className="w-full">
+      <div className="w-full p-4">
         <Calendar
           locale={ptBR}
           className="w-full"
