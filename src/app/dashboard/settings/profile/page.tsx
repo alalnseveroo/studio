@@ -29,7 +29,6 @@ import { cn } from '@/lib/utils'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from '@/components/ui/command'
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter } from '@/components/ui/alert-dialog'
-import { triggerConfetti } from '@/components/upgrade-plan-modal'
 
 const STEPS = {
   TYPE: 1,
@@ -272,7 +271,6 @@ export default function ProfilePage() {
       toast({ variant: 'destructive', title: 'Erro ao Salvar Perfil', description: error.message });
     } else {
       setIsSaved(true);
-      triggerConfetti();
     }
   }
 
@@ -294,21 +292,19 @@ export default function ProfilePage() {
                         className="size-[120px] md:size-[150px]"
                     />
                     <div className="text-center md:text-left">
-                        <AlertDialogTitle className="text-2xl font-bold text-foreground">Parabéns! Agora é sucesso na certa.</AlertDialogTitle>
+                        <AlertDialogTitle className="text-2xl font-bold text-foreground">Parabéns! Seu perfil está completo.</AlertDialogTitle>
                     </div>
                 </div>
                 <div className="text-base text-foreground text-center md:text-left !mt-6">
-                    E para celebrar, temos um presente: <strong className="text-green-600">adicionamos 1 Crédito de Boas-vindas à sua conta!</strong>
+                    Tudo pronto! Agora você pode gerar contratos, adicionar clientes e automatizar suas cobranças.
                     <br/><br/>
-                    Use-o para gerir seu <strong className="text-green-600">primeiro cliente de graça, para sempre.</strong> Isso inclui cobrança automática, contratos e portal do cliente, sem nenhum custo de gestão.
-                    <br/><br/>
-                    Pronta para colocar seu primeiro cliente no piloto automático?
+                    Explore o dashboard para começar a usar todas as funcionalidades.
                 </div>
             </AlertDialogHeader>
             <AlertDialogFooter className="justify-center mt-6">
                  <Button asChild className="bg-green-600 hover:bg-green-700 text-lg py-6 px-8 transition-all">
-                    <Link href="/dashboard/settings/buy-credits">
-                        <CreditCard className="mr-2 h-5 w-5"/> Comprar mais créditos
+                    <Link href="/dashboard">
+                        <CreditCard className="mr-2 h-5 w-5"/> Ir para o Dashboard
                     </Link>
                 </Button>
             </AlertDialogFooter>
