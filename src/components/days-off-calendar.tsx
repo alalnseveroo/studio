@@ -116,9 +116,6 @@ export function DaysOffCalendar() {
           month={month}
           onMonthChange={setMonth}
           onSelect={handleSetDayOff}
-          captionLayout="dropdown-buttons"
-          fromYear={new Date().getFullYear()}
-          toYear={new Date().getFullYear() + 2}
           modifiers={{
             holiday: holidayDates,
             dayOff: dayOffDates,
@@ -137,8 +134,6 @@ export function DaysOffCalendar() {
             day: "h-9 w-9 p-0 font-normal aria-selected:opacity-100 text-white",
             day_selected: "bg-pink-200 text-pink-800 hover:bg-pink-300 focus:bg-pink-300",
             day_today: "bg-white/20 text-white",
-            caption_dropdowns: "flex gap-2",
-            dropdown: "text-black",
           }}
            components={{
             DayContent: (props) => {
