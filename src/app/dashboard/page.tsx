@@ -14,6 +14,7 @@ import {
   FilePlus,
   Receipt,
   Settings,
+  PlusCircle,
 } from 'lucide-react'
 
 import {
@@ -112,24 +113,43 @@ export default async function DashboardPage() {
     <div className="flex flex-1 flex-col gap-4 sm:gap-6">
       <div className="flex items-center">
         <h1 className="text-lg font-semibold md:text-2xl">Dashboard</h1>
+         <div className="ml-auto flex items-center gap-2">
+            <Button asChild variant="outline" className="h-10 w-10 p-0 shadow-sm hover:shadow-md transition-shadow">
+               <Link href="/dashboard/clientes">
+                <PlusCircle className="h-5 w-5" />
+                <span className="sr-only">Criar Cliente</span>
+               </Link>
+            </Button>
+            <Button asChild variant="outline" className="h-10 w-10 p-0 shadow-sm hover:shadow-md transition-shadow">
+               <Link href="/dashboard/cobrancas">
+                <PlusCircle className="h-5 w-5" />
+                <span className="sr-only">Criar Cobrança</span>
+               </Link>
+            </Button>
+            <Button asChild variant="outline" className="h-10 w-10 p-0 shadow-sm hover:shadow-md transition-shadow">
+               <Link href="/dashboard/contratos">
+                <PlusCircle className="h-5 w-5" />
+                <span className="sr-only">Criar Contrato</span>
+               </Link>
+            </Button>
+             <Button asChild variant="outline" className="h-10 w-10 p-0 shadow-sm hover:shadow-md transition-shadow">
+               <Link href="/dashboard/propostas/nova">
+                <PlusCircle className="h-5 w-5" />
+                <span className="sr-only">Criar Proposta</span>
+               </Link>
+            </Button>
+        </div>
       </div>
 
-      {!profile?.pix_key && (
-        <Alert>
-          <Settings className="h-4 w-4" />
+      {isProfileComplete && !profile?.pix_key && (
+        <Alert variant="destructive" className="border-red-500/50 bg-red-500/10 text-red-700">
+          <Settings className="h-4 w-4 text-red-700" />
           <AlertTitle className="font-bold">Ação Necessária!</AlertTitle>
-          <AlertDescription>
-            Para garantir que você receba pagamentos via PIX, por favor, <Link href="/dashboard/settings/profile" className="underline font-semibold hover:text-primary">configure sua Chave PIX principal</Link> em seu perfil.
+          <AlertDescription className="text-red-700">
+            Para garantir que você receba pagamentos via PIX, por favor, <Link href="/dashboard/settings/profile" className="underline font-semibold hover:text-red-800">configure sua Chave PIX principal</Link> em seu perfil.
           </AlertDescription>
         </Alert>
       )}
-
-       <div className="flex items-center gap-4">
-          <QuickActionButton href="/dashboard/clientes" icon={UserPlus} label="Criar Cliente" />
-          <QuickActionButton href="/dashboard/cobrancas" icon={Receipt} label="Criar Cobrança" />
-          <QuickActionButton href="/dashboard/contratos" icon={FileSignature} label="Criar Contrato" />
-          <QuickActionButton href="/dashboard/propostas/nova" icon={FilePlus} label="Criar Proposta" />
-        </div>
       
       <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
         <Card>
