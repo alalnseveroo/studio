@@ -1,4 +1,5 @@
 
+
 'use client'
 
 import * as React from 'react'
@@ -108,9 +109,27 @@ export function DaysOffCalendar() {
             holiday: holidayDates,
             dayOff: dayOffDates,
           }}
+          classNames={{
+            root: '[--day-bg:transparent] [--day-fg:white] [--day-border:transparent] [--day-today-bg:transparent] [--day-today-fg:white] [--day-today-border:white] [--day-active-bg:#000] [--day-active-fg:#fff] [--day-disabled-fg:#fff5] [--day-disabled-bg:transparent] [--day-outside-fg:#fff5] [--day-outside-bg:transparent] [--day-hover-bg:#0005] [--day-hover-fg:white] [--day-range-fg:#fff] [--day-range-bg:#0005] [--head-fg:white] [--nav-fg:white] [--nav-disabled-fg:#fff5] w-full border-none p-0',
+            table: 'w-full',
+            row: 'flex w-full mt-1',
+            head_row: 'flex w-full',
+            head_cell: 'w-full text-center text-xs font-light text-[var(--head-fg)]',
+            cell: 'w-full text-center',
+            day: 'h-8 w-8 rounded-full text-[var(--day-fg)] bg-[var(--day-bg)] border border-[var(--day-border)] hover:text-[var(--day-hover-fg)] hover:bg-[var(--day-hover-bg)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white',
+            day_today: '!border-[var(--day-today-border)]',
+            day_selected: '!text-[var(--day-active-fg)] !bg-[var(--day-active-bg)]',
+            day_disabled: '!text-[var(--day-disabled-fg)] !bg-[var(--day-disabled-bg)] cursor-not-allowed',
+            day_outside: '!text-[var(--day-outside-fg)] !bg-[var(--day-outside-bg)]',
+            day_range_middle: '!text-[var(--day-range-fg)] !bg-[var(--day-range-bg)]',
+            nav_button: 'h-6 w-6 text-[var(--nav-fg)] hover:text-white hover:bg-[#0005] disabled:text-[var(--nav-disabled-fg)]',
+            caption: 'flex justify-between items-center px-2 py-1',
+            caption_label: 'text-sm font-medium',
+            nav: 'flex items-center gap-1',
+          }}
           modifiersClassNames={{
             holiday: 'relative',
-            dayOff: 'bg-pink-100 text-pink-800 rounded-md',
+            dayOff: '!bg-black !text-white',
           }}
           components={{
             DayContent: (props) => {
@@ -129,10 +148,10 @@ export function DaysOffCalendar() {
                     <TooltipTrigger asChild>
                       <div className="relative w-full h-full flex items-center justify-center">
                         {props.date.getDate()}
-                        <div className="absolute bottom-1 w-1 h-1 bg-pink-500 rounded-full" />
+                        <div className="absolute bottom-1 w-1 h-1 bg-white rounded-full" />
                       </div>
                     </TooltipTrigger>
-                    <TooltipContent className="w-auto">
+                    <TooltipContent className="w-auto bg-black text-white border-none">
                       <div className="flex items-center gap-4">
                           <p className="font-semibold">{holidayInfo?.name}</p>
                           <Button size="sm" onClick={() => handleSetDayOff(props.date)}>Folga</Button>
@@ -145,13 +164,13 @@ export function DaysOffCalendar() {
             },
           }}
         />
-        <div className="pt-4 text-xs text-muted-foreground space-y-2">
+        <div className="pt-4 text-xs text-white space-y-2">
             <div className="flex items-center gap-2">
-                <div className="w-2.5 h-2.5 rounded-full bg-pink-500" />
+                <div className="w-2.5 h-2.5 rounded-full bg-white" />
                 <span>Feriados e pontos facultativos</span>
             </div>
             <div className="flex items-center gap-2">
-                <div className="w-2.5 h-2.5 bg-pink-100 rounded-sm" />
+                <div className="w-2.5 h-2.5 bg-black rounded-sm border border-white" />
                 <span>Optou por folga</span>
             </div>
         </div>

@@ -105,7 +105,6 @@ export default async function DashboardPage() {
     const activeClients = clients?.filter(c => c.billing_status === 'active').length || 0;
 
     const recentContracts = contracts?.slice(0, 5) || [];
-    const recentCharges = charges?.slice(0, 5) || [];
     
     const isProfileComplete = profile?.is_completed ?? false;
 
@@ -272,69 +271,17 @@ export default async function DashboardPage() {
              )}
           </CardContent>
         </Card>
-        <div className="grid gap-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Cobranças Recentes</CardTitle>
-                 <CardDescription>
-                    As últimas cobranças geradas ou pagas.
-                  </CardDescription>
-              </CardHeader>
-              <CardContent className="grid gap-8">
-                {recentCharges.length > 0 ? (
-                    recentCharges.map(charge => {
-                        const status = getChargeStatusInfo(charge.status, charge.due_date);
-                        return (
-                         <div key={charge.id} className="flex items-center gap-4">
-                            <Avatar className="hidden h-9 w-9 sm:flex">
-                                <AvatarImage src={charge.clientes?.avatar_url || ''} alt="Avatar" />
-                                <AvatarFallback>{(charge.clientes?.full_name || charge.clientes?.company_name || 'C').charAt(0)}</AvatarFallback>
-                            </Avatar>
-                            <div className="grid gap-1">
-                                <p className="text-sm font-medium leading-none">
-                                {charge.clientes?.full_name || charge.clientes?.company_name}
-                                </p>
-                                <p className="text-sm text-muted-foreground">
-                                Vence em: {format(new Date(charge.due_date), 'dd/MM/yyyy')}
-                                </p>
-                            </div>
-                            <div className="ml-auto flex flex-col items-end">
-                                <div className="font-medium">R$ {charge.value.toFixed(2)}</div>
-                                 <Badge variant="outline" className={cn("text-xs font-normal mt-1", status.className)}>{status.text}</Badge>
-                            </div>
-                        </div>
-                    )})
-                ) : (
-                     <div className="flex flex-col items-center justify-center gap-2 text-center py-12">
-                        <ClipboardList className="h-8 w-8 text-muted-foreground" />
-                        <p className="text-sm text-muted-foreground">Nenhuma cobrança encontrada.</p>
-                         {isProfileComplete ? (
-                            <Button asChild size="sm" className="mt-2">
-                                <Link href="/dashboard/clientes">
-                                    Adicionar Cliente
-                                </Link>
-                            </Button>
-                         ) : (
-                            <Button size="sm" className="mt-2" disabled>
-                                Adicionar Cliente
-                            </Button>
-                         )}
-                    </div>
-                )}
-              </CardContent>
-            </Card>
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-base font-semibold">
-                        <CalendarDays className="h-5 w-5" />
-                        Folgas e Feriados
-                    </CardTitle>
-                </CardHeader>
-                <CardContent className="px-4 pb-4">
-                    <DaysOffCalendar />
-                </CardContent>
-            </Card>
-        </div>
+        <Card className="bg-[#fb923c] text-white">
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base font-semibold">
+                    <CalendarDays className="h-5 w-5" />
+                    Folgas e Feriados
+                </CardTitle>
+            </CardHeader>
+            <CardContent className="px-4 pb-4">
+                <DaysOffCalendar />
+            </CardContent>
+        </Card>
       </div>
     </div>
   )
