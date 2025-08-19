@@ -9,13 +9,8 @@ export async function getCharges() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { data: [], error: { message: 'Usuário não autenticado.' } };
 
-    // Primeiro, chama a função para gerar cobranças, se necessário.
-    const { error: rpcError } = await supabase.rpc('generate_monthly_charges');
-
-    if (rpcError) {
-        console.error('Error calling generate_monthly_charges:', rpcError);
-        // Não bloqueia a busca, apenas loga o erro.
-    }
+    // A geração de cobranças agora é feita pela função de cron: supabase/functions/billing-cron/index.ts
+    // A chamada RPC foi removida para evitar o erro.
 
     const { data, error } = await supabase
         .from('cobrancas')

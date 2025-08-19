@@ -14,5 +14,5 @@
 # health_check.enabled = true
 
 [functions]
-  [functions.send-billing-reminders]
-    schedule = "0 0 * * *" # Roda todos os dias à meia-noite (UTC)
+  [functions.billing-cron]
+    schedule = "0 5 * * *" # Roda todos os dias às 05:00 UTC (02:00 no Brasil)
