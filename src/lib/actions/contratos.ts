@@ -138,7 +138,7 @@ export async function getContractForClientById(contractId: string) {
         .from('contratos')
         .select(`
             *,
-            clientes (*, Cobranca(*)),
+            clientes (*),
             propostas (*)
         `)
         .eq('id', contractId)
@@ -148,6 +148,24 @@ export async function getContractForClientById(contractId: string) {
         console.error('Supabase error:', error);
         return { data: null, error: { message: 'Não foi possível buscar os dados do contrato.' } };
     }
+
+    // Adiciona a busca por cobranças separadamente se o contrato for encontrado
+    if (data) {
+        const { data: charges, error: chargesError } = await supabase
+            .from('cobrancas')
+            .select('*')
+            .eq('cliente_id', data.cliente_id);
+
+        if (chargesError) {
+             console.error('Supabase error fetching charges for contract:', chargesError);
+        } else {
+            // Anexa as cobranças ao objeto do cliente dentro do contrato
+            if (data.clientes) {
+                (data.clientes as any).Cobranca = charges || [];
+            }
+        }
+    }
+
 
     return { data, error: null };
 }
@@ -277,6 +295,7 @@ interface SignClientArgs {
 export async function signContractAsClient({ contractId, otp, signatureDataUrl }: SignClientArgs) {
     const supabase = createClient();
     
+    // Busca a versão mais recente do contrato ANTES de qualquer verificação
     const { data: contract, error: contractError } = await supabase
         .from('contratos')
         .select('*, clientes(*), propostas(*)')
