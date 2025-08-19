@@ -8,7 +8,6 @@ import type { Holiday, DayOff } from '@/lib/types'
 import { createClient } from '@/lib/supabase/client'
 import { format, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import { cn } from '@/lib/utils'
 
 async function getHolidays(): Promise<Holiday[]> {
   const supabase = createClient()
@@ -40,6 +39,18 @@ async function addDayOff(date: Date): Promise<DayOff | null> {
 
   const dateString = format(date, 'yyyy-MM-dd')
 
+  const { data: existingData, error: fetchError } = await supabase.from('days_off').select().eq('user_id', user.id).eq('date', dateString).maybeSingle();
+
+  if(fetchError && fetchError.code !== 'PGRST116') { // Ignore 'not found' error
+    console.error('Error checking for existing day off:', fetchError.message)
+    return null;
+  }
+  
+  if (existingData) {
+      console.log(`Day off for ${dateString} already exists.`);
+      return existingData;
+  }
+
   const { data, error } = await supabase
     .from('days_off')
     .insert({ user_id: user.id, date: dateString })
@@ -47,11 +58,6 @@ async function addDayOff(date: Date): Promise<DayOff | null> {
     .single()
 
   if (error) {
-    if (error.code === '23505') { 
-        console.log(`Day off for ${dateString} already exists.`);
-        const { data: existingData } = await supabase.from('days_off').select().eq('user_id', user.id).eq('date', dateString).single();
-        return existingData;
-    }
     console.error('Error adding day off:', error.message)
     return null
   }
@@ -115,13 +121,13 @@ export function DaysOffCalendar() {
           mode="single"
           month={month}
           onMonthChange={setMonth}
-          onSelect={handleSetDayOff}
+          onDayClick={handleSetDayOff}
           modifiers={{
             holiday: holidayDates,
             dayOff: dayOffDates,
           }}
           modifiersClassNames={{
-            dayOff: 'bg-pink-100 text-pink-800 rounded-md !text-pink-800 font-semibold',
+            dayOff: 'bg-pink-100 !text-pink-800 rounded-md font-semibold',
             holiday: 'relative text-muted-foreground',
           }}
           classNames={{
@@ -130,7 +136,7 @@ export function DaysOffCalendar() {
             nav_button: "h-7 w-7",
             nav_button_previous: "absolute left-1 text-white",
             nav_button_next: "absolute right-1 text-white",
-            head_cell: "text-white/80 rounded-md w-9 font-normal text-[0.8rem]",
+            head_cell: "text-white/80 rounded-md w-9 font-normal text-[0.8rem] justify-center text-center",
             day: "h-9 w-9 p-0 font-normal aria-selected:opacity-100 text-white",
             day_selected: "bg-pink-200 text-pink-800 hover:bg-pink-300 focus:bg-pink-300",
             day_today: "bg-white/20 text-white",
