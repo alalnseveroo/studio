@@ -272,15 +272,17 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
         <Card className="bg-black text-white">
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-base font-semibold">
-                    <CalendarDays className="h-5 w-5" />
-                    Folgas e Feriados
-                </CardTitle>
-            </CardHeader>
-            <CardContent className="p-1">
-                <DaysOffCalendar />
-            </CardContent>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base font-semibold text-white">
+              <CalendarDays className="h-5 w-5" />
+              Folgas e Feriados
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-1">
+            <div className="mx-auto max-w-xs">
+              <DaysOffCalendar />
+            </div>
+          </CardContent>
         </Card>
       </div>
     </div>
