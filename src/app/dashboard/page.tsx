@@ -184,8 +184,8 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
       </div>
-      <div className="grid gap-4 md:gap-8 lg:grid-cols-1">
-        <Card>
+      <div className="grid gap-4 md:gap-8 lg:grid-cols-3">
+        <Card className="lg:col-span-2">
           <CardHeader className="flex flex-row items-center">
             <div className="grid gap-2">
               <CardTitle>Contratos Recentes</CardTitle>
@@ -269,6 +269,11 @@ export default async function DashboardPage() {
              )}
           </CardContent>
         </Card>
+        <div className="lg:col-span-1 bg-black rounded-lg p-4 flex flex-col items-center">
+            <h3 className="text-lg font-semibold text-white mb-2">Folgas e Feriados</h3>
+            <p className="text-sm text-white/80 mb-4 text-center">Clique em um dia para marcar/desmarcar folga.</p>
+            <DaysOffCalendar />
+        </div>
       </div>
     </div>
   )
