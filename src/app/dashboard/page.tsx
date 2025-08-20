@@ -272,7 +272,9 @@ export default async function DashboardPage() {
         <div className="lg:col-span-1 bg-black rounded-lg p-4 flex flex-col items-center">
             <h3 className="text-lg font-semibold text-white mb-2">Folgas e Feriados</h3>
             <p className="text-sm text-white/80 mb-4 text-center">Clique em um dia para marcar/desmarcar folga.</p>
-            <DaysOffCalendar />
+            <div className="w-full">
+              <DaysOffCalendar />
+            </div>
         </div>
       </div>
     </div>
