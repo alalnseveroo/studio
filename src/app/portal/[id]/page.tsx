@@ -228,7 +228,7 @@ export default function ClientPortalPage() {
                 </div>
                 <div className="col-span-2 grid grid-cols-subgrid border-t border-t-[#dbe0e6] py-5">
                     <p className="text-[#60758a] text-sm font-normal leading-normal">Valores</p>
-                    <p className="text-[#111418] text-sm font-normal leading-normal">R$ {Number(activeProposal.value).toFixed(2)} / {activeProposal.payment_type === 'fixed' ? 'mês' : activeProposal.payment_type}</p>
+                    <p className="text-[#111418] text-sm font-normal leading-normal">R$ {Number(activeProposal.value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} / {activeProposal.payment_type === 'fixed' ? 'mês' : activeProposal.payment_type}</p>
                 </div>
                  <div className="col-span-2 grid grid-cols-subgrid border-t border-t-[#dbe0e6] py-5">
                     <p className="text-[#60758a] text-sm font-normal leading-normal">Vencimento</p>
@@ -307,7 +307,7 @@ export default function ClientPortalPage() {
                         return (
                          <TableRow key={charge.id}>
                             <TableCell>{format(new Date(charge.due_date), 'dd/MM/yyyy')}</TableCell>
-                            <TableCell>R$ {Number(charge.value).toFixed(2)}</TableCell>
+                            <TableCell>R$ {Number(charge.value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
                             <TableCell><Badge variant="outline" className={cn("font-normal w-24 justify-center", status.className)}>{status.text}</Badge></TableCell>
                             <TableCell className="text-right space-x-2">
                                {isInvoiceAvailable ? (

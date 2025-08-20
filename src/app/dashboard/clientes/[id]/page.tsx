@@ -790,7 +790,7 @@ function FinancialStep({ isEditing, setEditingStep, onSave, isLoading, proposals
                 <CardContent className="space-y-4 text-sm pt-6">
                      <p className="flex items-center">
                         <DollarSign className="mr-2 h-4 w-4 text-muted-foreground" />
-                        <strong>Valor Mensal:</strong>&nbsp;R$ {Number(clientData.value || 0).toFixed(2)}
+                        <strong>Valor Mensal:</strong>&nbsp;R$ {Number(clientData.value || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </p>
                     <p className="flex items-center">
                         <Calendar className="mr-2 h-4 w-4 text-muted-foreground" />
@@ -849,7 +849,7 @@ function ChargeHistory({ charges, onMarkAsPaid }: { charges: Cobranca[], onMarkA
                                 return (
                                 <TableRow key={charge.id}>
                                     <TableCell>{format(new Date(charge.due_date), 'dd/MM/yyyy')}</TableCell>
-                                    <TableCell>R$ {Number(charge.value).toFixed(2)}</TableCell>
+                                    <TableCell>R$ {Number(charge.value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
                                     <TableCell>
                                         <Badge variant="outline" className={cn("font-normal", status.className)}>{status.text}</Badge>
                                     </TableCell>

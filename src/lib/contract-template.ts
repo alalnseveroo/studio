@@ -53,7 +53,7 @@ function getServicesList(services: string[]): string {
 
 function getRemunerationInfo(proposta: Proposta): string {
     let remunerationText = '';
-    const value = proposta.value ? `R$ ${Number(proposta.value).toFixed(2)}` : '[Valor]';
+    const value = proposta.value ? `R$ ${Number(proposta.value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '[Valor]';
     const valueInWords = proposta.value_in_words || '[Valor por Extenso]';
 
     switch (proposta.payment_type) {
