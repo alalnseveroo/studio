@@ -184,9 +184,9 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
       </div>
-      <div className="grid gap-4 md:gap-8 lg:grid-cols-2 xl:grid-cols-3">
+      <div className="grid gap-4 md:gap-8 lg:grid-cols-3">
         <Card
-          className="xl:col-span-2"
+          className="lg:col-span-2"
         >
           <CardHeader className="flex flex-row items-center">
             <div className="grid gap-2">
@@ -279,13 +279,10 @@ export default async function DashboardPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="p-1">
-            <div className="mx-auto max-w-xs">
-              <DaysOffCalendar />
-            </div>
+             <DaysOffCalendar />
           </CardContent>
         </Card>
       </div>
     </div>
   )
 }
-
