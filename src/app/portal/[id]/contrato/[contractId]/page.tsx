@@ -202,16 +202,10 @@ export default function ContratoPortalPage() {
             <div className="grid md:grid-cols-2 gap-12 items-start max-w-6xl mx-auto">
                 {/* Coluna Esquerda: Preview do Contrato */}
                 <div id="contract-content-for-pdf">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Visualização do Contrato</CardTitle>
-                            <CardDescription>
-                                Revise todos os detalhes do contrato antes de assinar.
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
+                    <Card className="shadow-md">
+                        <CardContent className="p-0">
                             <div 
-                                className="prose prose-sm max-w-none rounded-md border bg-gray-50 p-6 h-[70vh] overflow-y-auto"
+                                className="prose prose-sm max-w-none rounded-md bg-white p-6 h-[70vh] overflow-y-auto"
                                 dangerouslySetInnerHTML={{ __html: contract.full_contract_text || '' }}
                             />
                         </CardContent>
@@ -221,20 +215,16 @@ export default function ContratoPortalPage() {
                  {/* Coluna Direita: Ações */}
                 <div className="sticky top-20">
                      {isSignedByClient && provider && firstCharge ? (
-                          <Card>
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2">
-                                     <CreditCard className="h-5 w-5"/> Concretizar Parceria
-                                </CardTitle>
-                                <CardDescription>Para iniciar os serviços, realize o pagamento da primeira parcela via PIX.</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <StaticPixQRCode provider={provider} charge={firstCharge} />
-                                 <p className="text-xs text-muted-foreground text-center w-full mt-4">
-                                    Após o pagamento, a contratada será notificada para dar início aos trabalhos.
-                                </p>
-                            </CardContent>
-                          </Card>
+                        <div className="space-y-4">
+                             <div className="text-center">
+                                <h2 className="text-xl font-bold">Concretize a Parceria</h2>
+                                <p className="text-muted-foreground mt-1">Para iniciar os serviços, realize o pagamento da primeira parcela via PIX.</p>
+                            </div>
+                            <StaticPixQRCode provider={provider} charge={firstCharge} />
+                            <p className="text-xs text-muted-foreground text-center w-full">
+                                Após o pagamento, a contratada será notificada para dar início aos trabalhos.
+                            </p>
+                        </div>
                      ) : !isReadyToSign ? (
                          <Alert variant="default">
                             <Info className="h-4 w-4" />
@@ -319,5 +309,3 @@ export default function ContratoPortalPage() {
     </div>
   )
 }
-
-    

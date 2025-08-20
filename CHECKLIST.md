@@ -35,7 +35,7 @@ Este checklist deve ser verificado manualmente antes de cada entrega de código 
 - [ ] O **provedor** (usuário logado) consegue solicitar o OTP de assinatura e receber o e-mail?
 - [ ] O **provedor** consegue assinar o contrato com o OTP correto? O status muda para "Aguardando Cliente"?
 - [ ] Uma notificação por e-mail é enviada ao cliente quando o provedor assina?
-- [ ] A página de assinatura do **cliente** (`/portal/[id]/contrato/[contractId]`) carrega o contrato para visualização?
+- [ ] A página de assinatura do **cliente** (`/portal/[id]/contrato/[contractId]`) carrega o contrato para visualização com o layout correto?
 - [ ] O **cliente** consegue desenhar a assinatura, solicitar o OTP e recebê-lo por e-mail?
 - [ ] O **cliente** consegue assinar com o OTP correto? O status do contrato muda para "Finalizado"?
 - [ ] O QR Code para pagamento da primeira parcela é exibido corretamente para o cliente após a assinatura?
