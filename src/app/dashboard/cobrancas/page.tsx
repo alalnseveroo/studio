@@ -1,4 +1,5 @@
 
+
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -96,7 +97,7 @@ export default function CobrancasPage() {
         params: {
           CLIENTE_NOME: charge.clientes.full_name || charge.clientes.company_name,
           CONTRATADA_NOME: providerProfile.full_name || providerProfile.company_name,
-          COBRANCA_VALOR: (charge.value || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+          COBRANCA_VALOR: (charge.value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
           COBRANCA_VENCIMENTO: format(new Date(charge.due_date + 'T00:00:00'), 'dd/MM/yyyy'),
           LINK_PORTAL: portalUrl,
         },
@@ -210,7 +211,7 @@ export default function CobrancasPage() {
                                 {format(new Date(charge.due_date), 'dd/MM/yyyy')}
                             </TableCell>
                             <TableCell>
-                                {charge.value ? `${Number(charge.value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : 'N/A'}
+                                {charge.value ? `${Number(charge.value).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : 'N/A'}
                             </TableCell>
                             <TableCell>
                                 <Badge variant="outline" className={cn("font-normal", status.className)}>{status.text}</Badge>

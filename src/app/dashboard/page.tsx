@@ -139,7 +139,7 @@ export default async function DashboardPage() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">R$ {totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+            <div className="text-2xl font-bold">R$ {totalRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
             <p className="text-xs text-muted-foreground">
               Total de valores recebidos
             </p>
@@ -153,7 +153,7 @@ export default async function DashboardPage() {
             <BadgeCent className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">R$ {pendingAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+            <div className="text-2xl font-bold">R$ {pendingAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
             <p className="text-xs text-muted-foreground">
               Total de valores a receber
             </p>
@@ -165,7 +165,7 @@ export default async function DashboardPage() {
             <AlertTriangle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">R$ {overdueAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+            <div className="text-2xl font-bold">R$ {overdueAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
             <p className="text-xs text-muted-foreground">
               Total de valores vencidos
             </p>
@@ -184,7 +184,7 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
       </div>
-      <div className="grid gap-4 md:gap-8 lg:grid-cols-2">
+      <div className="grid gap-4 md:gap-8 lg:grid-cols-3">
         <Card className="lg:col-span-2">
           <CardHeader className="flex flex-row items-center">
             <div className="grid gap-2">
@@ -245,7 +245,7 @@ export default async function DashboardPage() {
                                 <TableCell className="hidden md:table-cell lg:hidden xl:table-cell">
                                     {format(new Date(contract.created_at), 'dd/MM/yyyy')}
                                 </TableCell>
-                                <TableCell className="text-right">R$ {(contract.propostas?.value ?? 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
+                                <TableCell className="text-right">R$ {(contract.propostas?.value ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
                             </TableRow>
                         ))}
                     </TableBody>
@@ -269,6 +269,15 @@ export default async function DashboardPage() {
              )}
           </CardContent>
         </Card>
+        <div className="lg:col-span-1 bg-black text-white rounded-lg flex flex-col">
+            <CardHeader>
+                <CardTitle className="text-white">Folgas e Feriados</CardTitle>
+                <CardDescription className="text-white/80">Clique em um dia para marcar como folga.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <DaysOffCalendar />
+            </CardContent>
+        </div>
       </div>
     </div>
   )

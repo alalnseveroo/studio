@@ -283,7 +283,7 @@ export default function ContratosPage() {
                       </TableCell>
                       <TableCell className="py-1 hidden md:table-cell">{contract.propostas?.name}</TableCell>
                       <TableCell className="py-1 hidden lg:table-cell">
-                        {contract.propostas?.value ? `R$ ${Number(contract.propostas.value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : 'N/A'}
+                        {contract.propostas?.value ? `R$ ${Number(contract.propostas.value).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : 'N/A'}
                       </TableCell>
                       <TableCell className="hidden py-1 lg:table-cell">
                         {format(new Date(contract.created_at), 'dd/MM/yyyy')}

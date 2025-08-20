@@ -122,7 +122,7 @@ export default function ContratoDetailPage() {
     )
   }
   
-  const contractValue = contract.propostas?.value ? `R$ ${Number(contract.propostas.value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : 'N/A';
+  const contractValue = contract.propostas?.value ? `R$ ${Number(contract.propostas.value).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : 'N/A';
   const clientName = contract.clientes?.full_name || contract.clientes?.company_name || '[Cliente]';
   const providerName = userProfile?.full_name || userProfile?.company_name || '[Seu Nome]';
 

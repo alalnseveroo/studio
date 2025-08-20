@@ -150,7 +150,7 @@ export default function PropostaDetailPage() {
                     <InfoItem 
                         icon={DollarSign} 
                         label="Valor" 
-                        value={`R$ ${proposal.value?.toFixed(2) || '0.00'}`} 
+                        value={`R$ ${Number(proposal.value).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0,00'}`} 
                     />
                      <InfoItem 
                         icon={Calendar} 

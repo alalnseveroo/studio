@@ -1,4 +1,5 @@
 
+
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type { Profile, Cliente, Proposta, Contrato, SignatureData } from './types';
@@ -53,7 +54,7 @@ function getServicesList(services: string[]): string {
 
 function getRemunerationInfo(proposta: Proposta): string {
     let remunerationText = '';
-    const value = proposta.value ? `R$ ${Number(proposta.value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '[Valor]';
+    const value = proposta.value ? `R$ ${Number(proposta.value).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '[Valor]';
     const valueInWords = proposta.value_in_words || '[Valor por Extenso]';
 
     switch (proposta.payment_type) {
