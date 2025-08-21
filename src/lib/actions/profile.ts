@@ -60,7 +60,9 @@ export async function saveProfile(formData: ProfileFormData & { is_completed: bo
     is_completed: formData.is_completed,
     email: user.email, // Incluindo email para o webhook
     asaas_customer_id: asaasCustomerId, // 2. Salvar a STRING do ID do Asaas
-    pix_key: formData.pix_key
+    pix_key: formData.pix_key,
+    credits: 1, // Adiciona 1 crédito inicial gratuito para o primeiro cliente
+    plan_type: 'per_client', // Define um plano padrão
   };
 
   const { data: savedProfile, error } = await supabase.from('profiles').upsert(profileData).select().single();

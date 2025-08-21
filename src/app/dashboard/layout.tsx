@@ -11,6 +11,7 @@ import {
   Settings,
   MessageSquare,
   User,
+  CreditCard,
 } from 'lucide-react'
 import {
   AlertDialog,
@@ -42,6 +43,7 @@ import { MainNav } from './_components/main-nav'
 import { useRouter, usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { ChatModal } from '@/components/chat-modal'
+import { Badge } from '@/components/ui/badge'
 
 
 function UserNav({ user }: { user: (Profile & { email: string })}) {
@@ -123,6 +125,12 @@ function DashboardHeader({
                     <MainNav />
                 </div>
                 <div className="flex items-center gap-4">
+                     {userProfile && (
+                        <Badge variant="outline" className="flex items-center gap-2 border-green-500 bg-green-500/10 text-green-700">
+                            <CreditCard className="h-4 w-4"/>
+                            <span>Você tem {userProfile.credits ?? 0} créditos</span>
+                        </Badge>
+                     )}
                     <Button variant="ghost" size="icon">
                         <Bell className="h-5 w-5" />
                         <span className="sr-only">Notificações</span>
