@@ -15,13 +15,12 @@ import {
 import { cn } from '@/lib/utils'
 import { RadioGroup, RadioGroupItem } from './ui/radio-group'
 import Link from 'next/link'
-import { getProfile, saveProfile } from '@/lib/actions/profile'
-import { getOrCreateAsaasCustomer } from '@/lib/asaas'
+import { getProfile } from '@/lib/actions/profile'
 import type { Profile } from '@/lib/types'
 import confetti from "canvas-confetti";
-import { createAsaasCharge, createAsaasPaymentLink, getAsaasPixCharge } from '@/lib/asaas'
 import { PixQRCode } from './pix-qrcode'
 import { useToast } from '@/hooks/use-toast'
+import { purchaseCredits } from '@/lib/actions/credits'
 import { useRouter } from 'next/navigation'
 
 
@@ -184,6 +183,8 @@ export function UpgradePlanModal({ isOpen, onClose }: UpgradePlanModalProps) {
   const handleContinue = async () => {
     if (selectedPlan === 'flexible') {
       onClose();
+      // Assuming 'flexible' plan might have a different flow or is not a direct purchase.
+      // The original logic redirected, so we keep that.
       router.push('/dashboard/settings/buy-credits');
       return;
     }
@@ -192,52 +193,15 @@ export function UpgradePlanModal({ isOpen, onClose }: UpgradePlanModalProps) {
     setError(null);
     setCheckoutData(null);
     
-    if (!userProfile) {
-        setError("Não foi possível carregar os dados do seu perfil. Tente novamente.");
+    const result = await purchaseCredits(selectedPlan);
+
+    if (result.error || !result.paymentId || !result.paymentLink) {
+        setError(result.error || "Ocorreu um erro desconhecido. Tente novamente.");
         setStep('error');
         return;
     }
 
-    const { asaas_customer_id } = userProfile;
-    if (!asaas_customer_id) {
-         setError("Sua conta de pagamentos não foi encontrada. Contate o suporte.");
-         setStep('error');
-         return;
-    }
-    
-    let description = '';
-    let value = 0;
-
-    if (selectedPlan === 'professional') {
-        description = 'Assinatura Plano Profissional Crivo - Mensal';
-        value = 49.90;
-    } else { // flexible
-        description = 'Compra de 2 créditos Crivo';
-        value = 20.00; // 2 * R$10
-    }
-
-    const { payment, error: chargeError } = await createAsaasCharge({
-        customer: asaas_customer_id,
-        value: value,
-        dueDate: new Date().toISOString().split('T')[0],
-        description: description,
-    });
-    
-    if (chargeError || !payment) {
-        setError(chargeError?.message || "Ocorreu um erro ao criar a cobrança. Tente novamente.");
-        setStep('error');
-        return;
-    }
-    
-    const { link, error: linkError } = await createAsaasPaymentLink(payment.id);
-
-    if (linkError || !link) {
-        setError(linkError?.message || "Ocorreu um erro ao gerar o link de pagamento. Tente novamente.");
-        setStep('error');
-        return;
-    }
-
-    setCheckoutData({ paymentId: payment.id, paymentLink: link });
+    setCheckoutData({ paymentId: result.paymentId, paymentLink: result.paymentLink });
     setStep('checkout');
   }
 
