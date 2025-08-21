@@ -35,6 +35,7 @@ export async function POST(req: NextRequest) {
 
       if (profileError || !profile) {
         console.error(`Perfil não encontrado para o asaas_customer_id: ${asaasCustomerId}`, profileError);
+        // Retorna 200 para que o Asaas não tente reenviar o webhook. O erro é do nosso lado.
         return NextResponse.json({ error: 'Perfil do cliente não encontrado no nosso sistema.' }, { status: 200 });
       }
 
@@ -54,6 +55,7 @@ export async function POST(req: NextRequest) {
       console.log(`Sucesso! ${creditsToAdd} créditos adicionados ao perfil ${profile.id}. Novo total: ${newTotalCredits}`);
     
     } else {
+        // Ignora outros eventos (como PAYMENT_CREATED) para evitar erros
         console.log(`Evento '${eventType}' recebido e ignorado.`);
     }
 
