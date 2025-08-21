@@ -16,38 +16,14 @@ type AsaasCustomer = {
     // ... outros campos que a API do Asaas retorna
 };
 
-async function getOrCreateAsaasCustomer(profile: Partial<Profile & Cliente>): Promise<AsaasCustomer> {
+async function getOrCreateAsaasCustomer(profile: Partial<Profile & Cliente>): Promise<AsaasCustomer | null> {
     if (!ASAAS_API_KEY || !ASAAS_API_URL) {
         throw new Error("As credenciais da API do Asaas não estão configuradas nas variáveis de ambiente.");
     }
     
     if (!profile.email) {
-        throw new Error("O e-mail do perfil é obrigatório para criar um cliente no Asaas.");
+        throw new Error("O e-mail do perfil é obrigatório para criar ou atualizar um cliente no Asaas.");
     }
-    
-    // 1. Tenta buscar o cliente se já tiver um ID Asaas
-    if (profile.asaas_customer_id) {
-        const getUrl = `${ASAAS_API_URL}/customers/${profile.asaas_customer_id}`;
-        try {
-            const response = await fetch(getUrl, {
-                method: 'GET',
-                headers: { 'access_token': ASAAS_API_KEY },
-            });
-            if (response.ok) {
-                console.log(`Cliente Asaas encontrado para o perfil ${profile.id}`);
-                return await response.json();
-            }
-            if (response.status !== 404) {
-                 const errorData = await response.json();
-                 throw new Error(`Asaas API Error (GET): ${errorData.errors?.[0]?.description || response.statusText}`);
-            }
-        } catch (error: any) {
-             console.error(`Falha ao buscar cliente no Asaas, tentando criar um novo. Erro: ${error.message}`);
-        }
-    }
-    
-    // 2. Se não encontrou ou não tinha ID, cria um novo cliente
-    console.log(`Cliente Asaas não encontrado para o perfil ${profile.id}. Criando um novo...`);
     
     const name = profile.full_name || profile.company_name || profile.email;
     const cpfCnpj = profile.cpf || profile.cnpj;
@@ -66,6 +42,38 @@ async function getOrCreateAsaasCustomer(profile: Partial<Profile & Cliente>): Pr
         externalReference: profile.id
     };
 
+    // Se já temos um ID Asaas, tentamos atualizar o cliente (POST em cliente existente atualiza)
+    if (profile.asaas_customer_id) {
+        const updateUrl = `${ASAAS_API_URL}/customers/${profile.asaas_customer_id}`;
+        try {
+            const response = await fetch(updateUrl, {
+                method: 'POST',
+                headers: { 
+                    'accept': 'application/json',
+                    'content-type': 'application/json',
+                    'access_token': ASAAS_API_KEY 
+                },
+                body: JSON.stringify(payload),
+            });
+
+            const responseData = await response.json();
+            if (response.ok) {
+                console.log(`Cliente Asaas ${profile.asaas_customer_id} atualizado com sucesso.`);
+                return responseData;
+            }
+             // Se o cliente não foi encontrado (404), vamos tentar criá-lo novamente abaixo.
+            if (response.status !== 404) {
+                 throw new Error(`Asaas API Error (UPDATE): ${responseData.errors?.[0]?.description || response.statusText}`);
+            }
+
+        } catch (error: any) {
+             console.error(`Falha ao ATUALIZAR cliente no Asaas (ID: ${profile.asaas_customer_id}), tentando criar um novo. Erro: ${error.message}`);
+        }
+    }
+    
+    // Se não tinha ID ou a atualização falhou, cria um novo cliente
+    console.log(`Criando um novo cliente no Asaas para o perfil ${profile.id}...`);
+    
     const createUrl = `${ASAAS_API_URL}/customers`;
     try {
         const response = await fetch(createUrl, {
@@ -81,12 +89,11 @@ async function getOrCreateAsaasCustomer(profile: Partial<Profile & Cliente>): Pr
         const responseData = await response.json();
 
         if (!response.ok) {
-             throw new Error(`Asaas API Error (POST): ${responseData.errors?.[0]?.description || response.statusText}`);
+             throw new Error(`Asaas API Error (CREATE): ${responseData.errors?.[0]?.description || response.statusText}`);
         }
         console.log("Cliente criado no Asaas com sucesso:", responseData.id);
 
         const tableName = 'is_completed' in profile ? 'profiles' : 'clientes';
-
         const supabase = createClient();
         const { error: updateError } = await supabase
             .from(tableName)
@@ -100,8 +107,8 @@ async function getOrCreateAsaasCustomer(profile: Partial<Profile & Cliente>): Pr
         return responseData;
 
     } catch (error: any) {
-        console.error("Erro detalhado ao criar cliente no Asaas:", error);
-        throw new Error(`Falha ao criar cliente no Asaas: ${error.message}`);
+        console.error("Erro detalhado ao criar/atualizar cliente no Asaas:", error);
+        throw new Error(`Falha na comunicação com a API do Asaas: ${error.message}`);
     }
 }
 
@@ -204,35 +211,6 @@ export async function createAsaasCharge(chargeDetails: {
     }
 }
 
-export async function createAsaasPaymentLink(paymentId: string) {
-    if (!ASAAS_API_KEY || !ASAAS_API_URL) {
-        return { link: null, error: { message: "As credenciais da API do Asaas não estão configuradas." } };
-    }
-    try {
-        const response = await fetch(`${ASAAS_API_URL}/payments/${paymentId}/identificationField`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-                'access_token': ASAAS_API_KEY
-            }
-        });
-
-        const data = await response.json();
-        
-        if (!response.ok) {
-            const errorMessage = data.errors?.[0]?.description || 'Erro desconhecido ao criar link de pagamento no Asaas.';
-            return { link: null, error: { message: errorMessage } };
-        }
-        
-        const paymentLink = `https://www.asaas.com/payment/${paymentId}`;
-
-
-        return { link: paymentLink, error: null };
-
-    } catch (e: any) {
-        return { link: null, error: { message: e.message || 'Erro de conexão com a API do Asaas ao criar link de pagamento.' } };
-    }
-}
 
 export async function getAsaasPixCharge(paymentId: string) {
     if (!ASAAS_API_KEY || !ASAAS_API_URL) {
