@@ -26,7 +26,7 @@ const benefitItems = [
     { text: "Portal do cliente com sua marca", icon: Gift },
     { text: "Perfil exposto no Google", icon: Globe },
     { text: "Controle do seu negócio", icon: Star },
-    { text: "E-mail marketing (em breve)", icon: Star },
+    { text: "E-mail marketing (em breve)", icon: Star, isFuture: true },
     { text: "Nota fiscal automática (em breve)", icon: BarChart3, isFuture: true },
 ];
 
