@@ -1,4 +1,3 @@
-
 'use server'
 
 import type { Profile } from "./types";
@@ -120,7 +119,7 @@ async function getOrCreateAsaasCustomer(profile: Partial<Profile & Cliente & { f
 }
 
 
-export async function createPixCharge(customerId: string, value: number, description: string): Promise<{id: string | null, status: string | null, encodedImage: string | null, payload: string | null, error: null | string}> {
+export async function createPixCharge(customerId: string, value: number, description: string): Promise<{id: string | null, status: string | null, encodedImage: string | null, payload: string | null, error: string | null}> {
     if (!ASAAS_API_KEY || !ASAAS_API_URL) {
         return { id: null, status: null, encodedImage: null, payload: null, error: "As credenciais da API do Asaas não estão configuradas nas variáveis de ambiente." };
     }
