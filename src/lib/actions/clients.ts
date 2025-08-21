@@ -76,7 +76,7 @@ export async function createFullClient(formData: any) {
 
   // Após criar o cliente no Supabase, cria ou busca no Asaas
   if (newClient) {
-     const asaasCustomer = await getOrCreateAsaasCustomer(newClient, user.id);
+     const asaasCustomer = await getOrCreateAsaasCustomer(newClient);
      if (asaasCustomer.error) {
          // Opcional: deletar o cliente criado no Supabase ou apenas logar o erro
          console.error(`Falha ao criar cliente no Asaas para o cliente Supabase ID ${newClient.id}: ${asaasCustomer.error.message}`);
@@ -247,7 +247,7 @@ export async function updateClientFinancials(id: string, financials: {
     payment_day: financials.payment_day ? Number(financials.payment_day) : null,
     first_charge_date: financials.first_charge_date || null,
     updated_at: new Date().toISOString(),
-    // O billing_status é atualizado pela função `activateClientAndDeductCredit`
+    // O billing_status é atualizado pela função `deduct_credit_and_activate_client`
   };
 
   const { error } = await supabase
@@ -317,3 +317,5 @@ export async function deleteMultipleClients(ids: string[]) {
   revalidatePath('/dashboard/clientes');
   return { error: null };
 }
+
+  

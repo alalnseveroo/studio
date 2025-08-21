@@ -16,7 +16,7 @@ type AsaasCustomer = {
     // ... outros campos que a API do Asaas retorna
 };
 
-async function getOrCreateAsaasCustomer(profile: Partial<Profile & Cliente & { fullName?: string, personType?: string, companyName?: string }>, userId?: string): Promise<AsaasCustomer> {
+async function getOrCreateAsaasCustomer(profile: Partial<Profile & Cliente & { fullName?: string, personType?: string, companyName?: string }>): Promise<AsaasCustomer> {
     if (!ASAAS_API_KEY || !ASAAS_API_URL) {
         throw new Error("As credenciais da API do Asaas não estão configuradas nas variáveis de ambiente.");
     }
@@ -102,14 +102,18 @@ async function getOrCreateAsaasCustomer(profile: Partial<Profile & Cliente & { f
         }
         console.log("Cliente criado no Asaas com sucesso:", responseData.id);
 
+        // Verifica se é um perfil de usuário ou um cliente para saber qual tabela atualizar
+        const isUserProfile = 'is_completed' in profile;
+        const tableName = isUserProfile ? 'profiles' : 'clientes';
+
         const supabase = createClient();
         const { error: updateError } = await supabase
-            .from(userId ? 'clientes' : 'profiles')
+            .from(tableName)
             .update({ asaas_customer_id: responseData.id })
             .eq('id', profile.id!);
 
         if (updateError) {
-             console.error(`Falha ao salvar o asaas_customer_id para o ID ${profile.id}:`, updateError.message);
+             console.error(`Falha ao salvar o asaas_customer_id para o ID ${profile.id} na tabela ${tableName}:`, updateError.message);
              // Não lança erro, mas registra o problema.
         }
 
@@ -281,3 +285,5 @@ export async function getAsaasPixCharge(paymentId: string) {
 }
 
 export { getOrCreateAsaasCustomer };
+
+  
