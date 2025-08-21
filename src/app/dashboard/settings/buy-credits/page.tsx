@@ -20,21 +20,21 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 
 
 const benefitItems = [
-    { text: "Contratos ilimitados", icon: FileText },
-    { text: "Nota fiscal automática", icon: BarChart3 },
+    { text: "Contratos ilimitados", icon: FileText, tooltip: "Crie quantos contratos desejar, e seu crédito será deduzido se ele for assinado." },
     { text: "Cobrança automática", icon: ShieldCheck },
     { text: "Recorrência via PIX", icon: CreditCard },
     { text: "Portal do cliente com sua marca", icon: Gift },
     { text: "Perfil exposto no Google", icon: Globe },
     { text: "Controle do seu negócio", icon: Star },
     { text: "E-mail marketing (em breve)", icon: Star },
+    { text: "Nota fiscal automática (em breve)", icon: BarChart3, isFuture: true },
 ];
 
 const presetOptions = [
-    { label: '2 clientes', value: 10 },
-    { label: '5 clientes', value: 25 },
-    { label: '7 clientes', value: 35 },
-    { label: '11 clientes', value: 55 },
+    { label: '1 cliente', value: 7 },
+    { label: '3 clientes', value: 21 },
+    { label: '5 clientes', value: 35 },
+    { label: '10 clientes', value: 70 },
 ]
 
 interface PixData {
@@ -44,7 +44,7 @@ interface PixData {
 }
 
 export default function BuyCreditsPage() {
-    const [amount, setAmount] = useState(10);
+    const [amount, setAmount] = useState(7);
     const [paymentMethod, setPaymentMethod] = useState('pix');
     const [userProfile, setUserProfile] = useState<Profile & { email?: string } | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -65,7 +65,7 @@ export default function BuyCreditsPage() {
     }, []);
 
     const handleAmountChange = (newAmount: number) => {
-        const constrainedAmount = Math.max(5, newAmount);
+        const constrainedAmount = Math.max(7, newAmount);
         setAmount(constrainedAmount);
     }
     
@@ -81,7 +81,8 @@ export default function BuyCreditsPage() {
 
         setIsProcessingPayment(true);
         try {
-            const result = await createPixCharge(userProfile.asaas_customer_id, amount, `Compra de ${Math.floor(amount / 5)} créditos`);
+            const creditsToBuy = Math.floor(amount / 7);
+            const result = await createPixCharge(userProfile.asaas_customer_id, amount, `Compra de ${creditsToBuy} crédito(s)`);
             if (result.error) {
                 throw new Error(result.error);
             }
@@ -117,7 +118,7 @@ export default function BuyCreditsPage() {
         return <div className="flex flex-1 items-center justify-center p-6"><Loader2 className="h-8 w-8 animate-spin" /></div>
     }
 
-    const credits = Math.floor(amount / 5);
+    const credits = Math.floor(amount / 7);
 
     const SummaryCard = () => (
          <Card className="sticky top-24">
@@ -152,21 +153,23 @@ export default function BuyCreditsPage() {
                         <div className="flex items-center gap-3 text-sm">
                             <Users className="h-4 w-4 text-green-500 flex-shrink-0" />
                             <span>{credits} cliente{credits !== 1 ? 's' : ''} ativo{credits !== 1 ? 's' : ''}</span>
-                            <TooltipProvider>
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <Button variant="ghost" size="icon" className="h-5 w-5 opacity-50 hover:opacity-100"><Info className="h-4 w-4" /></Button>
-                                    </TooltipTrigger>
-                                    <TooltipContent className="max-w-xs">
-                                        <p>Cadastre quantos clientes desejar, envie propostas e tenha portal do cliente ativo, pague por esse cliente somente quando ele assinar um contrato ou estiver no fluxo de pagamento recorrente.</p>
-                                    </TooltipContent>
-                                </Tooltip>
-                            </TooltipProvider>
                         </div>
                         {benefitItems.map((item, index) => (
                             <div key={index} className="flex items-center gap-3 text-sm">
                                 <item.icon className="h-4 w-4 text-green-500 flex-shrink-0" />
                                 <span>{item.text}</span>
+                                 {item.tooltip && (
+                                     <TooltipProvider>
+                                        <Tooltip>
+                                            <TooltipTrigger asChild>
+                                                <Button variant="ghost" size="icon" className="h-5 w-5 opacity-50 hover:opacity-100"><Info className="h-4 w-4" /></Button>
+                                            </TooltipTrigger>
+                                            <TooltipContent className="max-w-xs">
+                                                <p>{item.tooltip}</p>
+                                            </TooltipContent>
+                                        </Tooltip>
+                                    </TooltipProvider>
+                                 )}
                             </div>
                         ))}
                     </div>
@@ -195,8 +198,8 @@ export default function BuyCreditsPage() {
                                             </Link>
                                         </Button>
                                     </div>
-                                    <h1 className="text-2xl font-bold">Comprar Créditos</h1>
-                                    <p className="text-muted-foreground">Registre quantos clientes quiser, <strong>pague somente quando o cliente for ativado com assinatura ou pagamento recorrente.</strong></p>
+                                    <h1 className="text-2xl font-bold">Obtenha créditos</h1>
+                                    <p className="text-muted-foreground">Você compra crédito agora, mas ele só é deduzido quando houver sucesso garantido: contrato assinado ou cobrança recorrente ativa.</p>
                                 </div>
                                 
                                 <div className="flex flex-col items-start gap-6">
@@ -207,10 +210,10 @@ export default function BuyCreditsPage() {
                                             </div>
                                         </div>
                                         <div className="flex items-center gap-2">
-                                            <Button size="icon" variant="outline" className="rounded-full h-8 w-8" onClick={() => handleAmountChange(amount + 5)}>
+                                            <Button size="icon" variant="outline" className="rounded-full h-8 w-8" onClick={() => handleAmountChange(amount + 7)}>
                                                 <Plus className="h-5 w-5" />
                                             </Button>
-                                            <Button size="icon" variant="outline" className="rounded-full h-8 w-8" onClick={() => handleAmountChange(amount - 5)} disabled={amount <= 5}>
+                                            <Button size="icon" variant="outline" className="rounded-full h-8 w-8" onClick={() => handleAmountChange(amount - 7)} disabled={amount <= 7}>
                                                 <Minus className="h-5 w-5" />
                                             </Button>
                                         </div>
@@ -270,7 +273,7 @@ export default function BuyCreditsPage() {
                                 
                                 <div className="pt-4">
                                     <Button size="lg" className="text-lg py-6" onClick={handlePayment} disabled={isProcessingPayment}>
-                                        {isProcessingPayment ? <Loader2 className="h-6 w-6 animate-spin" /> : 'Realizar Pagamento'}
+                                        {isProcessingPayment ? <Loader2 className="h-6 w-6 animate-spin" /> : `Comprar ${credits} crédito(s)`}
                                     </Button>
                                 </div>
                             </div>
