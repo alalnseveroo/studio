@@ -202,36 +202,6 @@ export async function activateClientAndDeductCredit(clientId: string) {
         return { error: { message: 'Usuário não autenticado.' } };
     }
 
-    // 1. Pega o perfil do usuário e os dados do cliente em uma única chamada
-    const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('credits')
-        .eq('id', user.id)
-        .single();
-    
-    const { data: client, error: clientError } = await supabase
-        .from('clientes')
-        .select('billing_status, value, payment_day')
-        .eq('id', clientId)
-        .eq('user_id', user.id)
-        .single();
-
-    if (profileError || clientError) {
-        return { error: { message: 'Não foi possível buscar os dados do usuário ou do cliente.' } };
-    }
-    
-    // 2. Verifica se o cliente já está ativo para evitar dupla cobrança de crédito
-    if (client.billing_status === 'active') {
-        console.log(`Cliente ${clientId} já está ativo. Nenhum crédito foi deduzido.`);
-        return { error: null, message: 'Cliente já está ativo.' };
-    }
-
-    // 3. Verifica se o usuário tem créditos
-    if (!profile || profile.credits <= 0) {
-        return { error: { message: 'Créditos insuficientes para ativar o cliente.' } };
-    }
-
-    // 4. Executa a transação: deduz o crédito e ativa o cliente
     const { error: deductError } = await supabase.rpc('deduct_credit_and_activate_client', {
         p_user_id: user.id,
         p_client_id: clientId,
@@ -240,22 +210,6 @@ export async function activateClientAndDeductCredit(clientId: string) {
     if (deductError) {
         console.error('Erro ao executar a função SQL:', deductError);
         return { error: { message: `Não foi possível deduzir o crédito e ativar o cliente: ${deductError.message}` } };
-    }
-
-    // 5. Cria a cobrança inicial
-    if (client.value && client.payment_day) {
-        const { error: chargeError } = await supabase.from('cobrancas').insert({
-            user_id: user.id,
-            cliente_id: clientId,
-            due_date: format(new Date(), 'yyyy-MM-dd'),
-            value: client.value,
-            status: 'pendente'
-        });
-
-        if (chargeError) {
-            // Log do erro, mas não reverte a ativação. Pode ser ajustado se a transação for crítica.
-            console.error(`Cliente ativado, mas falha ao criar cobrança inicial para o cliente ${clientId}: ${chargeError.message}`);
-        }
     }
     
     console.log(`Crédito deduzido com sucesso para o usuário ${user.id}. Cliente ${clientId} ativado.`);
