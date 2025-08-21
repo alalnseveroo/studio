@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
-import { Check, ArrowLeft, CreditCard, Users, Briefcase, Loader2, RefreshCw } from 'lucide-react'
+import { Check, ArrowLeft, CreditCard, Users, Briefcase, Loader2, RefreshCw, Minus, Plus, ShieldCheck, Gift, FileText, Globe, BarChart3, Star, Info } from 'lucide-react'
 import Image from 'next/image'
 import {
   Dialog,
@@ -23,6 +23,7 @@ import { createAsaasCharge, createAsaasPaymentLink, getAsaasPixCharge } from '@/
 import { PixQRCode } from './pix-qrcode'
 import { useToast } from '@/hooks/use-toast'
 import { useRouter } from 'next/navigation'
+import { Tooltip, TooltipProvider, TooltipTrigger } from './ui/tooltip'
 
 
 export const triggerConfetti = () => {
@@ -55,66 +56,16 @@ export const triggerConfetti = () => {
     frame();
 };
 
-const PlanCard = ({ 
-    planId,
-    title,
-    description,
-    price,
-    priceSuffix,
-    bodyText,
-    features,
-    selectedPlan,
-    onSelect,
-    isFeatured,
-    className
-}: { 
-    planId: string,
-    title: string, 
-    description: string, 
-    price: string, 
-    priceSuffix: string,
-    bodyText: string,
-    features: string[], 
-    selectedPlan: string,
-    onSelect: (plan: string) => void,
-    isFeatured?: boolean,
-    className?: string
-}) => {
-    const isSelected = selectedPlan === planId;
-    return (
-        <div
-            onClick={() => onSelect(planId)}
-            className={cn(
-                "cursor-pointer rounded-xl border-2 p-5 transition-all h-full flex flex-col",
-                isSelected ? "border-primary shadow-lg" : "border-border",
-                className
-            )}
-        >
-            <div className="flex items-start justify-between">
-                <div>
-                    <h3 className="font-bold text-base">{title}</h3>
-                    <p className="text-xs text-muted-foreground mt-1">{description}</p>
-                </div>
-                <RadioGroup>
-                    <RadioGroupItem value={planId} id={planId} checked={isSelected} />
-                </RadioGroup>
-            </div>
-            <div className="mt-3">
-                <span className="text-2xl font-bold">{price}</span>
-                <span className="text-xs text-muted-foreground ml-1">{priceSuffix}</span>
-            </div>
-            <p className="text-xs text-muted-foreground mt-2 flex-grow">{bodyText}</p>
-             <div className="space-y-2 pt-4 mt-auto">
-                {features.map((feature, index) => (
-                    <div key={index} className="flex items-start gap-2 text-xs">
-                        <Check className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0"/>
-                        <span>{feature}</span>
-                    </div>
-                ))}
-            </div>
-        </div>
-    )
-}
+const benefitItems = [
+    { text: "Contratos ilimitados", icon: FileText },
+    { text: "Nota fiscal automática", icon: BarChart3 },
+    { text: "Cobrança automática", icon: ShieldCheck },
+    { text: "Recorrência via PIX", icon: CreditCard },
+    { text: "Portal do cliente com sua marca", icon: Gift },
+    { text: "Perfil exposto no Google", icon: Globe },
+    { text: "Controle do seu negócio", icon: Star },
+    { text: "E-mail marketing (em breve)", icon: Star },
+];
 
 const CheckoutDisplay = ({ paymentId, paymentLink, onRetry }: { paymentId: string; paymentLink: string; onRetry: () => void; }) => (
     <div className="w-full max-w-md mx-auto">
@@ -163,7 +114,8 @@ interface CheckoutData {
 }
 
 export function UpgradePlanModal({ isOpen, onClose }: UpgradePlanModalProps) {
-  const [selectedPlan, setSelectedPlan] = useState('flexible');
+  const [selectedPlan, setSelectedPlan] = useState('credits');
+  const [amount, setAmount] = useState(7);
   const [step, setStep] = useState<Step>('selection');
   const [userProfile, setUserProfile] = useState<Profile | null>(null);
   const [checkoutData, setCheckoutData] = useState<CheckoutData | null>(null);
@@ -182,12 +134,6 @@ export function UpgradePlanModal({ isOpen, onClose }: UpgradePlanModalProps) {
   }, [isOpen]);
   
   const handleContinue = async () => {
-    if (selectedPlan === 'flexible') {
-      onClose();
-      router.push('/dashboard/settings/buy-credits');
-      return;
-    }
-    
     setStep('loading');
     setError(null);
     setCheckoutData(null);
@@ -205,20 +151,12 @@ export function UpgradePlanModal({ isOpen, onClose }: UpgradePlanModalProps) {
          return;
     }
     
-    let description = '';
-    let value = 0;
-
-    if (selectedPlan === 'professional') {
-        description = 'Assinatura Plano Profissional Crivo - Mensal';
-        value = 49.90;
-    } else { // flexible
-        description = 'Compra de 2 créditos Crivo';
-        value = 20.00; // 2 * R$10
-    }
+    const creditsToBuy = Math.floor(amount / 7);
+    const description = `Compra de ${creditsToBuy} crédito(s) Crivo`;
 
     const { payment, error: chargeError } = await createAsaasCharge({
         customer: asaas_customer_id,
-        value: value,
+        value: amount,
         dueDate: new Date().toISOString().split('T')[0],
         description: description,
     });
@@ -245,11 +183,19 @@ export function UpgradePlanModal({ isOpen, onClose }: UpgradePlanModalProps) {
     onClose();
     setTimeout(() => {
         setStep('selection');
-        setSelectedPlan('professional');
+        setSelectedPlan('credits');
+        setAmount(7);
         setCheckoutData(null);
         setError(null);
     }, 300);
   }
+  
+  const handleAmountChange = (newAmount: number) => {
+    const constrainedAmount = Math.max(7, newAmount);
+    setAmount(constrainedAmount);
+  };
+  
+  const credits = Math.floor(amount / 7);
 
   const renderContent = () => {
     switch (step) {
@@ -272,7 +218,7 @@ export function UpgradePlanModal({ isOpen, onClose }: UpgradePlanModalProps) {
                 </div>
             );
         case 'checkout':
-            return (
+             return (
                  <div className="flex flex-col justify-center p-8 md:p-16 bg-background h-full">
                      {checkoutData && (
                         <CheckoutDisplay 
@@ -286,49 +232,44 @@ export function UpgradePlanModal({ isOpen, onClose }: UpgradePlanModalProps) {
         case 'selection':
         default:
              return (
-                <div className="flex flex-col justify-center p-8 md:p-16 bg-background">
-                    <div className="w-full max-w-2xl mx-auto">
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
-                            <PlanCard
-                                planId="flexible"
-                                title="Plano Flexível"
-                                description="Ideal para quem está começando ou prefere não ter um custo fixo mensal."
-                                price="R$ 10,00"
-                                priceSuffix="/mês, por cliente ativo"
-                                bodyText="Pague apenas pelos clientes que assinou contrato ou você coloca no piloto automático. Cadastrar contatos na sua base é sempre gratuito."
-                                features={[
-                                    "Seu 1º cliente é grátis, sempre!",
-                                    "Cobrança automática e notas fiscais",
-                                    "Portal do Cliente.",
-                                    "Contratos completo",
-                                    "Cancele a qualquer momento, sem burocracia.",
-                                ]}
-                                selectedPlan={selectedPlan}
-                                onSelect={setSelectedPlan}
-                                className="bg-[#faf5ff]"
-                            />
-                            <PlanCard
-                                planId="professional"
-                                title="Plano Profissional"
-                                description="Perfeito para quem já tem uma carteira de clientes e quer escalar sem limites."
-                                price="R$ 49,90"
-                                priceSuffix="/mês"
-                                bodyText="Tudo ilimitado. A tranquilidade de um custo fixo para crescer o seu negócio sem surpresas."
-                                features={[
-                                    "Clientes ILIMITADOS na gestão automática.",
-                                    "Contratos e Propostas ILIMITADOS.",
-                                    "Acesso a todas as funcionalidades premium.",
-                                    "O melhor custo-benefício a partir de 3 clientes.",
-                                ]}
-                                selectedPlan={selectedPlan}
-                                onSelect={setSelectedPlan}
-                                isFeatured
-                                className="bg-[#f0fdf4]"
-                            />
+                <div className="flex flex-col justify-center items-center p-8 md:p-16 bg-background">
+                    <div className="w-full max-w-md mx-auto">
+                        <div
+                            className={cn(
+                                "cursor-pointer rounded-xl border-2 p-5 transition-all h-full flex flex-col bg-[#faf5ff]",
+                                "border-primary shadow-lg"
+                            )}
+                        >
+                            <h3 className="font-bold text-base">Obtenha créditos</h3>
+                            <p className="text-xs text-muted-foreground mt-1">Os créditos funcionam como uma reserva para habilitar suas cobranças e contratos. Mas não se preocupe, é deduzido somente quando você tiver sucesso: contrato assinado ou cobrança recorrente ativa.</p>
+                            
+                            <div className="mt-4 flex items-center justify-between">
+                                <div className="text-2xl font-bold">
+                                    R$ {amount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                </div>
+                                <div className="flex items-center gap-2">
+                                     <Button size="icon" variant="outline" className="rounded-full h-8 w-8" onClick={() => handleAmountChange(amount - 7)} disabled={amount <= 7}>
+                                        <Minus className="h-5 w-5" />
+                                    </Button>
+                                    <span className="font-bold w-12 text-center">{credits} crédito{credits !== 1 ? 's' : ''}</span>
+                                    <Button size="icon" variant="outline" className="rounded-full h-8 w-8" onClick={() => handleAmountChange(amount + 7)}>
+                                        <Plus className="h-5 w-5" />
+                                    </Button>
+                                </div>
+                            </div>
+                            
+                            <div className="space-y-2 pt-4 mt-4 border-t">
+                                {benefitItems.map((feature, index) => (
+                                    <div key={index} className="flex items-start gap-2 text-xs">
+                                        <Check className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0"/>
+                                        <span>{feature.text}</span>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                         <div className="mt-6 flex justify-end">
-                            <Button size="lg" className="text-base py-6" onClick={handleContinue}>
-                                Continuar para o Pagamento
+                            <Button size="lg" className="text-base py-6 w-full" onClick={handleContinue}>
+                                Comprar {credits} crédito{credits !== 1 ? 's' : ''}
                             </Button>
                         </div>
                     </div>
