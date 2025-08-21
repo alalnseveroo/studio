@@ -4,7 +4,6 @@ import { getSupabaseAdminClient } from '@/lib/supabase/admin';
 
 export async function POST(req: NextRequest) {
   try {
-    const supabase = getSupabaseAdminClient();
     const body = await req.json();
     const eventType = body.event;
 
@@ -12,6 +11,7 @@ export async function POST(req: NextRequest) {
 
     // Processa apenas os eventos que confirmam um pagamento de fato
     if (eventType === 'PAYMENT_CONFIRMED' || eventType === 'PAYMENT_RECEIVED') {
+      const supabase = getSupabaseAdminClient();
       const payment = body.payment;
 
       if (!payment || !payment.customer || !payment.value) {
