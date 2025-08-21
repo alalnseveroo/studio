@@ -179,7 +179,7 @@ export default function BuyCreditsPage() {
     );
 
     return (
-        <div className="flex flex-1 justify-center p-4 sm:p-6 md:p-10 animate-fade-in overflow-x-hidden">
+        <div className="flex flex-1 justify-center p-4 sm:p-6 md:p-10 animate-in fade-in-50 duration-500 overflow-x-hidden">
             <div className="w-full max-w-5xl">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-12 gap-y-8 items-start">
                     
@@ -288,7 +288,12 @@ export default function BuyCreditsPage() {
                                     <h2 className="text-xl font-bold">Pague com PIX</h2>
                                     <p className="text-muted-foreground max-w-xs">Abra o app do seu banco e escaneie o QR Code ou use o código abaixo.</p>
                                     <div className="p-2 bg-white rounded-lg border mt-4">
-                                        <QRCode value={pixData.payload} size={220} />
+                                        <Image
+                                          src={`data:image/png;base64,${pixData.qrCodeImage}`}
+                                          alt="PIX QR Code"
+                                          width={220}
+                                          height={220}
+                                        />
                                     </div>
                                     <div className="w-full max-w-sm space-y-2 mt-4">
                                         <p className="text-sm font-medium text-center">PIX Copia e Cola</p>

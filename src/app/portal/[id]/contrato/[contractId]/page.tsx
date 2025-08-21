@@ -87,7 +87,8 @@ export default function ContratoPortalPage() {
     setSignature(signatureData)
     setOtpStep('verifying')
     
-    const { success, error, message } = await sendClientVerificationCode(contract!.id)
+    if(!contract) return;
+    const { success, error, message } = await sendClientVerificationCode(contract.id)
     if (error) {
       toast({ variant: 'destructive', title: 'Erro ao Enviar Código', description: error.message })
       setOtpStep('initial')
@@ -108,7 +109,8 @@ export default function ContratoPortalPage() {
     }
     setOtpStep('verifying')
     
-    const { data, error } = await signContractAsClient({ contractId: contract!.id, otp, signatureDataUrl: signature })
+    if(!contract) return;
+    const { data, error } = await signContractAsClient({ contractId: contract.id, otp, signatureDataUrl: signature })
     if (error) {
       toast({ variant: 'destructive', title: 'Erro ao Assinar', description: error.message })
       setOtpStep('otp_sent')
@@ -162,7 +164,7 @@ export default function ContratoPortalPage() {
   const isSignedByClient = !!contract.client_signature_data
   const isReadyToSign = isSignedByProvider && !isSignedByClient;
   
-  const firstCharge: Cobranca | undefined = isSignedByClient ? contract.clientes.Cobranca?.find(c => c.value === contract.propostas.value) : undefined;
+  const firstCharge: Cobranca | undefined = isSignedByClient && contract.clientes?.Cobranca ? contract.clientes.Cobranca.find(c => c.value === contract.propostas?.value) : undefined;
 
   return (
     <div className="flex min-h-screen w-full flex-col bg-muted/40">
