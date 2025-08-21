@@ -143,7 +143,7 @@ export default function BuyCreditsPage() {
                 <Separator />
                 <div className="flex justify-between items-center text-lg">
                     <span className="text-muted-foreground">Valor total:</span>
-                    <span className="font-bold">R$ {amount.toFixed(2).replace('.', ',')}</span>
+                    <span className="font-bold">R$ {amount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 </div>
                 <Separator />
                 <div>
@@ -203,7 +203,7 @@ export default function BuyCreditsPage() {
                                     <div className="flex items-center gap-4 w-full justify-start">
                                         <div className="text-left">
                                             <div className="text-5xl font-bold tracking-tight">
-                                                <span className="text-3xl text-muted-foreground mr-1">R$</span>{amount.toFixed(2).replace('.', ',')}
+                                                <span className="text-3xl text-muted-foreground mr-1">R$</span>{amount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                             </div>
                                         </div>
                                         <div className="flex items-center gap-2">

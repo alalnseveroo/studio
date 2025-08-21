@@ -119,10 +119,8 @@ export default function ContratoPortalPage() {
         description: 'Sua assinatura foi registrada com sucesso.',
         className: 'bg-green-100 border-green-200 text-green-800'
       })
-      
-      if (data) {
-        setContract(data); // Atualiza o contrato com os novos dados de assinatura
-      }
+      // Refetch data to get the new charge and updated contract status
+      await fetchContract();
       setOtpStep('signed');
     }
   }
@@ -164,21 +162,7 @@ export default function ContratoPortalPage() {
   const isSignedByClient = !!contract.client_signature_data
   const isReadyToSign = isSignedByProvider && !isSignedByClient;
   
-  const firstCharge: Cobranca | undefined = isSignedByClient ? {
-      id: contract.id, // Use contract ID as a unique TXID
-      created_at: contract.created_at,
-      user_id: contract.user_id,
-      cliente_id: contract.cliente_id,
-      due_date: new Date().toISOString(), // First payment is due due now
-      value: contract.propostas.value || 0,
-      status: 'pendente',
-      paid_at: null,
-      invoice_url: null,
-      updated_at: null,
-      download_otp: null,
-      download_otp_expires_at: null,
-      clientes: contract.clientes,
-  } : undefined;
+  const firstCharge: Cobranca | undefined = isSignedByClient ? contract.clientes.Cobranca?.find(c => c.value === contract.propostas.value) : undefined;
 
   return (
     <div className="flex min-h-screen w-full flex-col bg-muted/40">
