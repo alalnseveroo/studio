@@ -54,7 +54,6 @@ interface CreateContractModalProps {
   onClientListChange: (clients: Cliente[]) => void
   selectedClientId?: string | null;
   selectedProposalId?: string | null;
-  onUpgradePlan: () => void;
 }
 
 export function CreateContractModal({ 
@@ -67,7 +66,6 @@ export function CreateContractModal({
     onClientListChange,
     selectedClientId,
     selectedProposalId,
-    onUpgradePlan
 }: CreateContractModalProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [isAddClientSheetOpen, setIsAddClientSheetOpen] = useState(false)
@@ -96,11 +94,11 @@ export function CreateContractModal({
     if (profile && profile.credits <= 0) {
         toast({
           title: 'Créditos Insuficientes',
-          description: 'Você precisa de créditos para gerar um novo contrato. Por favor, compre mais créditos.',
+          description: 'Você precisa de créditos para gerar um novo contrato.',
           variant: 'destructive'
         });
         onClose();
-        onUpgradePlan();
+        router.push('/dashboard/settings/buy-credits');
         return;
     }
 

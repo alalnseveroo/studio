@@ -44,11 +44,9 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { cn } from '@/lib/utils'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useToast } from '@/hooks/use-toast'
-import { UpgradePlanModal } from '@/components/upgrade-plan-modal'
 
 export default function ContratosPage() {
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
   const [contracts, setContracts] = useState<Contrato[]>([])
   const [clients, setClients] = useState<Cliente[]>([])
   const [proposals, setProposals] = useState<Proposta[]>([])
@@ -347,12 +345,6 @@ export default function ContratosPage() {
         proposals={proposals}
         profile={profile}
         onClientListChange={setClients}
-        onUpgradePlan={() => setIsUpgradeModalOpen(true)}
-      />
-      
-      <UpgradePlanModal 
-        isOpen={isUpgradeModalOpen}
-        onClose={() => setIsUpgradeModalOpen(false)}
       />
       
        <AlertDialog open={isBulkDeleteConfirmOpen} onOpenChange={setIsBulkDeleteConfirmOpen}>

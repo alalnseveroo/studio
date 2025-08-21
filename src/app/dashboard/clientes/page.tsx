@@ -48,7 +48,6 @@ import { useToast } from '@/hooks/use-toast'
 import { CreateContractModal } from '@/components/create-contract-modal'
 import { ConfigureBillingModal } from '@/components/configure-billing-modal'
 import { CreateContractTooltip } from '@/components/create-contract-tooltip'
-import { UpgradePlanModal } from '@/components/upgrade-plan-modal'
 
 
 const ITEMS_PER_PAGE = 10;
@@ -71,7 +70,6 @@ export default function ClientesPage() {
   const [isSheetOpen, setIsSheetOpen] = useState(false)
   const [isContractModalOpen, setIsContractModalOpen] = useState(false)
   const [isBillingModalOpen, setIsBillingModalOpen] = useState(false)
-  const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false)
   
   const [clients, setClients] = useState<Cliente[]>([])
   const [proposals, setProposals] = useState<Proposta[]>([])
@@ -90,7 +88,7 @@ export default function ClientesPage() {
   const [clientForBilling, setClientForBilling] = useState<Cliente | null>(null);
   const [copiedClientId, setCopiedClientId] = useState<string | null>(null);
 
-
+  const router = useRouter()
   const { toast } = useToast()
 
   const fetchInitialData = async () => {
@@ -235,7 +233,7 @@ export default function ClientesPage() {
 
   const openContractModalForClient = (client: Cliente) => {
     if (profile && profile.credits <= 0) {
-        setIsUpgradeModalOpen(true);
+        router.push('/dashboard/settings/buy-credits');
         return;
     }
     setClientForContract(client);
@@ -443,7 +441,6 @@ export default function ClientesPage() {
           onClientListChange={setClients}
           selectedClientId={clientForContract?.id || newlyCreatedClient?.id}
           onContractAdded={() => fetchInitialData()} 
-          onUpgradePlan={() => setIsUpgradeModalOpen(true)}
       />
 
        <ConfigureBillingModal
@@ -456,14 +453,8 @@ export default function ClientesPage() {
         clientId={clientForBilling?.id || newlyCreatedClient?.id}
         proposals={proposals}
         onBillingConfigured={() => fetchInitialData()}
-        onUpgradePlan={() => setIsUpgradeModalOpen(true)}
       />
       
-      <UpgradePlanModal 
-        isOpen={isUpgradeModalOpen}
-        onClose={() => setIsUpgradeModalOpen(false)}
-      />
-
       <AlertDialog open={!!clientToDelete} onOpenChange={() => setClientToDelete(null)}>
         <AlertDialogContent>
             <AlertDialogHeader>

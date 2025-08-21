@@ -55,7 +55,6 @@ interface ConfigureBillingModalProps {
   onBillingConfigured: () => void
   clientId: string | null
   proposals: Proposta[]
-  onUpgradePlan: () => void;
 }
 
 export function ConfigureBillingModal({ 
@@ -64,10 +63,10 @@ export function ConfigureBillingModal({
     onBillingConfigured, 
     clientId, 
     proposals,
-    onUpgradePlan,
 }: ConfigureBillingModalProps) {
   const [isLoading, setIsLoading] = useState(false)
   const { toast } = useToast()
+  const router = useRouter()
 
   const form = useForm<BillingFormData>({
     resolver: zodResolver(billingSchema),
@@ -120,7 +119,7 @@ export function ConfigureBillingModal({
     if (result.error) {
        if (result.error.message.includes('Créditos insuficientes')) {
             onClose();
-            onUpgradePlan();
+            router.push('/dashboard/settings/buy-credits');
        } else {
             toast({
                 variant: 'destructive',
