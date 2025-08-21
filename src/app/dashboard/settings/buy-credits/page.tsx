@@ -15,7 +15,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { createPixCharge } from '@/lib/asaas'
 import { useToast } from '@/hooks/use-toast'
 import Image from 'next/image'
-import QRCode from "qrcode.react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 
 
@@ -73,8 +72,8 @@ export default function BuyCreditsPage() {
         if (!userProfile?.asaas_customer_id) {
             toast({
                 variant: 'destructive',
-                title: 'Erro',
-                description: 'ID de cliente do Asaas não encontrado. Sincronize seu perfil novamente.'
+                title: 'Erro de Configuração',
+                description: 'Seu perfil de pagamentos não foi encontrado. Por favor, salve seu perfil nas configurações e tente novamente.'
             });
             return;
         }
@@ -83,9 +82,11 @@ export default function BuyCreditsPage() {
         try {
             const creditsToBuy = Math.floor(amount / 7);
             const result = await createPixCharge(userProfile.asaas_customer_id, amount, `Compra de ${creditsToBuy} crédito(s)`);
-            if (result.error) {
-                throw new Error(result.error);
+            
+            if (result.error || !result.encodedImage || !result.payload) {
+                throw new Error(result.error || 'Não foi possível obter os dados do PIX.');
             }
+            
             setPixData({
                 qrCodeImage: result.encodedImage,
                 payload: result.payload,
@@ -183,7 +184,6 @@ export default function BuyCreditsPage() {
             <div className="w-full max-w-5xl">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-12 gap-y-8 items-start">
                     
-                    {/* --- COLUNA DA ESQUERDA (Seleção ou Resumo) --- */}
                     <div className={cn("transition-all duration-500 ease-in-out", showPix ? "opacity-100" : "opacity-100")}>
                         {showPix ? (
                            <SummaryCard />
@@ -280,7 +280,6 @@ export default function BuyCreditsPage() {
                         )}
                     </div>
                     
-                    {/* --- COLUNA DA DIREITA (Resumo ou PIX) --- */}
                      <div className={cn("transition-all duration-500 ease-in-out", showPix ? "opacity-100" : "opacity-100")}>
                         {showPix ? (
                            pixData && (

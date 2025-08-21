@@ -25,7 +25,6 @@ async function getOrCreateAsaasCustomer(profile: Partial<Profile & Cliente & { f
         throw new Error("O e-mail do perfil é obrigatório para criar um cliente no Asaas.");
     }
 
-    // Se o perfil já tem um ID do Asaas, tenta buscá-lo para garantir que existe.
     if (profile.asaas_customer_id) {
         const getUrl = `${ASAAS_API_URL}/customers/${profile.asaas_customer_id}`;
         try {
@@ -37,7 +36,6 @@ async function getOrCreateAsaasCustomer(profile: Partial<Profile & Cliente & { f
                 console.log(`Cliente Asaas encontrado para o perfil ${profile.id}`);
                 return await response.json();
             }
-            // Se não encontrou (404), vai para o fluxo de criação logo abaixo.
             if (response.status !== 404) {
                  const errorData = await response.json();
                  throw new Error(`Asaas API Error (GET): ${errorData.errors?.[0]?.description || response.statusText}`);
@@ -47,13 +45,11 @@ async function getOrCreateAsaasCustomer(profile: Partial<Profile & Cliente & { f
         }
     }
     
-    // Se não tem ID ou não foi encontrado, cria um novo cliente no Asaas.
     console.log(`Cliente Asaas não encontrado para o perfil ${profile.id}. Criando um novo...`);
     
-    // Lógica robusta para obter o nome, verificando todas as possibilidades.
     const name = (profile.person_type === 'cpf' 
       ? profile.fullName || profile.full_name
-      : profile.companyName || profile.company_name) || profile.email; // Fallback para email
+      : profile.companyName || profile.company_name) || profile.email;
 
     if (!name) {
         throw new Error("O campo name deve ser informado");
@@ -65,8 +61,8 @@ async function getOrCreateAsaasCustomer(profile: Partial<Profile & Cliente & { f
         email: string,
         phone?: string | null,
         mobilePhone?: string | null,
-        postalCode?: string,
-        addressNumber?: string,
+        postalCode?: string | null,
+        addressNumber?: string | null,
         externalReference?: string | undefined
     } = {
         name,
@@ -102,7 +98,6 @@ async function getOrCreateAsaasCustomer(profile: Partial<Profile & Cliente & { f
         }
         console.log("Cliente criado no Asaas com sucesso:", responseData.id);
 
-        // Verifica se é um perfil de usuário ou um cliente para saber qual tabela atualizar
         const isUserProfile = 'is_completed' in profile;
         const tableName = isUserProfile ? 'profiles' : 'clientes';
 
@@ -114,7 +109,6 @@ async function getOrCreateAsaasCustomer(profile: Partial<Profile & Cliente & { f
 
         if (updateError) {
              console.error(`Falha ao salvar o asaas_customer_id para o ID ${profile.id} na tabela ${tableName}:`, updateError.message);
-             // Não lança erro, mas registra o problema.
         }
 
         return responseData;
@@ -126,9 +120,9 @@ async function getOrCreateAsaasCustomer(profile: Partial<Profile & Cliente & { f
 }
 
 
-export async function createPixCharge(customerId: string, value: number, description: string): Promise<{id: string, status: string, encodedImage: string, payload: string, error: null | string}> {
+export async function createPixCharge(customerId: string, value: number, description: string): Promise<{id: string | null, status: string | null, encodedImage: string | null, payload: string | null, error: null | string}> {
     if (!ASAAS_API_KEY || !ASAAS_API_URL) {
-        return { id: '', status: '', encodedImage: '', payload: '', error: "As credenciais da API do Asaas não estão configuradas nas variáveis de ambiente." };
+        return { id: null, status: null, encodedImage: null, payload: null, error: "As credenciais da API do Asaas não estão configuradas nas variáveis de ambiente." };
     }
 
     const today = new Date();
@@ -161,9 +155,8 @@ export async function createPixCharge(customerId: string, value: number, descrip
             throw new Error(data.errors?.[0]?.description || 'Erro desconhecido ao criar cobrança PIX.');
         }
 
-        // Após criar o pagamento, buscamos o QR Code gerado pelo Asaas
         const pixResponse = await fetch(`${ASAAS_API_URL}/payments/${data.id}/pixQrCode`, {
-            headers: { 'access_token': ASAAS_API_KEY }
+            headers: { 'access_token': ASAAS_API_KEY, 'accept': 'application/json' }
         });
 
         const pixData = await pixResponse.json();
@@ -175,18 +168,17 @@ export async function createPixCharge(customerId: string, value: number, descrip
         return {
             id: data.id,
             status: data.status,
-            encodedImage: pixData.encodedImage, // QR Code em base64
-            payload: pixData.payload, // Chave "Copia e Cola"
+            encodedImage: pixData.encodedImage, 
+            payload: pixData.payload, 
             error: null
         };
 
     } catch (error: any) {
         console.error("Erro ao criar cobrança PIX no Asaas:", error);
-        return { id: '', status: '', encodedImage: '', payload: '', error: error.message };
+        return { id: null, status: null, encodedImage: null, payload: null, error: error.message };
     }
 }
 
-// Função para criar cobrança PIX no Asaas
 export async function createAsaasCharge(chargeDetails: {
     customer: string;
     value: number;
@@ -199,7 +191,7 @@ export async function createAsaasCharge(chargeDetails: {
 
     try {
         const payload = {
-            billingType: 'UNDEFINED', // Permite PIX e Cartão
+            billingType: 'UNDEFINED',
             ...chargeDetails
         };
 
@@ -246,9 +238,6 @@ export async function createAsaasPaymentLink(paymentId: string) {
             return { link: null, error: { message: errorMessage } };
         }
         
-        // A API do Asaas não retorna um link direto, mas sim o 'identificationField' (linha digitável)
-        // O link de pagamento real geralmente é construído a partir do ID do pagamento
-        // A URL correta é /payment, não /pay
         const paymentLink = `https://www.asaas.com/payment/${paymentId}`;
 
 
@@ -265,7 +254,7 @@ export async function getAsaasPixCharge(paymentId: string) {
     }
     try {
         const pixResponse = await fetch(`${ASAAS_API_URL}/payments/${paymentId}/pixQrCode`, {
-            headers: { 'access_token': ASAAS_API_KEY }
+            headers: { 'access_token': ASAAS_API_KEY, 'accept': 'application/json' }
         });
 
         const pixData = await pixResponse.json();
@@ -275,8 +264,8 @@ export async function getAsaasPixCharge(paymentId: string) {
         }
 
         return {
-            qrCode: pixData.encodedImage, // QR Code em base64
-            payload: pixData.payload, // Chave "Copia e Cola"
+            qrCode: pixData.encodedImage,
+            payload: pixData.payload,
             error: null
         };
     } catch (error: any) {
@@ -285,5 +274,3 @@ export async function getAsaasPixCharge(paymentId: string) {
 }
 
 export { getOrCreateAsaasCustomer };
-
-  

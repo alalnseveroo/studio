@@ -1,5 +1,4 @@
 
-
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
@@ -21,27 +20,19 @@ export async function saveProfile(formData: ProfileFormData & { is_completed: bo
     return { error: { message: 'Usuário não autenticado.' } }
   }
 
-  // 1. Criar ou obter o cliente no Asaas ANTES de salvar no nosso banco
-  let asaasCustomerId: string | null = null;
-  try {
-      const profileWithEmail = { ...formData, email: user.email };
-      const asaasCustomer = await getOrCreateAsaasCustomer(profileWithEmail);
-      if (asaasCustomer && asaasCustomer.id) {
-        asaasCustomerId = asaasCustomer.id; // Extrai apenas o ID (string)
-      } else {
-        throw new Error('O objeto de cliente retornado pelo Asaas é inválido ou não contém um ID.');
-      }
-  } catch (asaasError: any) {
-      console.error("Asaas customer creation failed:", asaasError.message);
-      return { error: { message: `Falha ao sincronizar com o sistema de pagamentos: ${asaasError.message}` } };
-  }
-
-  if (!asaasCustomerId) {
-       return { error: { message: 'Não foi possível obter um ID de cliente do sistema de pagamentos.' } };
-  }
-
-
   const avatarUrl = formData.sex === 'male' ? AVATAR_USER_MALE : AVATAR_USER_FEMALE;
+  
+  const profileForAsaas = {
+    id: user.id,
+    email: user.email,
+    ...formData,
+  };
+
+  const asaasCustomer = await getOrCreateAsaasCustomer(profileForAsaas);
+
+  if (!asaasCustomer || !asaasCustomer.id) {
+     return { error: { message: 'Não foi possível obter um ID de cliente do sistema de pagamentos.' } };
+  }
 
   const profileData = {
     id: user.id,
@@ -58,11 +49,11 @@ export async function saveProfile(formData: ProfileFormData & { is_completed: bo
     avatar_url: avatarUrl,
     updated_at: new Date().toISOString(),
     is_completed: formData.is_completed,
-    email: user.email, // Incluindo email para o webhook
-    asaas_customer_id: asaasCustomerId, // 2. Salvar a STRING do ID do Asaas
+    email: user.email, 
+    asaas_customer_id: asaasCustomer.id,
     pix_key: formData.pix_key,
-    credits: 1, // Adiciona 1 crédito inicial gratuito para o primeiro cliente
-    plan_type: 'per_client', // Define um plano padrão
+    credits: 1, 
+    plan_type: 'per_client', 
   };
 
   const { data: savedProfile, error } = await supabase.from('profiles').upsert(profileData).select().single();
@@ -76,7 +67,7 @@ export async function saveProfile(formData: ProfileFormData & { is_completed: bo
       try {
           await sendTransactionalEmail({
             toEmail: user.email!,
-            templateId: 65, // Template de Boas-vindas para a Contratada
+            templateId: 65, 
             params: {
               CONTRATADA_NOME: savedProfile.full_name || savedProfile.company_name
             },
@@ -115,18 +106,15 @@ export async function getProfile(userId?: string) {
         .eq('id', targetUserId)
         .single();
         
-    // Se houver um erro e não for o de 'nenhum resultado encontrado', retorne o erro.
     if (error && error.code !== 'PGRST116') {
         console.error('Error fetching profile:', error);
         return { data: null, error: { message: 'Erro ao buscar perfil.' } };
     }
 
-    // Se não houver dados de perfil (usuário novo), retorne nulo.
     if (!profileData) {
         return { data: null, error: null };
     }
     
-    // Se o perfil foi encontrado, adicione o e-mail do usuário autenticado a ele.
     if (!profileData.email && user && user.id === targetUserId) {
         profileData.email = user.email;
     }

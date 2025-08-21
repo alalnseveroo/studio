@@ -2,10 +2,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdminClient } from '@/lib/supabase/admin';
 
-// Este endpoint irá receber as notificações de webhook do Asaas.
-// Você precisa configurar esta URL no seu painel do Asaas:
-// https://<seu-dominio>/api/webhooks/asaas
-
 export async function POST(req: NextRequest) {
   try {
     const supabase = getSupabaseAdminClient();
@@ -14,7 +10,6 @@ export async function POST(req: NextRequest) {
 
     console.log('Webhook Asaas recebido:', eventType);
 
-    // Verificamos se o evento é uma confirmação ou recebimento de pagamento
     if (eventType === 'PAYMENT_CONFIRMED' || eventType === 'PAYMENT_RECEIVED') {
       const payment = body.payment;
 
@@ -22,35 +17,30 @@ export async function POST(req: NextRequest) {
         console.error('Payload de pagamento inválido recebido do Asaas.');
         return NextResponse.json({ error: 'Payload de pagamento inválido.' }, { status: 400 });
       }
-
-      const customerId = payment.customer;
+      
+      const asaasCustomerId = payment.customer;
       const paidValue = payment.value;
-      const creditsToAdd = Math.floor(paidValue / 7); // Alterado de 5 para 7
+      const creditsToAdd = Math.floor(paidValue / 7);
 
       if (creditsToAdd <= 0) {
         console.log(`Pagamento de R$ ${paidValue} não resulta em créditos. Ignorando.`);
         return NextResponse.json({ success: true, message: 'Nenhum crédito a adicionar.' });
       }
       
-      // Encontra o perfil do usuário no nosso banco de dados usando o ID do cliente do Asaas
-      // A busca pode ser tanto na tabela de profiles (para o dono da conta) quanto na de clientes
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('id, credits')
-        .eq('asaas_customer_id', customerId)
+        .eq('asaas_customer_id', asaasCustomerId)
         .single();
 
       if (profileError || !profile) {
-        console.error(`Perfil não encontrado para o asaas_customer_id: ${customerId}`, profileError);
-        // Retornamos 200 para que o Asaas não tente reenviar, pois o erro é do nosso lado.
+        console.error(`Perfil não encontrado para o asaas_customer_id: ${asaasCustomerId}`, profileError);
         return NextResponse.json({ error: 'Perfil do cliente não encontrado no nosso sistema.' }, { status: 200 });
       }
 
-      // Calcula os novos créditos
       const currentCredits = profile.credits || 0;
       const newTotalCredits = currentCredits + creditsToAdd;
 
-      // Atualiza o perfil do usuário com os novos créditos
       const { error: updateError } = await supabase
         .from('profiles')
         .update({ credits: newTotalCredits, updated_at: new Date().toISOString() })
@@ -58,18 +48,15 @@ export async function POST(req: NextRequest) {
 
       if (updateError) {
         console.error(`Erro ao atualizar créditos para o perfil ${profile.id}:`, updateError);
-        // Retornamos 500 para que o Asaas possa tentar reenviar o webhook
         return NextResponse.json({ error: 'Erro ao atualizar créditos do usuário.' }, { status: 500 });
       }
 
       console.log(`Sucesso! ${creditsToAdd} créditos adicionados ao perfil ${profile.id}. Novo total: ${newTotalCredits}`);
     
     } else {
-        // Se for qualquer outro evento (como PAYMENT_CREATED), apenas acuse o recebimento.
         console.log(`Evento '${eventType}' recebido e ignorado.`);
     }
 
-    // Retorna uma resposta de sucesso para o Asaas para confirmar o recebimento.
     return NextResponse.json({ success: true });
 
   } catch (error: any) {

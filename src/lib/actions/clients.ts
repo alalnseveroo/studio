@@ -28,10 +28,9 @@ export async function createFullClient(formData: any) {
     return { data: null, error: { message: 'Usuário não autenticado.' } }
   }
 
-  // Buscar o perfil da contratada (usuário) para obter asaas_customer_id
   const { data: providerProfile, error: profileError } = await supabase
     .from('profiles')
-    .select('*') // Busca o perfil completo
+    .select('*')
     .eq('id', user.id)
     .single();
 
@@ -74,13 +73,10 @@ export async function createFullClient(formData: any) {
     return { data: null, error: { message: `Não foi possível adicionar o cliente: ${error.message}` } }
   }
 
-  // Após criar o cliente no Supabase, cria ou busca no Asaas
   if (newClient) {
      const asaasCustomer = await getOrCreateAsaasCustomer(newClient);
      if (asaasCustomer.error) {
-         // Opcional: deletar o cliente criado no Supabase ou apenas logar o erro
          console.error(`Falha ao criar cliente no Asaas para o cliente Supabase ID ${newClient.id}: ${asaasCustomer.error.message}`);
-         // Por simplicidade, vamos apenas logar e continuar. O cliente pode ser sincronizado depois.
      }
   }
   
@@ -117,7 +113,7 @@ export async function getClients() {
 
     const { data, error } = await supabase
         .from('clientes')
-        .select('*, propostas(*)') // Inclui a proposta vinculada
+        .select('*, propostas(*)')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
@@ -193,7 +189,6 @@ export async function updateClientProfile(id: string, formData: any) {
   return { error: null }
 }
 
-
 export async function activateClientAndDeductCredit(clientId: string) {
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
@@ -202,6 +197,7 @@ export async function activateClientAndDeductCredit(clientId: string) {
         return { error: { message: 'Usuário não autenticado.' } };
     }
 
+    // Usando uma RPC para garantir a transação atômica
     const { error: rpcError } = await supabase.rpc('deduct_credit_and_activate_client', {
         p_client_id: clientId,
         p_user_id: user.id
@@ -214,7 +210,7 @@ export async function activateClientAndDeductCredit(clientId: string) {
     
     console.log(`Crédito deduzido com sucesso para o usuário ${user.id}. Cliente ${clientId} ativado.`);
     
-    revalidatePath('/dashboard/layout'); // Para atualizar o contador de créditos no header
+    revalidatePath('/dashboard/layout');
     revalidatePath(`/dashboard/clientes/${clientId}`);
     revalidatePath(`/dashboard/cobrancas`);
 
@@ -223,8 +219,8 @@ export async function activateClientAndDeductCredit(clientId: string) {
 
 export async function updateClientFinancials(id: string, financials: { 
     proposal_id: string | null; 
-    value: any; // Mantido como any para acomodar string ou number do form
-    payment_day: any; // Mantido como any
+    value: any; 
+    payment_day: any;
     first_charge_date?: string | null;
     billing_status: 'active' | 'inactive';
 }) {
@@ -247,7 +243,6 @@ export async function updateClientFinancials(id: string, financials: {
     payment_day: financials.payment_day ? Number(financials.payment_day) : null,
     first_charge_date: financials.first_charge_date || null,
     updated_at: new Date().toISOString(),
-    // O billing_status é atualizado pela função `deduct_credit_and_activate_client`
   };
 
   const { error } = await supabase
@@ -282,7 +277,7 @@ export async function deleteClient(id: string) {
 
   if (error) {
     console.error('Supabase delete error:', error);
-    if (error.code === '23503') { // Foreign key violation
+    if (error.code === '23503') {
         return { error: { message: 'Não é possível excluir este cliente pois ele está associado a contratos ou cobranças existentes.' } };
     }
     return { error: { message: `Não foi possível excluir o cliente: ${error.message}` } };
@@ -308,7 +303,7 @@ export async function deleteMultipleClients(ids: string[]) {
 
   if (error) {
     console.error('Supabase bulk delete error:', error);
-     if (error.code === '23503') { // Foreign key violation
+     if (error.code === '23503') {
         return { error: { message: 'Não é possível excluir um ou mais clientes selecionados, pois estão associados a contratos ou cobranças existentes.' } };
     }
     return { error: { message: `Não foi possível excluir os clientes selecionados: ${error.message}` } };
@@ -317,5 +312,3 @@ export async function deleteMultipleClients(ids: string[]) {
   revalidatePath('/dashboard/clientes');
   return { error: null };
 }
-
-  
