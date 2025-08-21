@@ -35,6 +35,7 @@ import {
 } from "@/components/ui/pagination"
 import { Checkbox } from "@/components/ui/checkbox"
 import { AddClientSheet } from '@/components/add-client-sheet'
+import { UpgradePlanModal } from '@/components/upgrade-plan-modal'
 import { getClients, deleteClient, deleteMultipleClients } from '@/lib/actions/clients'
 import type { Cliente, Proposta, Profile, Contrato } from '@/lib/types'
 import { getProposals } from '@/lib/actions/propostas'
@@ -68,6 +69,7 @@ const CardAction = ({ icon: Icon, title, description, onClick }: { icon: React.E
 
 export default function ClientesPage() {
   const [isSheetOpen, setIsSheetOpen] = useState(false)
+  const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false)
   const [isContractModalOpen, setIsContractModalOpen] = useState(false)
   const [isBillingModalOpen, setIsBillingModalOpen] = useState(false)
   
@@ -121,7 +123,18 @@ export default function ClientesPage() {
   };
 
   const handleAddClientClick = () => {
-    setIsSheetOpen(true);
+    // Users on the 'total_plan' can add unlimited clients.
+    if (profile?.plan_type === 'total_plan') {
+      setIsSheetOpen(true);
+      return;
+    }
+
+    // For other plans (e.g., free_tier), limit to 1 client before showing upgrade modal.
+    if (clients.length >= 1) {
+      setIsUpgradeModalOpen(true);
+    } else {
+      setIsSheetOpen(true);
+    }
   };
   
   const handleDeleteClient = async () => {
@@ -413,6 +426,11 @@ export default function ClientesPage() {
         isOpen={isSheetOpen}
         onClose={() => setIsSheetOpen(false)}
         onSuccess={handleClientAdded}
+      />
+
+      <UpgradePlanModal
+        isOpen={isUpgradeModalOpen}
+        onClose={() => setIsUpgradeModalOpen(false)}
       />
       
       <CreateContractModal
