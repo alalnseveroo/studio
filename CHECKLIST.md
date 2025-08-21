@@ -38,6 +38,7 @@ Este checklist deve ser verificado manualmente antes de cada entrega de código 
 - [ ] A página de assinatura do **cliente** (`/portal/[id]/contrato/[contractId]`) carrega o contrato para visualização com o layout correto?
 - [ ] O **cliente** consegue desenhar a assinatura, solicitar o OTP e recebê-lo por e-mail?
 - [ ] O **cliente** consegue assinar com o OTP correto? O status do contrato muda para "Finalizado"?
+- [ ] Uma cobrança referente à primeira parcela é criada automaticamente após a assinatura do cliente?
 - [ ] O QR Code para pagamento da primeira parcela é exibido corretamente para o cliente após a assinatura?
 
 ## ✅ Módulo de Cobranças e Portal do Cliente

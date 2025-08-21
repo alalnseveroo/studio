@@ -8,6 +8,7 @@ import { headers } from 'next/headers'
 import { getContractTemplate } from '@/lib/contract-template'
 import type { Profile, Contrato, SignatureData } from '@/lib/types'
 import { sendTransactionalEmail } from '../brevo'
+import { format } from 'date-fns'
 
 // Helper para buscar o perfil da contratada (usuário logado)
 async function getProviderProfile(supabase: any, userId: string): Promise<{ data: Profile | null, error: any }> {
@@ -365,7 +366,26 @@ export async function signContractAsClient({ contractId, otp, signatureDataUrl }
          return { data: null, error: { message: `Não foi possível assinar o contrato: ${updateError.message}` } };
     }
 
+    // Cria a cobrança da primeira parcela após a assinatura
+    if (updatedContract && updatedContract.propostas?.value) {
+        const { error: chargeError } = await supabase.from('cobrancas').insert({
+            user_id: updatedContract.user_id,
+            cliente_id: updatedContract.cliente_id,
+            due_date: format(new Date(), 'yyyy-MM-dd'),
+            value: updatedContract.propostas.value,
+            status: 'pendente'
+        });
+
+        if (chargeError) {
+            // Log do erro, mas não impede a resposta de sucesso da assinatura
+            console.error(`Falha ao criar cobrança para o contrato ${updatedContract.id}: ${chargeError.message}`);
+        }
+    }
+
+
     revalidatePath(`/dashboard/contratos/${contractId}`);
+    revalidatePath(`/dashboard/cobrancas`);
+    revalidatePath(`/dashboard/clientes/${contract.cliente_id}`);
     revalidatePath(`/portal/${contract.cliente_id}/contrato/${contract.id}`);
     revalidatePath(`/portal/${contract.cliente_id}`);
     return { data: updatedContract, error: null };

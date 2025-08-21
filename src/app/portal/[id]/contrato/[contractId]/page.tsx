@@ -186,14 +186,12 @@ export default function ContratoPortalPage() {
             <div className="grid md:grid-cols-2 gap-12 items-start max-w-6xl mx-auto">
                 {/* Coluna Esquerda: Preview do Contrato */}
                 <div id="contract-content-for-pdf">
-                    <Card className="shadow-md">
-                        <CardContent className="p-0">
-                            <div 
-                                className="prose prose-sm max-w-none rounded-md bg-white p-6 h-[70vh] overflow-y-auto"
-                                dangerouslySetInnerHTML={{ __html: contract.full_contract_text || '' }}
-                            />
-                        </CardContent>
-                    </Card>
+                    <div className="bg-white shadow-md rounded-lg">
+                        <div 
+                            className="prose prose-sm max-w-none p-6 h-[70vh] overflow-y-auto"
+                            dangerouslySetInnerHTML={{ __html: contract.full_contract_text || '' }}
+                        />
+                    </div>
                 </div>
 
                  {/* Coluna Direita: Ações */}
