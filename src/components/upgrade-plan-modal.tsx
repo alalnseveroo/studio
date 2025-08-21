@@ -163,7 +163,7 @@ interface CheckoutData {
 }
 
 export function UpgradePlanModal({ isOpen, onClose }: UpgradePlanModalProps) {
-  const [selectedPlan, setSelectedPlan] = useState('professional');
+  const [selectedPlan, setSelectedPlan] = useState('flexible');
   const [step, setStep] = useState<Step>('selection');
   const [userProfile, setUserProfile] = useState<Profile | null>(null);
   const [checkoutData, setCheckoutData] = useState<CheckoutData | null>(null);
@@ -376,7 +376,7 @@ export function UpgradePlanModal({ isOpen, onClose }: UpgradePlanModalProps) {
             </DialogHeader>
              <div className="grid md:grid-cols-2 h-full">
                 {/* Coluna da Esquerda */}
-                <div className="flex flex-col justify-center items-start p-8 md:p-16 bg-muted/50">
+                <div className="hidden md:flex flex-col justify-center items-start p-8 md:p-16 bg-muted/50">
                     <div className="text-left w-full max-w-md">
                          <Button variant="ghost" onClick={step === 'selection' ? handleClose : () => setStep('selection')} className="mb-4 pl-0">
                             <ArrowLeft className="mr-2 h-4 w-4" /> Voltar

@@ -48,6 +48,7 @@ import { useToast } from '@/hooks/use-toast'
 import { CreateContractModal } from '@/components/create-contract-modal'
 import { ConfigureBillingModal } from '@/components/configure-billing-modal'
 import { CreateContractTooltip } from '@/components/create-contract-tooltip'
+import { UpgradePlanModal } from '@/components/upgrade-plan-modal'
 
 
 const ITEMS_PER_PAGE = 10;
@@ -70,6 +71,7 @@ export default function ClientesPage() {
   const [isSheetOpen, setIsSheetOpen] = useState(false)
   const [isContractModalOpen, setIsContractModalOpen] = useState(false)
   const [isBillingModalOpen, setIsBillingModalOpen] = useState(false)
+  const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false)
   
   const [clients, setClients] = useState<Cliente[]>([])
   const [proposals, setProposals] = useState<Proposta[]>([])
@@ -85,6 +87,7 @@ export default function ClientesPage() {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [newlyCreatedClient, setNewlyCreatedClient] = useState<Cliente | null>(null);
   const [clientForContract, setClientForContract] = useState<Cliente | null>(null);
+  const [clientForBilling, setClientForBilling] = useState<Cliente | null>(null);
   const [copiedClientId, setCopiedClientId] = useState<string | null>(null);
 
 
@@ -179,9 +182,9 @@ export default function ClientesPage() {
   const handleSuccessAction = (action: 'contract' | 'billing') => {
     setShowSuccessModal(false);
     if (action === 'contract') {
-        setIsContractModalOpen(true);
+        openContractModalForClient(newlyCreatedClient!);
     } else {
-        setIsBillingModalOpen(true);
+        openBillingModalForClient(newlyCreatedClient!);
     }
   };
   
@@ -229,9 +232,23 @@ export default function ClientesPage() {
   }
 
   const openContractModalForClient = (client: Cliente) => {
+    if (profile && profile.credits <= 0) {
+        setIsUpgradeModalOpen(true);
+        return;
+    }
     setClientForContract(client);
     setIsContractModalOpen(true);
   }
+
+  const openBillingModalForClient = (client: Cliente) => {
+    if (profile && profile.credits <= 0) {
+        setIsUpgradeModalOpen(true);
+        return;
+    }
+    setClientForBilling(client);
+    setIsBillingModalOpen(true);
+  }
+
 
   return (
     <>
@@ -424,9 +441,11 @@ export default function ClientesPage() {
           }}
           clients={clients}
           proposals={proposals}
+          profile={profile}
           onClientListChange={setClients}
           selectedClientId={clientForContract?.id || newlyCreatedClient?.id}
           onContractAdded={() => fetchInitialData()} 
+          onUpgradePlan={() => setIsUpgradeModalOpen(true)}
       />
 
        <ConfigureBillingModal
@@ -434,12 +453,18 @@ export default function ClientesPage() {
         onClose={() => {
           setIsBillingModalOpen(false);
           setNewlyCreatedClient(null);
+          setClientForBilling(null);
         }}
-        clientId={newlyCreatedClient?.id}
+        clientId={clientForBilling?.id || newlyCreatedClient?.id}
         proposals={proposals}
         onBillingConfigured={() => fetchInitialData()}
+        onUpgradePlan={() => setIsUpgradeModalOpen(true)}
       />
       
+      <UpgradePlanModal 
+        isOpen={isUpgradeModalOpen}
+        onClose={() => setIsUpgradeModalOpen(false)}
+      />
 
       <AlertDialog open={!!clientToDelete} onOpenChange={() => setClientToDelete(null)}>
         <AlertDialogContent>

@@ -55,6 +55,7 @@ interface ConfigureBillingModalProps {
   onBillingConfigured: () => void
   clientId: string | null
   proposals: Proposta[]
+  onUpgradePlan: () => void;
 }
 
 export function ConfigureBillingModal({ 
@@ -63,6 +64,7 @@ export function ConfigureBillingModal({
     onBillingConfigured, 
     clientId, 
     proposals,
+    onUpgradePlan,
 }: ConfigureBillingModalProps) {
   const [isLoading, setIsLoading] = useState(false)
   const { toast } = useToast()
@@ -124,11 +126,16 @@ export function ConfigureBillingModal({
     setIsLoading(false);
 
     if (result.error) {
-      toast({
-        variant: 'destructive',
-        title: 'Erro ao Configurar Cobrança',
-        description: result.error.message,
-      })
+       if (result.error.message.includes('Créditos insuficientes')) {
+            onClose();
+            onUpgradePlan();
+       } else {
+            toast({
+                variant: 'destructive',
+                title: 'Erro ao Configurar Cobrança',
+                description: result.error.message,
+            })
+       }
     } else {
       toast({
         title: 'Cobrança Configurada!',
@@ -184,7 +191,7 @@ export function ConfigureBillingModal({
                     render={({ field }) => (
                         <FormItem>
                             <FormLabel>Valor da Mensalidade (R$)</FormLabel>
-                            <FormControl><Input type="number" step="0.01" placeholder="1500.00" {...field} value={field.value ?? ''} /></FormControl>
+                            <FormControl><Input type="number" step="0.01" placeholder="1500,00" {...field} value={field.value ?? ''} /></FormControl>
                              <FormMessage />
                         </FormItem>
                     )}

@@ -1,4 +1,5 @@
 
+
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -34,7 +35,7 @@ import { useToast } from '@/hooks/use-toast'
 import { createContract } from '@/lib/actions/contratos'
 import { getClients } from '@/lib/actions/clients'
 import { Loader2, PlusCircle } from 'lucide-react'
-import type { Contrato, Cliente, Proposta } from '@/lib/types'
+import type { Contrato, Cliente, Proposta, Profile } from '@/lib/types'
 import { AddClientSheet } from './add-client-sheet'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 
@@ -49,9 +50,11 @@ interface CreateContractModalProps {
   onContractAdded: (newContract: Contrato) => void
   clients: Cliente[]
   proposals: Proposta[]
+  profile: Profile | null;
   onClientListChange: (clients: Cliente[]) => void
   selectedClientId?: string | null;
   selectedProposalId?: string | null;
+  onUpgradePlan: () => void;
 }
 
 export function CreateContractModal({ 
@@ -60,9 +63,11 @@ export function CreateContractModal({
     onContractAdded, 
     clients, 
     proposals,
+    profile,
     onClientListChange,
     selectedClientId,
-    selectedProposalId
+    selectedProposalId,
+    onUpgradePlan
 }: CreateContractModalProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [isAddClientSheetOpen, setIsAddClientSheetOpen] = useState(false)
@@ -84,6 +89,13 @@ export function CreateContractModal({
 
 
   const handleFormSubmit = async (values: z.infer<typeof contractSchema>) => {
+    // Verificação de créditos antes de criar o contrato
+    if (profile && profile.credits <= 0) {
+        onClose();
+        onUpgradePlan();
+        return;
+    }
+
     setIsLoading(true)
     const { data, error } = await createContract(values.clienteId, values.propostaId)
     setIsLoading(false)
