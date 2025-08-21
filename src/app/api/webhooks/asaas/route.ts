@@ -10,12 +10,14 @@ export async function POST(req: NextRequest) {
 
     console.log('Webhook Asaas recebido:', eventType);
 
+    // Processa apenas os eventos que confirmam um pagamento de fato
     if (eventType === 'PAYMENT_CONFIRMED' || eventType === 'PAYMENT_RECEIVED') {
       const payment = body.payment;
 
       if (!payment || !payment.customer || !payment.value) {
         console.error('Payload de pagamento inválido recebido do Asaas.');
-        return NextResponse.json({ error: 'Payload de pagamento inválido.' }, { status: 400 });
+        // Retorna 200 para não recebermos re-tentativas de um webhook malformado.
+        return NextResponse.json({ error: 'Payload de pagamento inválido.' }, { status: 200 });
       }
       
       const asaasCustomerId = payment.customer;
