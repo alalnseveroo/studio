@@ -202,14 +202,14 @@ export async function activateClientAndDeductCredit(clientId: string) {
         return { error: { message: 'Usuário não autenticado.' } };
     }
 
-    const { error: deductError } = await supabase.rpc('deduct_credit_and_activate_client', {
-        p_user_id: user.id,
+    const { error: rpcError } = await supabase.rpc('deduct_credit_and_activate_client', {
         p_client_id: clientId,
+        p_user_id: user.id
     });
     
-    if (deductError) {
-        console.error('Erro ao executar a função SQL:', deductError);
-        return { error: { message: `Não foi possível deduzir o crédito e ativar o cliente: ${deductError.message}` } };
+    if (rpcError) {
+        console.error('Erro ao executar a função SQL:', rpcError);
+        return { error: { message: rpcError.message } };
     }
     
     console.log(`Crédito deduzido com sucesso para o usuário ${user.id}. Cliente ${clientId} ativado.`);
@@ -223,8 +223,8 @@ export async function activateClientAndDeductCredit(clientId: string) {
 
 export async function updateClientFinancials(id: string, financials: { 
     proposal_id: string | null; 
-    value: number;
-    payment_day: number;
+    value: any; // Mantido como any para acomodar string ou number do form
+    payment_day: any; // Mantido como any
     first_charge_date?: string | null;
     billing_status: 'active' | 'inactive';
 }) {
@@ -234,21 +234,20 @@ export async function updateClientFinancials(id: string, financials: {
     return { error: { message: 'Usuário não autenticado.' } };
   }
   
-  // A lógica de dedução de crédito é chamada se o status for mudado para 'active'
   if (financials.billing_status === 'active') {
     const activationResult = await activateClientAndDeductCredit(id);
     if (activationResult.error) {
-        return activationResult; // Retorna o erro de falta de créditos, etc.
+        return activationResult;
     }
   }
 
-  // Atualiza apenas os dados financeiros, sem mexer no billing_status (que é gerenciado pela outra função)
   const financialUpdateData = {
     proposal_id: financials.proposal_id,
     value: financials.value ? Number(financials.value) : null,
     payment_day: financials.payment_day ? Number(financials.payment_day) : null,
     first_charge_date: financials.first_charge_date || null,
     updated_at: new Date().toISOString(),
+    // O billing_status é atualizado pela função `activateClientAndDeductCredit`
   };
 
   const { error } = await supabase

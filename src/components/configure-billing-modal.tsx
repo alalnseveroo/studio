@@ -35,7 +35,7 @@ import { Switch } from '@/components/ui/switch'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useToast } from '@/hooks/use-toast'
-import { updateClientFinancials, activateClientAndDeductCredit } from '@/lib/actions/clients'
+import { updateClientFinancials } from '@/lib/actions/clients'
 import { Loader2 } from 'lucide-react'
 import type { Proposta } from '@/lib/types'
 
@@ -112,16 +112,8 @@ export function ConfigureBillingModal({
     };
 
     setIsLoading(true);
-    let result: { error: { message: string; }; } | { error: null; } | undefined;
-
-    // Primeiro, atualiza os dados financeiros
-    result = await updateClientFinancials(clientId, values);
     
-    // Se a atualização financeira foi bem-sucedida e o status for para 'ativo',
-    // então tenta ativar o cliente e deduzir o crédito.
-    if (!result.error && values.billing_status === 'active') {
-        result = await activateClientAndDeductCredit(clientId);
-    }
+    const result = await updateClientFinancials(clientId, values);
     
     setIsLoading(false);
 

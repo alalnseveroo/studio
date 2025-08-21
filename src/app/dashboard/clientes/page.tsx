@@ -180,12 +180,14 @@ export default function ClientesPage() {
   };
   
   const handleSuccessAction = (action: 'contract' | 'billing') => {
-    setShowSuccessModal(false);
-    if (action === 'contract') {
-        openContractModalForClient(newlyCreatedClient!);
-    } else {
-        openBillingModalForClient(newlyCreatedClient!);
-    }
+      setShowSuccessModal(false);
+      if (!newlyCreatedClient) return;
+  
+      if (action === 'contract') {
+          openContractModalForClient(newlyCreatedClient);
+      } else {
+          openBillingModalForClient(newlyCreatedClient);
+      }
   };
   
   const totalPages = Math.ceil(clients.length / ITEMS_PER_PAGE);
@@ -241,10 +243,6 @@ export default function ClientesPage() {
   }
 
   const openBillingModalForClient = (client: Cliente) => {
-    if (profile && profile.credits <= 0) {
-        setIsUpgradeModalOpen(true);
-        return;
-    }
     setClientForBilling(client);
     setIsBillingModalOpen(true);
   }
