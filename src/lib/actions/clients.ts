@@ -76,12 +76,13 @@ export async function createFullClient(formData: any) {
 
   // Após criar o cliente no Supabase, cria ou busca no Asaas
   if (newClient) {
-     const asaasCustomer = await getOrCreateAsaasCustomer(newClient, user.id);
-     if (asaasCustomer.error) {
-         // Opcional: deletar o cliente criado no Supabase ou apenas logar o erro
-         console.error(`Falha ao criar cliente no Asaas para o cliente Supabase ID ${newClient.id}: ${asaasCustomer.error.message}`);
-         // Por simplicidade, vamos apenas logar e continuar. O cliente pode ser sincronizado depois.
-     }
+    try {
+      await getOrCreateAsaasCustomer(newClient, user.id);
+    } catch (e: any) {
+      // Opcional: deletar o cliente criado no Supabase ou apenas logar o erro
+      console.error(`Falha ao criar cliente no Asaas para o cliente Supabase ID ${newClient.id}: ${e.message}`);
+      // Por simplicidade, vamos apenas logar e continuar. O cliente pode ser sincronizado depois.
+    }
   }
   
     if (newClient && newClient.email) {
@@ -213,7 +214,7 @@ export async function updateClientFinancials(id: string, financials: {
     const chargeValue = Number(financials.value);
     const dueDate = new Date();
     
-    // Simplesmente insere a cobrança no banco de dados, sem chamar a Asaas.
+    // Insere a cobrança no banco de dados local. O QR Code é gerado no frontend.
     const { error: chargeError } = await supabase.from('cobrancas').insert({
       user_id: user.id,
       cliente_id: id,
