@@ -56,9 +56,10 @@ export async function POST(req: NextRequest) {
     
     } else {
         // Ignora outros eventos (como PAYMENT_CREATED) para evitar erros
-        console.log(`Evento '${eventType}' recebido e ignorado.`);
+        console.log(`Evento '${eventType}' recebido e ignorado com sucesso.`);
     }
 
+    // Retorna sucesso para todos os eventos recebidos que não resultaram em erro
     return NextResponse.json({ success: true });
 
   } catch (error: any) {
