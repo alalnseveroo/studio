@@ -194,13 +194,85 @@ export async function updateClientProfile(id: string, formData: any) {
 }
 
 
+export async function activateClientAndDeductCredit(clientId: string) {
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+        return { error: { message: 'Usuário não autenticado.' } };
+    }
+
+    // 1. Pega o perfil do usuário e os dados do cliente em uma única chamada
+    const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('credits')
+        .eq('id', user.id)
+        .single();
+    
+    const { data: client, error: clientError } = await supabase
+        .from('clientes')
+        .select('billing_status, value, payment_day')
+        .eq('id', clientId)
+        .eq('user_id', user.id)
+        .single();
+
+    if (profileError || clientError) {
+        return { error: { message: 'Não foi possível buscar os dados do usuário ou do cliente.' } };
+    }
+    
+    // 2. Verifica se o cliente já está ativo para evitar dupla cobrança de crédito
+    if (client.billing_status === 'active') {
+        console.log(`Cliente ${clientId} já está ativo. Nenhum crédito foi deduzido.`);
+        return { error: null, message: 'Cliente já está ativo.' };
+    }
+
+    // 3. Verifica se o usuário tem créditos
+    if (!profile || profile.credits <= 0) {
+        return { error: { message: 'Créditos insuficientes para ativar o cliente.' } };
+    }
+
+    // 4. Executa a transação: deduz o crédito e ativa o cliente
+    const { error: deductError } = await supabase.rpc('deduct_credit_and_activate_client', {
+        p_user_id: user.id,
+        p_client_id: clientId,
+    });
+    
+    if (deductError) {
+        console.error('Erro ao executar a função SQL:', deductError);
+        return { error: { message: `Não foi possível deduzir o crédito e ativar o cliente: ${deductError.message}` } };
+    }
+
+    // 5. Cria a cobrança inicial
+    if (client.value && client.payment_day) {
+        const { error: chargeError } = await supabase.from('cobrancas').insert({
+            user_id: user.id,
+            cliente_id: clientId,
+            due_date: format(new Date(), 'yyyy-MM-dd'),
+            value: client.value,
+            status: 'pendente'
+        });
+
+        if (chargeError) {
+            // Log do erro, mas não reverte a ativação. Pode ser ajustado se a transação for crítica.
+            console.error(`Cliente ativado, mas falha ao criar cobrança inicial para o cliente ${clientId}: ${chargeError.message}`);
+        }
+    }
+    
+    console.log(`Crédito deduzido com sucesso para o usuário ${user.id}. Cliente ${clientId} ativado.`);
+    
+    revalidatePath('/dashboard/layout'); // Para atualizar o contador de créditos no header
+    revalidatePath(`/dashboard/clientes/${clientId}`);
+    revalidatePath(`/dashboard/cobrancas`);
+
+    return { error: null };
+}
+
 export async function updateClientFinancials(id: string, financials: { 
-    billing_status: 'active' | 'inactive'; 
     proposal_id: string | null; 
     value: number;
     payment_day: number;
     first_charge_date?: string | null;
-    send_charge_now?: boolean;
+    billing_status: 'active' | 'inactive';
 }) {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -208,49 +280,27 @@ export async function updateClientFinancials(id: string, financials: {
     return { error: { message: 'Usuário não autenticado.' } };
   }
   
-  // Lógica de cobrança imediata
-  if (financials.send_charge_now) {
-    const chargeValue = Number(financials.value);
-    const dueDate = new Date();
-    
-    // Simplesmente insere a cobrança no banco de dados, sem chamar a Asaas.
-    const { error: chargeError } = await supabase.from('cobrancas').insert({
-      user_id: user.id,
-      cliente_id: id,
-      due_date: format(dueDate, 'yyyy-MM-dd'),
-      value: chargeValue,
-      status: 'pendente',
-    });
-
-    if (chargeError) {
-      console.error('Error inserting charge into Supabase:', chargeError);
-      return { error: { message: `Não foi possível salvar a cobrança no sistema: ${chargeError.message}`}};
+  // A lógica de dedução de crédito é chamada se o status for mudado para 'active'
+  if (financials.billing_status === 'active') {
+    const activationResult = await activateClientAndDeductCredit(id);
+    if (activationResult.error) {
+        return activationResult; // Retorna o erro de falta de créditos, etc.
     }
   }
 
-  // Define a data da próxima cobrança recorrente
-  let nextChargeDate = financials.first_charge_date;
-  if (financials.send_charge_now) {
-    const today = new Date();
-    const nextMonthDate = addMonths(today, 1);
-    nextChargeDate = format(new Date(nextMonthDate.getFullYear(), nextMonthDate.getMonth(), Number(financials.payment_day)), 'yyyy-MM-dd');
-  }
-
+  // Atualiza apenas os dados financeiros, sem mexer no billing_status (que é gerenciado pela outra função)
   const financialUpdateData = {
-    billing_status: financials.billing_status,
     proposal_id: financials.proposal_id,
     value: financials.value ? Number(financials.value) : null,
     payment_day: financials.payment_day ? Number(financials.payment_day) : null,
-    first_charge_date: nextChargeDate || null,
+    first_charge_date: financials.first_charge_date || null,
     updated_at: new Date().toISOString(),
   };
 
-  const { data: updatedClient, error } = await supabase
+  const { error } = await supabase
     .from('clientes')
     .update(financialUpdateData)
-    .eq('id', id)
-    .select('*, propostas(*)')
-    .single();
+    .eq('id', id);
 
   if (error) {
     console.error('Supabase error updating financials:', error);
@@ -261,6 +311,7 @@ export async function updateClientFinancials(id: string, financials: {
   revalidatePath('/dashboard/cobrancas');
   return { error: null };
 }
+
 
 export async function deleteClient(id: string) {
   const supabase = createClient();

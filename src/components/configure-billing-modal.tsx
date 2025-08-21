@@ -1,4 +1,5 @@
 
+
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -34,7 +35,7 @@ import { Switch } from '@/components/ui/switch'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useToast } from '@/hooks/use-toast'
-import { updateClientFinancials } from '@/lib/actions/clients'
+import { updateClientFinancials, activateClientAndDeductCredit } from '@/lib/actions/clients'
 import { Loader2 } from 'lucide-react'
 import type { Proposta } from '@/lib/types'
 
@@ -44,7 +45,6 @@ const billingSchema = z.object({
   payment_day: z.coerce.number().min(1, 'O dia do vencimento é obrigatório.').max(31, 'Dia inválido.'),
   first_charge_date: z.string().optional(),
   billing_status: z.enum(['active', 'inactive']),
-  send_charge_now: z.boolean().default(false).optional(),
 })
 
 type BillingFormData = z.infer<typeof billingSchema>;
@@ -75,7 +75,6 @@ export function ConfigureBillingModal({
         payment_day: undefined,
         first_charge_date: '',
         billing_status: 'active',
-        send_charge_now: false,
     }
   })
 
@@ -89,7 +88,6 @@ export function ConfigureBillingModal({
             payment_day: undefined,
             first_charge_date: '',
             billing_status: 'active',
-            send_charge_now: false,
         });
     }
   }, [isOpen, form]);
@@ -110,15 +108,26 @@ export function ConfigureBillingModal({
         toast({ variant: 'destructive', title: 'Erro', description: 'Nenhum cliente selecionado.'})
         return;
     };
-    setIsLoading(true)
-    const { error } = await updateClientFinancials(clientId, values)
-    setIsLoading(false)
 
-    if (error) {
+    setIsLoading(true);
+    let result: { error: { message: string; }; } | { error: null; } | undefined;
+
+    // Primeiro, atualiza os dados financeiros
+    result = await updateClientFinancials(clientId, values);
+    
+    // Se a atualização financeira foi bem-sucedida e o status for para 'ativo',
+    // então tenta ativar o cliente e deduzir o crédito.
+    if (!result.error && values.billing_status === 'active') {
+        result = await activateClientAndDeductCredit(clientId);
+    }
+    
+    setIsLoading(false);
+
+    if (result.error) {
       toast({
         variant: 'destructive',
         title: 'Erro ao Configurar Cobrança',
-        description: error.message,
+        description: result.error.message,
       })
     } else {
       toast({
@@ -214,26 +223,6 @@ export function ConfigureBillingModal({
                       <Switch
                         checked={field.value === 'active'}
                         onCheckedChange={(checked) => field.onChange(checked ? 'active' : 'inactive')}
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-               <FormField
-                control={form.control}
-                name="send_charge_now"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
-                    <div className="space-y-0.5">
-                      <FormLabel>Enviar cobrança agora?</FormLabel>
-                      <FormDescription className="text-xs">
-                        Uma fatura com vencimento para hoje será gerada.
-                      </FormDescription>
-                    </div>
-                    <FormControl>
-                      <Switch
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
                       />
                     </FormControl>
                   </FormItem>

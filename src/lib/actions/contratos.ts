@@ -9,6 +9,7 @@ import { getContractTemplate } from '@/lib/contract-template'
 import type { Profile, Contrato, SignatureData } from '@/lib/types'
 import { sendTransactionalEmail } from '../brevo'
 import { format } from 'date-fns'
+import { activateClientAndDeductCredit } from './clients'
 
 // Helper para buscar o perfil da contratada (usuário logado)
 async function getProviderProfile(supabase: any, userId: string): Promise<{ data: Profile | null, error: any }> {
@@ -347,6 +348,12 @@ export async function signContractAsClient({ contractId, otp, signatureDataUrl }
         proposta: contract.propostas,
         contract: finalContractData as Contrato,
     });
+    
+    // Ativa o cliente e deduz o crédito ANTES de finalizar o contrato
+    const activationResult = await activateClientAndDeductCredit(contract.cliente_id);
+    if (activationResult.error) {
+        return { data: null, error: activationResult.error };
+    }
 
     const { data: updatedContract, error: updateError } = await supabase
         .from('contratos')
@@ -365,23 +372,6 @@ export async function signContractAsClient({ contractId, otp, signatureDataUrl }
     if (updateError) {
          return { data: null, error: { message: `Não foi possível assinar o contrato: ${updateError.message}` } };
     }
-
-    // Cria a cobrança da primeira parcela após a assinatura
-    if (updatedContract && updatedContract.propostas?.value) {
-        const { error: chargeError } = await supabase.from('cobrancas').insert({
-            user_id: updatedContract.user_id,
-            cliente_id: updatedContract.cliente_id,
-            due_date: format(new Date(), 'yyyy-MM-dd'),
-            value: updatedContract.propostas.value,
-            status: 'pendente'
-        });
-
-        if (chargeError) {
-            // Log do erro, mas não impede a resposta de sucesso da assinatura
-            console.error(`Falha ao criar cobrança para o contrato ${updatedContract.id}: ${chargeError.message}`);
-        }
-    }
-
 
     revalidatePath(`/dashboard/contratos/${contractId}`);
     revalidatePath(`/dashboard/cobrancas`);
