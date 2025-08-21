@@ -37,18 +37,22 @@ import { CreateContractModal } from '@/components/create-contract-modal'
 import { getContracts, deleteMultipleContracts } from '@/lib/actions/contratos'
 import { getClients } from '@/lib/actions/clients'
 import { getProposals } from '@/lib/actions/propostas'
-import type { Contrato, Cliente, Proposta } from '@/lib/types'
+import { getProfile } from '@/lib/actions/profile'
+import type { Contrato, Cliente, Proposta, Profile } from '@/lib/types'
 import { format } from 'date-fns'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { cn } from '@/lib/utils'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useToast } from '@/hooks/use-toast'
+import { UpgradePlanModal } from '@/components/upgrade-plan-modal'
 
 export default function ContratosPage() {
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
   const [contracts, setContracts] = useState<Contrato[]>([])
   const [clients, setClients] = useState<Cliente[]>([])
   const [proposals, setProposals] = useState<Proposta[]>([])
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true)
   const [selectedContracts, setSelectedContracts] = useState<string[]>([])
   const [statusFilter, setStatusFilter] = useState('all')
@@ -61,16 +65,19 @@ export default function ContratosPage() {
     const [
       { data: contractsData }, 
       { data: clientsData }, 
-      { data: proposalsData }
+      { data: proposalsData },
+      { data: profileData }
     ] = await Promise.all([
       getContracts(),
       getClients(),
-      getProposals()
+      getProposals(),
+      getProfile()
     ])
     
     setContracts(contractsData || [])
     setClients(clientsData || [])
     setProposals(proposalsData || [])
+    setProfile(profileData as Profile | null);
     setIsLoading(false)
   }
 
@@ -338,7 +345,14 @@ export default function ContratosPage() {
         onContractAdded={handleContractAdded}
         clients={clients}
         proposals={proposals}
+        profile={profile}
         onClientListChange={setClients}
+        onUpgradePlan={() => setIsUpgradeModalOpen(true)}
+      />
+      
+      <UpgradePlanModal 
+        isOpen={isUpgradeModalOpen}
+        onClose={() => setIsUpgradeModalOpen(false)}
       />
       
        <AlertDialog open={isBulkDeleteConfirmOpen} onOpenChange={setIsBulkDeleteConfirmOpen}>
@@ -363,5 +377,3 @@ export default function ContratosPage() {
     </>
   )
 }
-
-    

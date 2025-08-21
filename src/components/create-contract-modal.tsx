@@ -85,12 +85,20 @@ export function CreateContractModal({
     if (selectedProposalId) {
       form.setValue('propostaId', selectedProposalId);
     }
-  }, [selectedClientId, selectedProposalId, form]);
+     if (!isOpen) {
+      form.reset({ clienteId: undefined, propostaId: undefined });
+    }
+  }, [selectedClientId, selectedProposalId, form, isOpen]);
 
 
   const handleFormSubmit = async (values: z.infer<typeof contractSchema>) => {
     // Verificação de créditos antes de criar o contrato
     if (profile && profile.credits <= 0) {
+        toast({
+          title: 'Créditos Insuficientes',
+          description: 'Você precisa de créditos para gerar um novo contrato. Por favor, compre mais créditos.',
+          variant: 'destructive'
+        });
         onClose();
         onUpgradePlan();
         return;
