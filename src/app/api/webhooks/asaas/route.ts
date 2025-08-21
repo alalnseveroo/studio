@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
 
       const customerId = payment.customer;
       const paidValue = payment.value;
-      const creditsToAdd = Math.floor(paidValue / 5);
+      const creditsToAdd = Math.floor(paidValue / 7); // Alterado de 5 para 7
 
       if (creditsToAdd <= 0) {
         console.log(`Pagamento de R$ ${paidValue} não resulta em créditos. Ignorando.`);

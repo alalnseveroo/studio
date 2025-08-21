@@ -122,9 +122,9 @@ async function getOrCreateAsaasCustomer(profile: Partial<Profile & Cliente & { f
 }
 
 
-export async function createPixCharge(customerId: string, value: number, description: string) {
+export async function createPixCharge(customerId: string, value: number, description: string): Promise<{id: string, status: string, encodedImage: string, payload: string, error: null | string}> {
     if (!ASAAS_API_KEY || !ASAAS_API_URL) {
-        return { error: "As credenciais da API do Asaas não estão configuradas nas variáveis de ambiente." };
+        return { id: '', status: '', encodedImage: '', payload: '', error: "As credenciais da API do Asaas não estão configuradas nas variáveis de ambiente." };
     }
 
     const today = new Date();
@@ -178,7 +178,7 @@ export async function createPixCharge(customerId: string, value: number, descrip
 
     } catch (error: any) {
         console.error("Erro ao criar cobrança PIX no Asaas:", error);
-        return { error: error.message };
+        return { id: '', status: '', encodedImage: '', payload: '', error: error.message };
     }
 }
 
