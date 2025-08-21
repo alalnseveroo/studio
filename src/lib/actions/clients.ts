@@ -75,8 +75,8 @@ export async function createFullClient(formData: any) {
 
   if (newClient) {
      const asaasCustomer = await getOrCreateAsaasCustomer(newClient);
-     if (asaasCustomer.error) {
-         console.error(`Falha ao criar cliente no Asaas para o cliente Supabase ID ${newClient.id}: ${asaasCustomer.error.message}`);
+     if (!asaasCustomer || !asaasCustomer.id) {
+         console.error(`Falha ao criar cliente no Asaas para o cliente Supabase ID ${newClient.id}`);
      }
   }
   
@@ -242,6 +242,7 @@ export async function updateClientFinancials(id: string, financials: {
     value: financials.value ? Number(financials.value) : null,
     payment_day: financials.payment_day ? Number(financials.payment_day) : null,
     first_charge_date: financials.first_charge_date || null,
+    billing_status: financials.billing_status,
     updated_at: new Date().toISOString(),
   };
 

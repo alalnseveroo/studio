@@ -22,10 +22,17 @@ export async function saveProfile(formData: ProfileFormData & { is_completed: bo
 
   const avatarUrl = formData.sex === 'male' ? AVATAR_USER_MALE : AVATAR_USER_FEMALE;
   
+  // O perfil do usuário logado é o "cliente" na Asaas.
   const profileForAsaas = {
     id: user.id,
     email: user.email,
-    ...formData,
+    cpf: formData.cpf,
+    cnpj: formData.cnpj,
+    full_name: formData.fullName,
+    company_name: formData.companyName,
+    phone: formData.phone,
+    address: formData.address,
+    is_completed: formData.is_completed, // para diferenciar de um cliente normal
   };
 
   const asaasCustomer = await getOrCreateAsaasCustomer(profileForAsaas);

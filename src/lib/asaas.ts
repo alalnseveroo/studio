@@ -1,3 +1,4 @@
+
 'use server'
 
 import type { Profile } from "./types";
@@ -15,7 +16,7 @@ type AsaasCustomer = {
     // ... outros campos que a API do Asaas retorna
 };
 
-async function getOrCreateAsaasCustomer(profile: Partial<Profile & Cliente & { fullName?: string, personType?: string, companyName?: string }>): Promise<AsaasCustomer> {
+async function getOrCreateAsaasCustomer(profile: Partial<Profile & Cliente>): Promise<AsaasCustomer> {
     if (!ASAAS_API_KEY || !ASAAS_API_URL) {
         throw new Error("As credenciais da API do Asaas não estão configuradas nas variáveis de ambiente.");
     }
@@ -23,7 +24,8 @@ async function getOrCreateAsaasCustomer(profile: Partial<Profile & Cliente & { f
     if (!profile.email) {
         throw new Error("O e-mail do perfil é obrigatório para criar um cliente no Asaas.");
     }
-
+    
+    // 1. Tenta buscar o cliente se já tiver um ID Asaas
     if (profile.asaas_customer_id) {
         const getUrl = `${ASAAS_API_URL}/customers/${profile.asaas_customer_id}`;
         try {
@@ -44,39 +46,25 @@ async function getOrCreateAsaasCustomer(profile: Partial<Profile & Cliente & { f
         }
     }
     
+    // 2. Se não encontrou ou não tinha ID, cria um novo cliente
     console.log(`Cliente Asaas não encontrado para o perfil ${profile.id}. Criando um novo...`);
     
-    const name = (profile.person_type === 'cpf' 
-      ? profile.fullName || profile.full_name
-      : profile.companyName || profile.company_name) || profile.email;
+    const name = profile.full_name || profile.company_name || profile.email;
+    const cpfCnpj = profile.cpf || profile.cnpj;
 
-    if (!name) {
-        throw new Error("O campo name deve ser informado");
+    if (!name || !cpfCnpj) {
+        throw new Error("Nome e CPF/CNPJ são obrigatórios para criar um cliente no Asaas.");
     }
 
-    const payload: {
-        name: string,
-        cpfCnpj: string | undefined | null,
-        email: string,
-        phone?: string | null,
-        mobilePhone?: string | null,
-        postalCode?: string | null,
-        addressNumber?: string | null,
-        externalReference?: string | undefined
-    } = {
+    const payload = {
         name,
-        cpfCnpj: profile.cpf || profile.cnpj,
+        cpfCnpj,
         email: profile.email,
         phone: profile.phone,
         mobilePhone: profile.phone,
+        address: profile.address,
         externalReference: profile.id
     };
-    
-    if (profile.address) {
-        payload.postalCode = profile.address.match(/CEP: ([\d-]+)/)?.[1].replace(/\D/g, '');
-        payload.addressNumber = profile.address.split(',')[1]?.trim().split(' ')[0];
-    }
-
 
     const createUrl = `${ASAAS_API_URL}/customers`;
     try {
@@ -97,8 +85,7 @@ async function getOrCreateAsaasCustomer(profile: Partial<Profile & Cliente & { f
         }
         console.log("Cliente criado no Asaas com sucesso:", responseData.id);
 
-        const isUserProfile = 'is_completed' in profile;
-        const tableName = isUserProfile ? 'profiles' : 'clientes';
+        const tableName = 'is_completed' in profile ? 'profiles' : 'clientes';
 
         const supabase = createClient();
         const { error: updateError } = await supabase
