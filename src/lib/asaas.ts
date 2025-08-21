@@ -1,9 +1,8 @@
 
 'use server'
 
-import type { Profile } from "./types";
+import type { Profile, Cliente } from "./types";
 import { createClient } from "./supabase/server";
-import type { Cliente } from "./types";
 
 const ASAAS_API_URL = process.env.ASAAS_API_URL;
 const ASAAS_API_KEY = process.env.ASAAS_API_KEY;
@@ -13,14 +12,18 @@ type AsaasCustomer = {
     name: string;
     email: string;
     cpfCnpj: string;
-    // ... outros campos que a API do Asaas retorna
 };
 
-async function getOrCreateAsaasCustomer(profile: Partial<Profile & Cliente>): Promise<AsaasCustomer | null> {
+/**
+ * Cria ou atualiza um cliente na plataforma Asaas.
+ * Garante que os dados essenciais como nome e CPF/CNPJ estejam sempre presentes.
+ */
+export async function getOrCreateAsaasCustomer(profile: Partial<Profile & Cliente>): Promise<AsaasCustomer | null> {
     if (!ASAAS_API_KEY || !ASAAS_API_URL) {
-        throw new Error("As credenciais da API do Asaas não estão configuradas nas variáveis de ambiente.");
+        throw new Error("As credenciais da API do Asaas não estão configuradas.");
     }
     
+    // Garante que o nome e cpfCnpj não sejam nulos
     const name = profile.full_name || profile.company_name || profile.email;
     const cpfCnpj = profile.cpf || profile.cnpj;
 
@@ -33,46 +36,16 @@ async function getOrCreateAsaasCustomer(profile: Partial<Profile & Cliente>): Pr
         cpfCnpj,
         email: profile.email,
         phone: profile.phone,
-        mobilePhone: profile.phone,
         address: profile.address,
         externalReference: profile.id
     };
 
-    // Se já temos um ID Asaas, tentamos atualizar o cliente (POST em cliente existente atualiza)
-    if (profile.asaas_customer_id) {
-        const updateUrl = `${ASAAS_API_URL}/customers/${profile.asaas_customer_id}`;
-        try {
-            const response = await fetch(updateUrl, {
-                method: 'POST',
-                headers: { 
-                    'accept': 'application/json',
-                    'content-type': 'application/json',
-                    'access_token': ASAAS_API_KEY 
-                },
-                body: JSON.stringify(payload),
-            });
+    const url = profile.asaas_customer_id
+        ? `${ASAAS_API_URL}/customers/${profile.asaas_customer_id}`
+        : `${ASAAS_API_URL}/customers`;
 
-            const responseData = await response.json();
-            if (response.ok) {
-                console.log(`Cliente Asaas ${profile.asaas_customer_id} atualizado com sucesso.`);
-                return responseData;
-            }
-             // Se o cliente não foi encontrado (404), vamos tentar criá-lo novamente abaixo.
-            if (response.status !== 404) {
-                 throw new Error(`Asaas API Error (UPDATE): ${responseData.errors?.[0]?.description || response.statusText}`);
-            }
-
-        } catch (error: any) {
-             console.error(`Falha ao ATUALIZAR cliente no Asaas (ID: ${profile.asaas_customer_id}), tentando criar um novo. Erro: ${error.message}`);
-        }
-    }
-    
-    // Se não tinha ID ou a atualização falhou, cria um novo cliente
-    console.log(`Criando um novo cliente no Asaas para o perfil ${profile.id}...`);
-    
-    const createUrl = `${ASAAS_API_URL}/customers`;
     try {
-        const response = await fetch(createUrl, {
+        const response = await fetch(url, {
             method: 'POST',
             headers: { 
                 'accept': 'application/json',
@@ -85,19 +58,25 @@ async function getOrCreateAsaasCustomer(profile: Partial<Profile & Cliente>): Pr
         const responseData = await response.json();
 
         if (!response.ok) {
-             throw new Error(`Asaas API Error (CREATE): ${responseData.errors?.[0]?.description || response.statusText}`);
+            // Se falhou com 404 ao tentar atualizar, tenta criar
+            if (response.status === 404 && profile.asaas_customer_id) {
+                 const createResponse = await fetch(`${ASAAS_API_URL}/customers`, {
+                    method: 'POST',
+                    headers: { 'accept': 'application/json', 'content-type': 'application/json', 'access_token': ASAAS_API_KEY },
+                    body: JSON.stringify(payload),
+                });
+                const createData = await createResponse.json();
+                 if (!createResponse.ok) throw new Error(`Asaas API Error (CREATE after 404): ${createData.errors?.[0]?.description || createResponse.statusText}`);
+                 return createData;
+            }
+            throw new Error(`Asaas API Error: ${responseData.errors?.[0]?.description || response.statusText}`);
         }
-        console.log("Cliente criado no Asaas com sucesso:", responseData.id);
 
-        const tableName = 'is_completed' in profile ? 'profiles' : 'clientes';
-        const supabase = createClient();
-        const { error: updateError } = await supabase
-            .from(tableName)
-            .update({ asaas_customer_id: responseData.id })
-            .eq('id', profile.id!);
-
-        if (updateError) {
-             console.error(`Falha ao salvar o asaas_customer_id para o ID ${profile.id} na tabela ${tableName}:`, updateError.message);
+        // Se um novo cliente foi criado, atualiza nosso banco com o ID
+        if (responseData.id && !profile.asaas_customer_id) {
+            const tableName = 'is_completed' in profile ? 'profiles' : 'clientes';
+            const supabase = createClient();
+            await supabase.from(tableName).update({ asaas_customer_id: responseData.id }).eq('id', profile.id!);
         }
 
         return responseData;
@@ -109,62 +88,55 @@ async function getOrCreateAsaasCustomer(profile: Partial<Profile & Cliente>): Pr
 }
 
 
-export async function createPixCharge(customerId: string, value: number, description: string): Promise<{id: string | null; status: string | null; encodedImage: string | null; payload: string | null; error: string | null}> {
+/**
+ * Cria uma cobrança na Asaas e retorna os dados para pagamento via PIX.
+ * Usa billingType: 'UNDEFINED' para máxima compatibilidade.
+ */
+export async function createPixCharge(customerId: string, value: number, description: string): Promise<{id: string | null; encodedImage: string | null; payload: string | null; error: string | null}> {
     if (!ASAAS_API_KEY || !ASAAS_API_URL) {
-        return { id: null, status: null, encodedImage: null, payload: null, error: "As credenciais da API do Asaas não estão configuradas nas variáveis de ambiente." };
+        return { id: null, encodedImage: null, payload: null, error: "As credenciais da API do Asaas não estão configuradas." };
     }
 
     const today = new Date();
     const dueDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-    const externalReference = `CREDITS_${customerId}_${Date.now()}`;
 
     const paymentPayload = {
-        billingType: "PIX",
         customer: customerId,
+        billingType: "UNDEFINED", // Chave da solução: Permite que a Asaas gerencie o PIX.
         value,
         dueDate,
         description,
-        externalReference
+        externalReference: `CREDITS_${customerId}_${Date.now()}`
     };
     
     try {
         // 1. Criar a cobrança
         const paymentResponse = await fetch(`${ASAAS_API_URL}/payments`, {
             method: 'POST',
-            headers: {
-                'accept': 'application/json',
-                'content-type': 'application/json',
-                'access_token': ASAAS_API_KEY,
-            },
+            headers: { 'accept': 'application/json', 'content-type': 'application/json', 'access_token': ASAAS_API_KEY },
             body: JSON.stringify(paymentPayload)
         });
 
         const paymentData = await paymentResponse.json();
-
         if (!paymentResponse.ok) {
-            throw new Error(paymentData.errors?.[0]?.description || 'Erro desconhecido ao criar cobrança PIX.');
+            throw new Error(paymentData.errors?.[0]?.description || 'Erro ao criar cobrança no Asaas.');
         }
 
         const paymentId = paymentData.id;
 
         // 2. Obter o QR Code para a cobrança criada
         const pixResponse = await fetch(`${ASAAS_API_URL}/payments/${paymentId}/pixQrCode`, {
-             method: 'GET', // GET para obter o QR Code
-            headers: { 
-                'access_token': ASAAS_API_KEY, 
-                'accept': 'application/json' 
-            }
+             method: 'GET',
+            headers: { 'access_token': ASAAS_API_KEY, 'accept': 'application/json' }
         });
 
         const pixData = await pixResponse.json();
-        
         if (!pixResponse.ok) {
-             throw new Error(pixData.errors?.[0]?.description || 'Erro ao obter QR Code.');
+             throw new Error(pixData.errors?.[0]?.description || 'Erro ao obter QR Code do Asaas.');
         }
 
         return {
             id: paymentId,
-            status: paymentData.status,
             encodedImage: pixData.encodedImage, 
             payload: pixData.payload, 
             error: null
@@ -172,10 +144,14 @@ export async function createPixCharge(customerId: string, value: number, descrip
 
     } catch (error: any) {
         console.error("Erro ao criar cobrança PIX no Asaas:", error);
-        return { id: null, status: null, encodedImage: null, payload: null, error: error.message };
+        return { id: null, encodedImage: null, payload: null, error: error.message };
     }
 }
 
+
+/**
+ * Cria uma cobrança para um cliente (usado no fluxo recorrente).
+ */
 export async function createAsaasCharge(chargeDetails: {
     customer: string;
     value: number;
@@ -194,28 +170,25 @@ export async function createAsaasCharge(chargeDetails: {
 
         const response = await fetch(`${ASAAS_API_URL}/payments`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'access_token': ASAAS_API_KEY
-            },
+            headers: { 'Content-Type': 'application/json', 'access_token': ASAAS_API_KEY },
             body: JSON.stringify(payload)
         });
 
         const data = await response.json();
-        
         if (!response.ok) {
-            const errorMessage = data.errors?.[0]?.description || 'Erro desconhecido ao criar cobrança no Asaas.';
-            return { payment: null, error: { message: errorMessage } };
+            throw new Error(data.errors?.[0]?.description || 'Erro ao criar cobrança no Asaas.');
         }
 
         return { payment: data, error: null };
 
     } catch (e: any) {
-        return { payment: null, error: { message: e.message || 'Erro de conexão com a API do Asaas ao criar cobrança.' } };
+        return { payment: null, error: { message: e.message || 'Erro de conexão com a API do Asaas.' } };
     }
 }
 
-
+/**
+ * Obtém o QR Code de uma cobrança já existente.
+ */
 export async function getAsaasPixCharge(paymentId: string) {
     if (!ASAAS_API_KEY || !ASAAS_API_URL) {
         return { qrCode: null, payload: null, error: { message: "As credenciais da API do Asaas não estão configuradas." } };
@@ -227,7 +200,6 @@ export async function getAsaasPixCharge(paymentId: string) {
         });
 
         const pixData = await pixResponse.json();
-        
         if (!pixResponse.ok) {
              throw new Error(pixData.errors?.[0]?.description || 'Erro ao obter QR Code.');
         }
@@ -241,5 +213,3 @@ export async function getAsaasPixCharge(paymentId: string) {
         return { qrCode: null, payload: null, error: { message: error.message } };
     }
 }
-
-export { getOrCreateAsaasCustomer };
