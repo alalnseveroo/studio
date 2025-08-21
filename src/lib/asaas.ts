@@ -21,15 +21,11 @@ async function getOrCreateAsaasCustomer(profile: Partial<Profile & Cliente>): Pr
         throw new Error("As credenciais da API do Asaas não estão configuradas nas variáveis de ambiente.");
     }
     
-    if (!profile.email) {
-        throw new Error("O e-mail do perfil é obrigatório para criar ou atualizar um cliente no Asaas.");
-    }
-    
     const name = profile.full_name || profile.company_name || profile.email;
     const cpfCnpj = profile.cpf || profile.cnpj;
 
-    if (!name || !cpfCnpj) {
-        throw new Error("Nome e CPF/CNPJ são obrigatórios para criar um cliente no Asaas.");
+    if (!name || !cpfCnpj || !profile.email) {
+        throw new Error("Nome, CPF/CNPJ e E-mail são obrigatórios para criar um cliente no Asaas.");
     }
 
     const payload = {
@@ -113,7 +109,7 @@ async function getOrCreateAsaasCustomer(profile: Partial<Profile & Cliente>): Pr
 }
 
 
-export async function createPixCharge(customerId: string, value: number, description: string): Promise<{id: string | null, status: string | null, encodedImage: string | null, payload: string | null, error: string | null}> {
+export async function createPixCharge(customerId: string, value: number, description: string): Promise<{id: string | null; status: string | null; encodedImage: string | null; payload: string | null; error: string | null}> {
     if (!ASAAS_API_KEY || !ASAAS_API_URL) {
         return { id: null, status: null, encodedImage: null, payload: null, error: "As credenciais da API do Asaas não estão configuradas nas variáveis de ambiente." };
     }
@@ -122,7 +118,7 @@ export async function createPixCharge(customerId: string, value: number, descrip
     const dueDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
     const externalReference = `CREDITS_${customerId}_${Date.now()}`;
 
-    const payload = {
+    const paymentPayload = {
         billingType: "PIX",
         customer: customerId,
         value,
@@ -132,24 +128,32 @@ export async function createPixCharge(customerId: string, value: number, descrip
     };
     
     try {
-        const response = await fetch(`${ASAAS_API_URL}/payments`, {
+        // 1. Criar a cobrança
+        const paymentResponse = await fetch(`${ASAAS_API_URL}/payments`, {
             method: 'POST',
             headers: {
                 'accept': 'application/json',
                 'content-type': 'application/json',
                 'access_token': ASAAS_API_KEY,
             },
-            body: JSON.stringify(payload)
+            body: JSON.stringify(paymentPayload)
         });
 
-        const data = await response.json();
+        const paymentData = await paymentResponse.json();
 
-        if (!response.ok) {
-            throw new Error(data.errors?.[0]?.description || 'Erro desconhecido ao criar cobrança PIX.');
+        if (!paymentResponse.ok) {
+            throw new Error(paymentData.errors?.[0]?.description || 'Erro desconhecido ao criar cobrança PIX.');
         }
 
-        const pixResponse = await fetch(`${ASAAS_API_URL}/payments/${data.id}/pixQrCode`, {
-            headers: { 'access_token': ASAAS_API_KEY, 'accept': 'application/json' }
+        const paymentId = paymentData.id;
+
+        // 2. Obter o QR Code para a cobrança criada
+        const pixResponse = await fetch(`${ASAAS_API_URL}/payments/${paymentId}/pixQrCode`, {
+             method: 'GET', // GET para obter o QR Code
+            headers: { 
+                'access_token': ASAAS_API_KEY, 
+                'accept': 'application/json' 
+            }
         });
 
         const pixData = await pixResponse.json();
@@ -159,8 +163,8 @@ export async function createPixCharge(customerId: string, value: number, descrip
         }
 
         return {
-            id: data.id,
-            status: data.status,
+            id: paymentId,
+            status: paymentData.status,
             encodedImage: pixData.encodedImage, 
             payload: pixData.payload, 
             error: null
@@ -218,6 +222,7 @@ export async function getAsaasPixCharge(paymentId: string) {
     }
     try {
         const pixResponse = await fetch(`${ASAAS_API_URL}/payments/${paymentId}/pixQrCode`, {
+            method: 'GET',
             headers: { 'access_token': ASAAS_API_KEY, 'accept': 'application/json' }
         });
 
