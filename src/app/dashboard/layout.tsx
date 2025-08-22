@@ -113,7 +113,7 @@ function DashboardHeader({
      return (
         <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
             <div className="flex h-16 items-center justify-between px-10">
-                <div className="flex items-center gap-6">
+                <div className="flex items-center gap-6 flex-1">
                     <Link href="/dashboard" className="flex items-center">
                         <Image 
                             src="https://pouynmrblzvwlhrfyins.supabase.co/storage/v1/object/public/icons/imags/Untitled%20folder/Crivo.png" 
@@ -122,9 +122,13 @@ function DashboardHeader({
                             height={30}
                         />
                     </Link>
+                </div>
+
+                <div className="flex-1 flex justify-center">
                     <MainNav />
                 </div>
-                <div className="flex items-center gap-4">
+
+                <div className="flex items-center gap-4 flex-1 justify-end">
                      {userProfile && (
                         <Badge variant="outline" className="flex items-center gap-2 border-green-500 bg-green-500/10 text-green-700">
                             <CreditCard className="h-4 w-4"/>
