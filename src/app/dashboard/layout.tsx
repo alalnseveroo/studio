@@ -192,9 +192,7 @@ export default function DashboardLayout({
           onOpenChat={(client) => setSelectedChatClient(client)} 
       />
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
-          <Suspense fallback={<CrivoLoader />}>
-            {children}
-          </Suspense>
+        {children}
       </main>
       {selectedChatClient && (
           <ChatModal 
