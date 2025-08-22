@@ -121,7 +121,7 @@ export default function ClienteEditPage() {
   const [client, setClient] = useState<Cliente | null>(null);
   const [proposals, setProposals] = useState<Proposta[]>([]);
   const [charges, setCharges] = useState<Cobranca[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<StepName>('info');
   const [editingStep, setEditingStep] = useState<StepName | null>(null);
   const { toast } = useToast();
@@ -179,7 +179,6 @@ export default function ClienteEditPage() {
 
   const fetchClientData = useCallback(async () => {
     if (!clientId) return;
-    setIsLoading(true);
 
     const [{ data, error }, { data: proposalsData }, {data: chargesData}] = await Promise.all([
         getClientById(clientId),
@@ -189,7 +188,6 @@ export default function ClienteEditPage() {
     
     if (error) {
       toast({ variant: 'destructive', title: 'Erro ao Carregar Cliente', description: error.message });
-      setIsLoading(false);
       return;
     } 
     
@@ -229,8 +227,7 @@ export default function ClienteEditPage() {
       methods.reset(defaultValues as ClientFormData);
       setEditingStep(null);
     }
-    setIsLoading(false);
-  }, [clientId, toast, methods.reset]);
+  }, [clientId, toast, methods]);
 
   useEffect(() => {
     fetchClientData();
@@ -261,7 +258,7 @@ export default function ClienteEditPage() {
       return;
     }
     
-    setIsLoading(true);
+    setIsSaving(true);
     const values = methods.getValues();
     
     let error;
@@ -282,7 +279,7 @@ export default function ClienteEditPage() {
         error = result.error;
     }
 
-    setIsLoading(false);
+    setIsSaving(false);
 
     if (error) {
       toast({ variant: 'destructive', title: 'Erro ao Salvar', description: error.message });
@@ -297,7 +294,7 @@ export default function ClienteEditPage() {
   };
 
   const handleMarkAsPaid = async (chargeId: string) => {
-    setIsLoading(true);
+    setIsSaving(true);
     const { error } = await markChargeAsPaid(chargeId);
      if (error) {
       toast({ variant: 'destructive', title: 'Erro', description: error.message });
@@ -305,19 +302,15 @@ export default function ClienteEditPage() {
       toast({ title: 'Sucesso!', description: 'Cobrança marcada como paga.' });
       await fetchClientData();
     }
-    setIsLoading(false);
+    setIsSaving(false);
   }
   
   const isInfoComplete = clientInfoSchema.safeParse(methods.getValues()).success;
   const isAddressComplete = addressSchema.safeParse(methods.getValues()).success;
   const isFinancialComplete = financialSchema.safeParse(methods.getValues()).success;
 
-  if (isLoading && !client) {
-    return <div className="flex items-center justify-center p-6"><Loader2 className="h-8 w-8 animate-spin" /></div>;
-  }
-
   if (!client) {
-     return <div className="flex items-center justify-center p-6">Cliente não encontrado.</div>;
+     return null; // A tela de loading do Next.js cuidará disso
   }
   
   return (
@@ -360,17 +353,17 @@ export default function ClienteEditPage() {
           </TabsList>
           
           <TabsContent value="info">
-            <InfoStep isEditing={editingStep === 'info'} setEditingStep={setEditingStep} onSave={() => handleSaveStep('info')} isLoading={isLoading} />
+            <InfoStep isEditing={editingStep === 'info'} setEditingStep={setEditingStep} onSave={() => handleSaveStep('info')} isSaving={isSaving} />
           </TabsContent>
            <TabsContent value="address">
-            <AddressStep isEditing={editingStep === 'address'} setEditingStep={setEditingStep} onSave={() => handleSaveStep('address')} isLoading={isLoading} />
+            <AddressStep isEditing={editingStep === 'address'} setEditingStep={setEditingStep} onSave={() => handleSaveStep('address')} isSaving={isSaving} />
           </TabsContent>
           <TabsContent value="financial">
             <FinancialStep 
                 isEditing={editingStep === 'financial'} 
                 setEditingStep={setEditingStep} 
                 onSave={() => handleSaveStep('financial')} 
-                isLoading={isLoading} 
+                isSaving={isSaving} 
                 proposals={proposals} 
                 charges={charges}
                 onMarkAsPaid={handleMarkAsPaid}
@@ -387,10 +380,10 @@ interface StepProps {
   isEditing: boolean;
   setEditingStep: (step: StepName | null) => void;
   onSave: () => Promise<void>;
-  isLoading: boolean;
+  isSaving: boolean;
 }
 
-function InfoStep({ isEditing, setEditingStep, onSave, isLoading }: StepProps) {
+function InfoStep({ isEditing, setEditingStep, onSave, isSaving }: StepProps) {
   const methods = useFormContext<ClientFormData>();
   const { toast } = useToast();
   const [isFetchingCnpj, setIsFetchingCnpj] = useState(false);
@@ -492,7 +485,7 @@ function InfoStep({ isEditing, setEditingStep, onSave, isLoading }: StepProps) {
             </CardContent>
             <CardContent className="flex justify-end gap-2">
             <Button variant="ghost" onClick={() => setEditingStep(null)}>Cancelar</Button>
-            <Button type="button" onClick={onSave} disabled={isLoading}>{isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Salvar e Continuar'}</Button>
+            <Button type="button" onClick={onSave} disabled={isSaving}>{isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Salvar e Continuar'}</Button>
         </CardContent>
         </Card>
     );
@@ -535,7 +528,7 @@ function InfoStep({ isEditing, setEditingStep, onSave, isLoading }: StepProps) {
   )
 }
 
-function AddressStep({ isEditing, setEditingStep, onSave, isLoading }: StepProps) {
+function AddressStep({ isEditing, setEditingStep, onSave, isSaving }: StepProps) {
   const methods = useFormContext<ClientFormData>();
   const { toast } = useToast();
   const [isFetchingCep, setIsFetchingCep] = useState(false);
@@ -613,7 +606,7 @@ function AddressStep({ isEditing, setEditingStep, onSave, isLoading }: StepProps
             </CardContent>
                 <CardContent className="flex justify-end gap-2">
                 <Button variant="ghost" onClick={() => setEditingStep(null)}>Cancelar</Button>
-                <Button type="button" onClick={onSave} disabled={isLoading}>{isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Salvar e Continuar'}</Button>
+                <Button type="button" onClick={onSave} disabled={isSaving}>{isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Salvar e Continuar'}</Button>
             </CardContent>
             </Card>
         )
@@ -656,7 +649,7 @@ const getStatusInfo = (status: string, dueDate: string) => {
     return { text: 'Pendente', className: 'border-yellow-500 bg-yellow-500/10 text-yellow-700' };
 }
 
-function FinancialStep({ isEditing, setEditingStep, onSave, isLoading, proposals, charges, onMarkAsPaid }: FinancialStepProps) {
+function FinancialStep({ isEditing, setEditingStep, onSave, isSaving, proposals, charges, onMarkAsPaid }: FinancialStepProps) {
   const methods = useFormContext<ClientFormData>();
   const clientData = methods.getValues();
   const selectedProposalId = methods.watch('proposal_id');
@@ -767,7 +760,7 @@ function FinancialStep({ isEditing, setEditingStep, onSave, isLoading, proposals
                 </CardContent>
                 <CardContent className="flex justify-end gap-2">
                     <Button variant="ghost" onClick={() => setEditingStep(null)}>Cancelar</Button>
-                    <Button type="button" onClick={onSave} disabled={isLoading}>{isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Salvar Configuração'}</Button>
+                    <Button type="button" onClick={onSave} disabled={isSaving}>{isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Salvar Configuração'}</Button>
                 </CardContent>
             </Card>
              <ChargeHistory charges={charges} onMarkAsPaid={onMarkAsPaid} />
@@ -887,6 +880,9 @@ function ChargeHistory({ charges, onMarkAsPaid }: { charges: Cobranca[], onMarkA
 
     
 
+
+
+    
 
 
     
