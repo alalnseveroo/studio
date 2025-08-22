@@ -7,8 +7,6 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const eventType = body.event;
 
-    console.log('Webhook Asaas recebido:', eventType);
-
     // Processa apenas os eventos que confirmam um pagamento de fato
     if (eventType === 'PAYMENT_CONFIRMED' || eventType === 'PAYMENT_RECEIVED') {
       const supabase = getSupabaseAdminClient();
