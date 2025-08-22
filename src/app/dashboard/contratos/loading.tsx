@@ -1,5 +1,5 @@
-import MultiStepLoaderDemo from "@/components/multi-step-loader-demo";
+import { CrivoLoader } from '@/components/crivo-loader';
 
 export default function ContratosLoading() {
-  return <MultiStepLoaderDemo />;
+  return <CrivoLoader />;
 }
