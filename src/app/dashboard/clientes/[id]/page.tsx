@@ -230,7 +230,7 @@ export default function ClienteEditPage() {
       setEditingStep(null);
     }
     setIsLoading(false);
-  }, [clientId, toast, methods]);
+  }, [clientId, toast, methods.reset]);
 
   useEffect(() => {
     fetchClientData();
