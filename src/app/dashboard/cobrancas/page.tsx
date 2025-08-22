@@ -29,6 +29,7 @@ import Link from 'next/link'
 
 
 export default function CobrancasPage() {
+  const [isLoading, setIsLoading] = useState(true);
   const [charges, setCharges] = useState<Cobranca[]>([])
   const [isSending, setIsSending] = useState<string | null>(null);
   const [providerProfile, setProviderProfile] = useState<Profile | null>(null)
@@ -45,6 +46,7 @@ export default function CobrancasPage() {
   }
 
   const fetchData = async () => {
+      setIsLoading(true);
       const [{ data: chargesData, error: chargesError }, { data: profileData }] = await Promise.all([
         getCharges(),
         getProfile()
@@ -56,11 +58,13 @@ export default function CobrancasPage() {
             title: 'Erro ao buscar dados',
             description: chargesError?.message || 'Não foi possível carregar as cobranças.'
         })
+        setIsLoading(false);
         return
       }
       
       setCharges(chargesData);
       setProviderProfile(profileData as Profile | null);
+      setIsLoading(false);
     }
 
   useEffect(() => {
@@ -104,6 +108,11 @@ export default function CobrancasPage() {
       setIsSending(null);
     }
   };
+  
+  if (isLoading) {
+    return null; // O loading.tsx cuidará disso
+  }
+
 
   return (
     <>

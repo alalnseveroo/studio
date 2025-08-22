@@ -67,6 +67,7 @@ const CardAction = ({ icon: Icon, title, description, onClick }: { icon: React.E
 
 
 export default function ClientesPage() {
+  const [isLoading, setIsLoading] = useState(true);
   const [isSheetOpen, setIsSheetOpen] = useState(false)
   const [isContractModalOpen, setIsContractModalOpen] = useState(false)
   const [isBillingModalOpen, setIsBillingModalOpen] = useState(false)
@@ -91,6 +92,7 @@ export default function ClientesPage() {
   const { toast } = useToast()
 
   const fetchInitialData = async () => {
+    setIsLoading(true);
     const [{ data: clientData }, { data: proposalData }, { data: profileData }, { data: contractsData }] = await Promise.all([
       getClients(),
       getProposals(),
@@ -101,6 +103,7 @@ export default function ClientesPage() {
     setProposals(proposalData || [])
     setContracts(contractsData || []);
     setProfile(profileData as Profile | null);
+    setIsLoading(false);
   }
 
   useEffect(() => {
@@ -242,6 +245,9 @@ export default function ClientesPage() {
     setIsBillingModalOpen(true);
   }
 
+  if (isLoading) {
+    return null; // O loading.tsx cuidará disso
+  }
 
   return (
     <>

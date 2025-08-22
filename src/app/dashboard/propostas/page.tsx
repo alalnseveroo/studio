@@ -12,14 +12,22 @@ import type { Proposta } from '@/lib/types'
 
 export default function PropostasPage() {
   const [proposals, setProposals] = useState<Proposta[]>([])
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     async function fetchProposals() {
+      setIsLoading(true);
       const { data } = await getProposals()
       setProposals(data || [])
+      setIsLoading(false);
     }
     fetchProposals()
   }, [])
+  
+  if (isLoading) {
+    return null; // O loading.tsx cuidará disso
+  }
+
 
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 sm:gap-6 sm:p-10">
