@@ -12,11 +12,13 @@ import type { Proposta } from '@/lib/types'
 
 export default function PropostasPage() {
   const [proposals, setProposals] = useState<Proposta[]>([])
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     async function fetchProposals() {
       const { data } = await getProposals()
       setProposals(data || [])
+      setIsLoading(false);
     }
     fetchProposals()
   }, [])
@@ -38,8 +40,8 @@ export default function PropostasPage() {
         </div>
       </div>
 
-      {proposals.length === 0 ? (
-        <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm">
+      {isLoading ? null : proposals.length === 0 ? (
+        <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm py-24">
           <div className="flex flex-col items-center gap-1 text-center">
             <FileText className="h-10 w-10 text-muted-foreground" />
             <h3 className="text-2xl font-bold tracking-tight">

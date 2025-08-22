@@ -56,6 +56,7 @@ function ContratosPageComponent() {
   const [sortOrder, setSortOrder] = useState('desc')
   const [isBulkDeleteConfirmOpen, setIsBulkDeleteConfirmOpen] = useState(false)
   const { toast } = useToast()
+  const [isLoading, setIsLoading] = useState(true);
 
   const fetchAllData = async () => {
     const [
@@ -74,6 +75,7 @@ function ContratosPageComponent() {
     setClients(clientsData || [])
     setProposals(proposalsData || [])
     setProfile(profileData as Profile | null);
+    setIsLoading(false);
   }
 
   useEffect(() => {
@@ -210,8 +212,8 @@ function ContratosPageComponent() {
         </div>
 
 
-        {filteredAndSortedContracts.length === 0 ? (
-          <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm">
+        {isLoading ? null : filteredAndSortedContracts.length === 0 ? (
+          <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm py-24">
             <div className="flex flex-col items-center gap-1 text-center">
               <FileSignature className="h-10 w-10 text-muted-foreground" />
               <h3 className="text-2xl font-bold tracking-tight">

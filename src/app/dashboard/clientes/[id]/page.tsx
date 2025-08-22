@@ -34,6 +34,7 @@ import { format, isPast } from 'date-fns'
 import { cn } from '@/lib/utils'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
+import { Skeleton } from '@/components/ui/skeleton'
 
 
 const clientInfoSchema = z.object({
@@ -114,6 +115,38 @@ const combinedSchema = z.object({
 
 type ClientFormData = z.infer<typeof combinedSchema>;
 type StepName = 'info' | 'address' | 'financial';
+
+function PageLoadingSkeleton() {
+    return (
+        <div className="flex flex-1 flex-col gap-6 p-4 sm:p-10">
+            <div className="flex items-center gap-4">
+                <Skeleton className="h-7 w-7" />
+                <Skeleton className="h-24 w-24 rounded-full" />
+                <div className="space-y-2">
+                    <Skeleton className="h-8 w-48" />
+                    <Skeleton className="h-5 w-32" />
+                </div>
+            </div>
+            <div className="flex gap-1 bg-gray-100 p-1 rounded-lg">
+                <Skeleton className="h-9 flex-1" />
+                <Skeleton className="h-9 flex-1" />
+                <Skeleton className="h-9 flex-1" />
+            </div>
+            <Card>
+                <CardHeader>
+                    <Skeleton className="h-6 w-1/3" />
+                    <Skeleton className="h-4 w-1/2" />
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <Skeleton className="h-5 w-2/3" />
+                    <Skeleton className="h-5 w-1/2" />
+                    <Skeleton className="h-5 w-3/4" />
+                </CardContent>
+            </Card>
+        </div>
+    )
+}
+
 
 export default function ClienteEditPage() {
   const params = useParams();
@@ -310,7 +343,7 @@ export default function ClienteEditPage() {
   const isFinancialComplete = financialSchema.safeParse(methods.getValues()).success;
 
   if (!client) {
-     return null; // A tela de loading do Next.js cuidará disso
+     return <PageLoadingSkeleton />;
   }
   
   return (

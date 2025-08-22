@@ -33,6 +33,7 @@ export default function CobrancasPage() {
   const [isSending, setIsSending] = useState<string | null>(null);
   const [providerProfile, setProviderProfile] = useState<Profile | null>(null)
   const { toast } = useToast()
+  const [isLoading, setIsLoading] = useState(true);
 
   const getStatusInfo = (status: string, dueDate: string) => {
     if (status === 'pago') {
@@ -56,11 +57,12 @@ export default function CobrancasPage() {
             title: 'Erro ao buscar dados',
             description: chargesError?.message || 'Não foi possível carregar as cobranças.'
         })
-        return
+      } else {
+        setCharges(chargesData);
       }
       
-      setCharges(chargesData);
       setProviderProfile(profileData as Profile | null);
+      setIsLoading(false);
     }
 
   useEffect(() => {
@@ -149,7 +151,7 @@ export default function CobrancasPage() {
                 <TabsTrigger value="historico" disabled>Histórico de Envios (em breve)</TabsTrigger>
             </TabsList>
             <TabsContent value="recorrentes">
-                {charges.length === 0 ? (
+                {isLoading ? null : charges.length === 0 ? (
                 <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm py-24">
                     <div className="flex flex-col items-center gap-1 text-center">
                     <FileWarning className="h-10 w-10 text-muted-foreground" />
