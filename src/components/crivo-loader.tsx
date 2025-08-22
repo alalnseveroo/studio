@@ -17,12 +17,12 @@ export function CrivoLoader({ isAnimating }: CrivoLoaderProps) {
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
         >
-          <path
+           <path
             className={cn(
-              "s-path", // Alterado para s-path para clareza
-              isAnimating && "s-path--animating"
+              "c-path",
+              isAnimating && "c-path--animating"
             )}
-            d="M30 12.5C30 8.35786 26.6421 5 22.5 5C17.201 5 12.5 9.47715 12.5 15C12.5 20.5228 17.201 25 22.5 25C26.6421 25 30 28.3579 30 32.5"
+            d="M29.9998 13.7502C29.9998 11.2374 28.9463 8.82903 27.0709 7.07107C25.1955 5.31311 22.652 4.375 19.9998 4.375C14.1778 4.375 9.9998 8.95202 9.9998 15V25C9.9998 30.078 14.1778 35.625 19.9998 35.625C22.652 35.625 25.1955 34.6869 27.0709 32.9289C28.9463 31.171 29.9998 28.7626 29.9998 26.25"
             stroke="white"
             strokeWidth="4"
             strokeLinecap="round"

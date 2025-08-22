@@ -99,22 +99,22 @@
     animation: checkmark-in 0.2s ease-out forwards;
   }
 
-  @keyframes draw-s {
+  @keyframes draw-c {
     from {
-      stroke-dashoffset: 100;
+      stroke-dashoffset: 85;
     }
     to {
       stroke-dashoffset: 0;
     }
   }
 
-  .s-path {
-    stroke-dasharray: 100;
-    stroke-dashoffset: 100;
+  .c-path {
+    stroke-dasharray: 85;
+    stroke-dashoffset: 85;
   }
 
-  .s-path--animating {
-    animation: draw-s 1.5s ease-out forwards;
+  .c-path--animating {
+    animation: draw-c 1.5s ease-out forwards;
   }
 }
 
