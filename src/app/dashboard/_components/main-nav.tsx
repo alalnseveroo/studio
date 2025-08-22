@@ -1,4 +1,3 @@
-
 'use client'
 
 import Link from 'next/link'
@@ -10,7 +9,7 @@ import {
   FileSignature,
   DollarSign,
 } from 'lucide-react'
-
+import { SidebarMenu, SidebarMenuItem, SidebarMenuButton } from '@/components/ui/sidebar'
 import { cn } from '@/lib/utils'
 
 const navItems = [
@@ -32,19 +31,17 @@ export function MainNav() {
     }
 
     return (
-        <nav className="hidden md:flex items-center space-x-6 text-sm font-medium">
+        <SidebarMenu>
             {navItems.map((item) => (
-                <Link
-                    key={item.href}
-                    href={item.href}
-                    className={cn(
-                        "transition-colors hover:text-primary",
-                        isActive(item.href, item.exact) ? "text-primary" : "text-muted-foreground"
-                    )}
-                >
-                    {item.label}
-                </Link>
+                <SidebarMenuItem key={item.href}>
+                    <Link href={item.href}>
+                        <SidebarMenuButton isActive={isActive(item.href, item.exact)}>
+                            <item.icon />
+                            <span>{item.label}</span>
+                        </SidebarMenuButton>
+                    </Link>
+                </SidebarMenuItem>
             ))}
-        </nav>
+        </SidebarMenu>
     )
 }

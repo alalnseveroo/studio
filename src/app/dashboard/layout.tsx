@@ -1,7 +1,7 @@
 
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import {
@@ -12,18 +12,8 @@ import {
   MessageSquare,
   User,
   CreditCard,
+  PanelLeft
 } from 'lucide-react'
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
-
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -41,135 +31,49 @@ import type { Profile, Cliente } from '@/lib/types'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { MainNav } from './_components/main-nav'
 import { useRouter, usePathname } from 'next/navigation'
-import { cn } from '@/lib/utils'
 import { ChatModal } from '@/components/chat-modal'
 import { Badge } from '@/components/ui/badge'
-
-
-function UserNav({ user }: { user: (Profile & { email: string })}) {
-    const displayName = user.full_name || user.company_name || 'Usuário';
-    const fallback = displayName.charAt(0).toUpperCase();
-
-    return (
-        <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-                <Button
-                    variant="ghost"
-                    className="relative size-10 rounded-full p-0"
-                >
-                    <div className="rounded-full border-2 border-primary p-0.5">
-                        <Avatar className="size-8">
-                           <AvatarImage src={user.avatar_url || ''} alt="Avatar" />
-                           <AvatarFallback>{fallback}</AvatarFallback>
-                        </Avatar>
-                    </div>
-                </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel>
-                     <div className="flex flex-col space-y-1">
-                        <p className="text-sm font-medium leading-none">{displayName}</p>
-                        <p className="text-xs leading-none text-muted-foreground">
-                        {user.email}
-                        </p>
-                    </div>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                 <DropdownMenuItem asChild>
-                     <Link href="/dashboard/settings/profile">
-                        <Settings className="mr-2 h-4 w-4" />
-                        <span>Configurações</span>
-                    </Link>
-                </DropdownMenuItem>
-                 <DropdownMenuItem asChild>
-                     <Link href="/dashboard/settings/public-profile">
-                        <User className="mr-2 h-4 w-4" />
-                        <span>Perfil Público</span>
-                    </Link>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <form action={signOut} className="w-full">
-                    <button type="submit" className="w-full">
-                        <DropdownMenuItem>
-                            <LogOut className="mr-2 h-4 w-4" />
-                            <span>Sair</span>
-                        </DropdownMenuItem>
-                    </button>
-                </form>
-            </DropdownMenuContent>
-        </DropdownMenu>
-    )
-}
+import {
+  SidebarProvider,
+  Sidebar,
+  SidebarHeader,
+  SidebarContent,
+  SidebarFooter,
+  SidebarTrigger,
+  SidebarMenu,
+  SidebarMenuItem,
+  SidebarMenuButton,
+  SidebarMenuBadge,
+  SidebarMenuSub,
+  SidebarMenuSubItem,
+  SidebarMenuSubButton,
+} from '@/components/ui/sidebar'
+import MultiStepLoaderDemo from '@/components/multi-step-loader-demo'
 
 function DashboardHeader({ 
     userProfile, 
-    clients,
-    onClientSelect
 } : { 
     userProfile: (Profile & { email: string }) | null,
-    clients: Cliente[],
-    onClientSelect: (client: Cliente) => void;
 }) {
      return (
-        <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-            <div className="flex h-16 items-center justify-between px-10">
-                <div className="flex items-center gap-6 flex-1">
-                    <Link href="/dashboard" className="flex items-center">
-                        <Image 
-                            src="https://pouynmrblzvwlhrfyins.supabase.co/storage/v1/object/public/icons/imags/Untitled%20folder/Crivo.png" 
-                            alt="Crivo Logo"
-                            width={80}
-                            height={30}
-                        />
-                    </Link>
-                </div>
+        <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-4 border-b bg-background px-4 sm:px-6">
+            <div className="flex items-center gap-2">
+                 <SidebarTrigger className="md:hidden" />
+                 <Image 
+                    src="https://pouynmrblzvwlhrfyins.supabase.co/storage/v1/object/public/icons/imags/Untitled%20folder/Crivo.png" 
+                    alt="Crivo Logo"
+                    width={80}
+                    height={30}
+                />
+            </div>
 
-                <div className="flex-1 flex justify-center">
-                    <MainNav />
-                </div>
-
-                <div className="flex items-center gap-4 flex-1 justify-end">
-                     {userProfile && (
-                        <Badge variant="outline" className="flex items-center gap-2 border-green-500 bg-green-500/10 text-green-700">
-                            <CreditCard className="h-4 w-4"/>
-                            <span>Você tem {userProfile.credits ?? 0} créditos</span>
-                        </Badge>
-                     )}
-                    <Button variant="ghost" size="icon">
-                        <Bell className="h-5 w-5" />
-                        <span className="sr-only">Notificações</span>
-                    </Button>
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                                <Inbox className="h-5 w-5" />
-                                <span className="sr-only">Caixa de Entrada</span>
-                            </Button>
-                        </DropdownMenuTrigger>
-                         <DropdownMenuContent align="end" className="w-64">
-                            <DropdownMenuLabel>Conversas</DropdownMenuLabel>
-                            <DropdownMenuSeparator />
-                             <DropdownMenuGroup>
-                                {clients.length > 0 ? (
-                                    clients.map(client => (
-                                        <DropdownMenuItem key={client.id} onSelect={() => onClientSelect(client)}>
-                                            <Avatar className="h-6 w-6 mr-2">
-                                                <AvatarImage src={client.avatar_url || ''} />
-                                                <AvatarFallback>{(client.full_name || client.company_name || 'C').charAt(0)}</AvatarFallback>
-                                            </Avatar>
-                                            <span>{client.full_name || client.company_name}</span>
-                                        </DropdownMenuItem>
-                                    ))
-                                ) : (
-                                    <DropdownMenuItem disabled>
-                                        Nenhum cliente encontrado.
-                                    </DropdownMenuItem>
-                                )}
-                             </DropdownMenuGroup>
-                         </DropdownMenuContent>
-                    </DropdownMenu>
-                    {userProfile ? <UserNav user={userProfile} /> : <div className="size-10 rounded-full bg-muted animate-pulse" />}
-                </div>
+            <div className="flex items-center gap-4">
+                 {userProfile && (
+                    <Badge variant="outline" className="hidden sm:flex items-center gap-2 border-green-500 bg-green-500/10 text-green-700">
+                        <CreditCard className="h-4 w-4"/>
+                        <span>Você tem {userProfile.credits ?? 0} créditos</span>
+                    </Badge>
+                 )}
             </div>
         </header>
      )
@@ -215,23 +119,128 @@ export default function DashboardLayout({
     fetchInitialData();
   }, [pathname, router]);
 
+  const displayName = userProfile?.full_name || userProfile?.company_name || 'Usuário';
+  const fallback = displayName.charAt(0).toUpperCase();
+
   return (
-    <>
-        <div className="flex min-h-screen flex-col">
-            <DashboardHeader 
-                userProfile={userProfile} 
-                clients={clients}
-                onClientSelect={(client) => setSelectedChatClient(client)}
-            />
-            <main className="flex-1 p-4 sm:p-10">{children}</main>
+    <SidebarProvider>
+      <div className="flex h-screen overflow-hidden">
+        <Sidebar>
+            <SidebarHeader>
+                 <Image 
+                    src="https://pouynmrblzvwlhrfyins.supabase.co/storage/v1/object/public/icons/imags/Untitled%20folder/Crivo.png" 
+                    alt="Crivo Logo"
+                    width={80}
+                    height={30}
+                />
+            </SidebarHeader>
+            <SidebarContent>
+                 <MainNav />
+            </SidebarContent>
+            <SidebarFooter className="p-4 space-y-4">
+                 <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="w-full justify-start gap-2">
+                             <Bell className="h-5 w-5" />
+                             <span className="group-data-[collapsible=icon]:hidden">Notificações</span>
+                        </Button>
+                    </DropdownMenuTrigger>
+                 </DropdownMenu>
+
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="w-full justify-start gap-2">
+                            <Inbox className="h-5 w-5" />
+                            <span className="group-data-[collapsible=icon]:hidden">Caixa de Entrada</span>
+                        </Button>
+                    </DropdownMenuTrigger>
+                     <DropdownMenuContent align="end" className="w-64">
+                        <DropdownMenuLabel>Conversas</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                         <DropdownMenuGroup>
+                            {clients.length > 0 ? (
+                                clients.map(client => (
+                                    <DropdownMenuItem key={client.id} onSelect={() => setSelectedChatClient(client)}>
+                                        <Avatar className="h-6 w-6 mr-2">
+                                            <AvatarImage src={client.avatar_url || ''} />
+                                            <AvatarFallback>{(client.full_name || client.company_name || 'C').charAt(0)}</AvatarFallback>
+                                        </Avatar>
+                                        <span>{client.full_name || client.company_name}</span>
+                                    </DropdownMenuItem>
+                                ))
+                            ) : (
+                                <DropdownMenuItem disabled>
+                                    Nenhum cliente encontrado.
+                                </DropdownMenuItem>
+                            )}
+                         </DropdownMenuGroup>
+                     </DropdownMenuContent>
+                </DropdownMenu>
+
+                 <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                         <Button variant="ghost" className="w-full justify-start gap-2 p-2">
+                            <Avatar className="size-8">
+                               <AvatarImage src={userProfile?.avatar_url || ''} alt="Avatar" />
+                               <AvatarFallback>{fallback}</AvatarFallback>
+                            </Avatar>
+                            <div className="flex flex-col items-start group-data-[collapsible=icon]:hidden">
+                                <span className="text-sm font-medium">{displayName}</span>
+                                <span className="text-xs text-muted-foreground">{userProfile?.email}</span>
+                            </div>
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-56">
+                        <DropdownMenuLabel>
+                             <div className="flex flex-col space-y-1">
+                                <p className="text-sm font-medium leading-none">{displayName}</p>
+                                <p className="text-xs leading-none text-muted-foreground">
+                                {userProfile?.email}
+                                </p>
+                            </div>
+                        </DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                         <DropdownMenuItem asChild>
+                             <Link href="/dashboard/settings/profile">
+                                <Settings className="mr-2 h-4 w-4" />
+                                <span>Configurações</span>
+                            </Link>
+                        </DropdownMenuItem>
+                         <DropdownMenuItem asChild>
+                             <Link href="/dashboard/settings/public-profile">
+                                <User className="mr-2 h-4 w-4" />
+                                <span>Perfil Público</span>
+                            </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <form action={signOut} className="w-full">
+                            <button type="submit" className="w-full">
+                                <DropdownMenuItem>
+                                    <LogOut className="mr-2 h-4 w-4" />
+                                    <span>Sair</span>
+                                </DropdownMenuItem>
+                            </button>
+                        </form>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            </SidebarFooter>
+        </Sidebar>
+        <div className="flex flex-col flex-1 overflow-hidden">
+          <DashboardHeader userProfile={userProfile} />
+          <main className="flex-1 overflow-y-auto overflow-x-hidden">
+             <Suspense fallback={<MultiStepLoaderDemo />}>
+                {children}
+             </Suspense>
+          </main>
         </div>
+      </div>
         
-        {selectedChatClient && (
-            <ChatModal 
-                client={selectedChatClient} 
-                onClose={() => setSelectedChatClient(null)} 
-            />
-        )}
-    </>
+      {selectedChatClient && (
+          <ChatModal 
+              client={selectedChatClient} 
+              onClose={() => setSelectedChatClient(null)} 
+          />
+      )}
+    </SidebarProvider>
   )
 }
