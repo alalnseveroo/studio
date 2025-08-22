@@ -46,7 +46,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast'
 
 function ContratosPageComponent() {
-  const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [contracts, setContracts] = useState<Contrato[]>([])
   const [clients, setClients] = useState<Cliente[]>([])
@@ -59,7 +58,6 @@ function ContratosPageComponent() {
   const { toast } = useToast()
 
   const fetchAllData = async () => {
-    setIsLoading(true);
     const [
       { data: contractsData }, 
       { data: clientsData }, 
@@ -76,7 +74,6 @@ function ContratosPageComponent() {
     setClients(clientsData || [])
     setProposals(proposalsData || [])
     setProfile(profileData as Profile | null);
-    setIsLoading(false);
   }
 
   useEffect(() => {
@@ -160,10 +157,6 @@ function ContratosPageComponent() {
       setSelectedContracts((prev) => prev.filter((id) => id !== contractId));
     }
   };
-
-  if (isLoading) {
-    return null; // O loading.tsx cuidará disso
-  }
 
   return (
     <>
