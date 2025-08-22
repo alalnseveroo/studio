@@ -2,7 +2,7 @@
 
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, Suspense } from 'react'
 import Link from 'next/link'
 import { Button, buttonVariants } from '@/components/ui/button'
 import {
@@ -31,7 +31,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { PlusCircle, FileSignature, Loader2, Eye, MoreVertical, Send, Trash2 } from 'lucide-react'
+import { PlusCircle, FileSignature, Eye, MoreVertical, Send, Trash2 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { CreateContractModal } from '@/components/create-contract-modal'
 import { getContracts, deleteMultipleContracts } from '@/lib/actions/contratos'
@@ -45,13 +45,12 @@ import { cn } from '@/lib/utils'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useToast } from '@/hooks/use-toast'
 
-export default function ContratosPage() {
+function ContratosPageComponent() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [contracts, setContracts] = useState<Contrato[]>([])
   const [clients, setClients] = useState<Cliente[]>([])
   const [proposals, setProposals] = useState<Proposta[]>([])
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [isLoading, setIsLoading] = useState(true)
   const [selectedContracts, setSelectedContracts] = useState<string[]>([])
   const [statusFilter, setStatusFilter] = useState('all')
   const [sortOrder, setSortOrder] = useState('desc')
@@ -59,7 +58,6 @@ export default function ContratosPage() {
   const { toast } = useToast()
 
   const fetchAllData = async () => {
-    setIsLoading(true)
     const [
       { data: contractsData }, 
       { data: clientsData }, 
@@ -76,7 +74,6 @@ export default function ContratosPage() {
     setClients(clientsData || [])
     setProposals(proposalsData || [])
     setProfile(profileData as Profile | null);
-    setIsLoading(false)
   }
 
   useEffect(() => {
@@ -107,20 +104,6 @@ export default function ContratosPage() {
       setSelectedContracts([]) // Clear selection
     }
     setIsBulkDeleteConfirmOpen(false)
-  }
-
-  
-  const getStatusVariant = (status: string) => {
-    switch (status) {
-      case 'draft':
-        return 'secondary'
-      case 'signed_by_provider':
-        return 'outline'
-      case 'signed_by_client':
-        return 'default'
-      default:
-        return 'secondary'
-    }
   }
   
   const getStatusClass = (status: string) => {
@@ -227,11 +210,7 @@ export default function ContratosPage() {
         </div>
 
 
-        {isLoading ? (
-          <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-          </div>
-        ) : filteredAndSortedContracts.length === 0 ? (
+        {filteredAndSortedContracts.length === 0 ? (
           <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm">
             <div className="flex flex-col items-center gap-1 text-center">
               <FileSignature className="h-10 w-10 text-muted-foreground" />
@@ -368,4 +347,12 @@ export default function ContratosPage() {
       </AlertDialog>
     </>
   )
+}
+
+export default function ContratosPage() {
+    return (
+        <Suspense fallback={<div>Carregando...</div>}>
+            <ContratosPageComponent />
+        </Suspense>
+    )
 }

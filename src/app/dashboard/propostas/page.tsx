@@ -6,21 +6,17 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
-import { PlusCircle, FileText, CheckCircle, Loader2 } from 'lucide-react'
+import { PlusCircle, FileText, CheckCircle } from 'lucide-react'
 import { getProposals } from '@/lib/actions/propostas'
 import type { Proposta } from '@/lib/types'
-import { Badge } from '@/components/ui/badge'
 
 export default function PropostasPage() {
   const [proposals, setProposals] = useState<Proposta[]>([])
-  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
     async function fetchProposals() {
-      setIsLoading(true)
       const { data } = await getProposals()
       setProposals(data || [])
-      setIsLoading(false)
     }
     fetchProposals()
   }, [])
@@ -41,11 +37,7 @@ export default function PropostasPage() {
         </div>
       </div>
 
-      {isLoading ? (
-        <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        </div>
-      ) : proposals.length === 0 ? (
+      {proposals.length === 0 ? (
         <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm">
           <div className="flex flex-col items-center gap-1 text-center">
             <FileText className="h-10 w-10 text-muted-foreground" />

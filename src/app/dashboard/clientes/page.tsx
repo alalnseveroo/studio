@@ -76,7 +76,6 @@ export default function ClientesPage() {
   const [contracts, setContracts] = useState<Contrato[]>([])
   const [profile, setProfile] = useState<Profile | null>(null);
 
-  const [isLoading, setIsLoading] = useState(true)
   const [currentPage, setCurrentPage] = useState(1)
   const [selectedClients, setSelectedClients] = useState<string[]>([])
   const [clientToDelete, setClientToDelete] = useState<Cliente | null>(null)
@@ -92,7 +91,6 @@ export default function ClientesPage() {
   const { toast } = useToast()
 
   const fetchInitialData = async () => {
-    setIsLoading(true)
     const [{ data: clientData }, { data: proposalData }, { data: profileData }, { data: contractsData }] = await Promise.all([
       getClients(),
       getProposals(),
@@ -103,7 +101,6 @@ export default function ClientesPage() {
     setProposals(proposalData || [])
     setContracts(contractsData || []);
     setProfile(profileData as Profile | null);
-    setIsLoading(false)
   }
 
   useEffect(() => {
@@ -274,11 +271,7 @@ export default function ClientesPage() {
           </div>
         </div>
 
-        {isLoading ? (
-          <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-          </div>
-        ) : clients.length === 0 ? (
+        {clients.length === 0 ? (
            <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm">
             <div className="flex flex-col items-center gap-1 text-center">
               <h3 className="text-2xl font-bold tracking-tight">

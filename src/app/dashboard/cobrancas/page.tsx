@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Loader2, Send, FileWarning, UserPlus, FilePlus, Link2, MoreVertical, BadgeCheck, Upload, Download } from 'lucide-react'
+import { Send, FileWarning, UserPlus, FilePlus, Link2, BadgeCheck } from 'lucide-react'
 import { getCharges, markChargeAsPaid } from '@/lib/actions/cobrancas'
 import type { Cobranca, Profile } from '@/lib/types'
 import { format, isPast } from 'date-fns'
@@ -30,7 +30,6 @@ import Link from 'next/link'
 
 export default function CobrancasPage() {
   const [charges, setCharges] = useState<Cobranca[]>([])
-  const [isLoading, setIsLoading] = useState(true)
   const [isSending, setIsSending] = useState<string | null>(null);
   const [providerProfile, setProviderProfile] = useState<Profile | null>(null)
   const { toast } = useToast()
@@ -46,7 +45,6 @@ export default function CobrancasPage() {
   }
 
   const fetchData = async () => {
-      setIsLoading(true)
       const [{ data: chargesData, error: chargesError }, { data: profileData }] = await Promise.all([
         getCharges(),
         getProfile()
@@ -58,13 +56,11 @@ export default function CobrancasPage() {
             title: 'Erro ao buscar dados',
             description: chargesError?.message || 'Não foi possível carregar as cobranças.'
         })
-        setIsLoading(false)
         return
       }
       
       setCharges(chargesData);
       setProviderProfile(profileData as Profile | null);
-      setIsLoading(false)
     }
 
   useEffect(() => {
@@ -72,7 +68,6 @@ export default function CobrancasPage() {
   }, [])
 
   const handleMarkAsPaid = async (chargeId: string) => {
-    setIsLoading(true);
     const { error } = await markChargeAsPaid(chargeId);
      if (error) {
       toast({ variant: 'destructive', title: 'Erro', description: error.message });
@@ -80,7 +75,6 @@ export default function CobrancasPage() {
       toast({ title: 'Sucesso!', description: 'Cobrança marcada como paga.' });
       await fetchData(); // Refetch charges
     }
-    setIsLoading(false);
   }
 
   const handleSendReminder = async (charge: Cobranca) => {
@@ -154,11 +148,7 @@ export default function CobrancasPage() {
                 <TabsTrigger value="historico" disabled>Histórico de Envios (em breve)</TabsTrigger>
             </TabsList>
             <TabsContent value="recorrentes">
-                {isLoading ? (
-                <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm py-24">
-                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                </div>
-                ) : charges.length === 0 ? (
+                {charges.length === 0 ? (
                 <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm py-24">
                     <div className="flex flex-col items-center gap-1 text-center">
                     <FileWarning className="h-10 w-10 text-muted-foreground" />
@@ -232,7 +222,7 @@ export default function CobrancasPage() {
                                  <div className="flex items-center justify-center">
                                      {charge.status === 'pendente' && (
                                         <Button variant="ghost" size="icon" onClick={() => handleSendReminder(charge)} disabled={isSending === charge.id}>
-                                            {isSending === charge.id ? <Loader2 className="h-4 w-4 animate-spin"/> : <Send className="h-4 w-4" />}
+                                            <Send className="h-4 w-4" />
                                             <span className="sr-only">Enviar Lembrete</span>
                                         </Button>
                                      )}
