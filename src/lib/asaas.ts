@@ -4,8 +4,8 @@
 import type { Profile, Cliente } from "./types";
 import { createClient } from "./supabase/server";
 
-const ASAAS_API_URL = 'https://api-sandbox.asaas.com/v3';
-const ASAAS_API_KEY = '$aact_hmlg_000MzkwODA2MWY2OGM3MWRlMDU2NWM3MzJlNzZmNGZhZGY6OmU4YmNhMjVmLWRhZDktNGU1Ni04YzY3LTBiYzNhNjVhMzEwNDo6JGFhY2hfMmY4MWY0MTItNTMwYS00MTUxLTgzYTQtZjM1NzA3YWZlZWUx';
+const ASAAS_API_URL = process.env.ASAAS_API_URL || 'https://api.asaas.com/v3';
+const ASAAS_API_KEY = process.env.ASAAS_API_KEY;
 
 type AsaasCustomer = {
     id: string;
@@ -279,3 +279,5 @@ export async function getAsaasPixCharge(paymentId: string) {
         return { qrCode: null, payload: null, error: { message: error.message } };
     }
 }
+
+    
