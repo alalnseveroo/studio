@@ -19,8 +19,8 @@ export function CrivoLoader({ isAnimating }: CrivoLoaderProps) {
         >
           <path
             className={cn(
-              "c-path",
-              isAnimating && "c-path--animating"
+              "s-path", // Alterado para s-path para clareza
+              isAnimating && "s-path--animating"
             )}
             d="M30 12.5C30 8.35786 26.6421 5 22.5 5C17.201 5 12.5 9.47715 12.5 15C12.5 20.5228 17.201 25 22.5 25C26.6421 25 30 28.3579 30 32.5"
             stroke="white"
