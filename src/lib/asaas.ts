@@ -21,7 +21,6 @@ async function disableAllNotifications(customerId: string) {
     }
 
     try {
-        // 1. Get all notifications for the customer
         const getNotificationsUrl = `${ASAAS_API_URL}/customers/${customerId}/notifications`;
         const getResponse = await fetch(getNotificationsUrl, {
             method: 'GET',
@@ -40,46 +39,39 @@ async function disableAllNotifications(customerId: string) {
             return;
         }
 
-        // 2. Prepare the batch update payload
-        const batchPayload = {
-            customer: customerId,
-            notifications: notifications.map((notif: any) => ({
-                id: notif.id,
-                enabled: false,
-                emailEnabledForProvider: false,
-                smsEnabledForProvider: false,
-                emailEnabledForCustomer: false,
-                smsEnabledForCustomer: false,
-                phoneCallEnabledForCustomer: false,
-                whatsappEnabledForCustomer: false,
-            })),
-        };
-
-        // 3. Send the batch update request
-        const batchUpdateUrl = `${ASAAS_API_URL}/notifications/batch`;
-        const postResponse = await fetch(batchUpdateUrl, {
+        const batchPayload = notifications.map((notif: any) => ({
+            id: notif.id,
+            enabled: false,
+            emailEnabledForProvider: false,
+            smsEnabledForProvider: false,
+            emailEnabledForCustomer: false,
+            smsEnabledForCustomer: false,
+            phoneCallEnabledForCustomer: false,
+            whatsappEnabledForCustomer: false,
+        }));
+        
+        const response = await fetch(`${ASAAS_API_URL}/notifications/batch`, {
             method: 'POST',
             headers: { 'accept': 'application/json', 'content-type': 'application/json', 'access_token': ASAAS_API_KEY },
-            body: JSON.stringify(batchPayload),
+            body: JSON.stringify({ customer: customerId, notifications: batchPayload }),
         });
-
-        if (!postResponse.ok) {
-             const errorData = await postResponse.json();
-            throw new Error(`Failed to disable notifications: ${errorData.errors?.[0]?.description || postResponse.statusText}`);
+        
+        if (!response.ok) {
+             const errorData = await response.json();
+            throw new Error(`Failed to disable notifications: ${errorData.errors?.[0]?.description || response.statusText}`);
         }
         
         console.log(`Successfully disabled all notifications for customer ${customerId}.`);
 
     } catch (error: any) {
         console.error("Error disabling Asaas notifications:", error.message);
-        // We don't throw here to avoid breaking the main flow if notification disabling fails
     }
 }
 
 
 /**
- * Creates or updates a customer in the Asaas platform.
- * Ensures essential data like name and CPF/CNPJ are always present.
+ * Gets, creates, or updates a customer in the Asaas platform.
+ * Avoids duplication by checking for existing CPF/CNPJ before creating.
  */
 export async function getOrCreateAsaasCustomer(profile: Partial<Profile & Cliente>): Promise<AsaasCustomer | null> {
     if (!ASAAS_API_KEY || !ASAAS_API_URL) {
@@ -90,69 +82,76 @@ export async function getOrCreateAsaasCustomer(profile: Partial<Profile & Client
     const cpfCnpj = profile.cpf || profile.cnpj;
 
     if (!name || !cpfCnpj || !profile.email) {
-        throw new Error("Name, CPF/CNPJ and Email are required to create a customer in Asaas.");
+        throw new Error("Name, CPF/CNPJ and Email are required to create or find a customer in Asaas.");
     }
 
-    const payload = {
-        name,
-        cpfCnpj,
-        email: profile.email,
-        phone: profile.phone,
-        address: profile.address,
-        externalReference: profile.id
-    };
-
-    const url = profile.asaas_customer_id
-        ? `${ASAAS_API_URL}/customers/${profile.asaas_customer_id}`
-        : `${ASAAS_API_URL}/customers`;
-
-    const method = profile.asaas_customer_id ? 'PUT' : 'POST';
-
     try {
-        const response = await fetch(url, {
-            method: method,
-            headers: { 
-                'accept': 'application/json',
-                'content-type': 'application/json',
-                'access_token': ASAAS_API_KEY 
-            },
-            body: JSON.stringify(payload),
+        // Step 1: Check if customer exists in Asaas using cpfCnpj
+        const searchUrl = `${ASAAS_API_URL}/customers?cpfCnpj=${cpfCnpj}`;
+        const searchResponse = await fetch(searchUrl, {
+            method: 'GET',
+            headers: { 'accept': 'application/json', 'access_token': ASAAS_API_KEY },
         });
 
-        const responseData = await response.json();
+        if (!searchResponse.ok) {
+            const errorData = await searchResponse.json();
+            throw new Error(`Asaas API Error (Search): ${errorData.errors?.[0]?.description || searchResponse.statusText}`);
+        }
+        
+        const searchData = await searchResponse.json();
+        const existingCustomer = searchData.data && searchData.data.length > 0 ? searchData.data[0] : null;
 
-        if (!response.ok) {
-            // If it failed with 404 trying to update, try to create it
-            if (response.status === 404 && profile.asaas_customer_id) {
-                 const createResponse = await fetch(`${ASAAS_API_URL}/customers`, {
-                    method: 'POST',
-                    headers: { 'accept': 'application/json', 'content-type': 'application/json', 'access_token': ASAAS_API_KEY },
-                    body: JSON.stringify(payload),
-                });
-                const createData = await createResponse.json();
-                 if (!createResponse.ok) throw new Error(`Asaas API Error (CREATE after 404): ${createData.errors?.[0]?.description || createResponse.statusText}`);
-                 
-                 await disableAllNotifications(createData.id);
-                 return createData;
-            }
-            throw new Error(`Asaas API Error: ${responseData.errors?.[0]?.description || response.statusText}`);
+        let asaasCustomer: AsaasCustomer;
+
+        const customerPayload = {
+            name,
+            cpfCnpj,
+            email: profile.email,
+            phone: profile.phone,
+            address: profile.address,
+            externalReference: profile.id
+        };
+
+        if (existingCustomer) {
+            // Step 2a: Customer exists, so we update them.
+            const updateUrl = `${ASAAS_API_URL}/customers/${existingCustomer.id}`;
+            const updateResponse = await fetch(updateUrl, {
+                method: 'PUT',
+                headers: { 'accept': 'application/json', 'content-type': 'application/json', 'access_token': ASAAS_API_KEY },
+                body: JSON.stringify(customerPayload),
+            });
+            const updateData = await updateResponse.json();
+            if (!updateResponse.ok) throw new Error(`Asaas API Error (Update): ${updateData.errors?.[0]?.description || updateResponse.statusText}`);
+            
+            asaasCustomer = updateData;
+        } else {
+            // Step 2b: Customer doesn't exist, so we create them.
+            const createUrl = `${ASAAS_API_URL}/customers`;
+            const createResponse = await fetch(createUrl, {
+                method: 'POST',
+                headers: { 'accept': 'application/json', 'content-type': 'application/json', 'access_token': ASAAS_API_KEY },
+                body: JSON.stringify(customerPayload),
+            });
+            const createData = await createResponse.json();
+            if (!createResponse.ok) throw new Error(`Asaas API Error (Create): ${createData.errors?.[0]?.description || createResponse.statusText}`);
+
+            asaasCustomer = createData;
+            // Disable notifications only for newly created customers
+            await disableAllNotifications(asaasCustomer.id);
         }
 
-        const customerId = responseData.id;
-
-        // If a new customer was created, update our database with the ID and disable notifications
-        if (method === 'POST' && customerId) {
-            const tableName = 'is_completed' in profile ? 'profiles' : 'clientes';
-            const supabase = createClient();
-            await supabase.from(tableName).update({ asaas_customer_id: customerId }).eq('id', profile.id!);
-            await disableAllNotifications(customerId);
+        // Step 3: Update our local database with the correct Asaas customer ID
+        if (asaasCustomer && asaasCustomer.id) {
+             const tableName = 'is_completed' in profile ? 'profiles' : 'clientes';
+             const supabase = createClient();
+             await supabase.from(tableName).update({ asaas_customer_id: asaasCustomer.id }).eq('id', profile.id!);
         }
 
-        return responseData;
+        return asaasCustomer;
 
     } catch (error: any) {
-        console.error("Detailed error creating/updating Asaas customer:", error);
-        throw new Error(`Failed to communicate with Asaas API: ${error.message}`);
+        console.error("Detailed error in getOrCreateAsaasCustomer:", error);
+        throw new Error(`Failed to sync with Asaas API: ${error.message}`);
     }
 }
 
@@ -279,5 +278,3 @@ export async function getAsaasPixCharge(paymentId: string) {
         return { qrCode: null, payload: null, error: { message: error.message } };
     }
 }
-
-    
