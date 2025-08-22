@@ -162,12 +162,14 @@ export default function DashboardLayout({
 }) {
   const [userProfile, setUserProfile] = useState<(Profile & { email: string }) | null>(null)
   const [selectedChatClient, setSelectedChatClient] = useState<Cliente | null>(null);
-  
+  const [isAnimating, setIsAnimating] = useState(false);
+
   const router = useRouter();
   const pathname = usePathname();
 
   useEffect(() => {
     async function fetchInitialData() {
+      setIsAnimating(true);
       const { data: profileData } = await getProfile();
       const profile = profileData as Profile & { email: string } | null;
       setUserProfile(profile);
@@ -181,6 +183,7 @@ export default function DashboardLayout({
           router.push('/dashboard/settings/profile');
         }
       }
+      setIsAnimating(false);
     }
     fetchInitialData();
   }, [pathname, router]);
@@ -192,8 +195,11 @@ export default function DashboardLayout({
           onOpenChat={(client) => setSelectedChatClient(client)} 
       />
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
-        {children}
+        <Suspense fallback={<CrivoLoader isAnimating={true} />}>
+            {children}
+        </Suspense>
       </main>
+      <CrivoLoader isAnimating={isAnimating} />
       {selectedChatClient && (
           <ChatModal 
               client={selectedChatClient} 
