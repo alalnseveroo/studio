@@ -32,7 +32,7 @@ import { MainNav } from './_components/main-nav'
 import { useRouter, usePathname } from 'next/navigation'
 import { ChatModal } from '@/components/chat-modal'
 import { Badge } from '@/components/ui/badge'
-import MultiStepLoaderDemo from '@/components/multi-step-loader-demo'
+import { CrivoLoader } from '@/components/crivo-loader'
 
 function DashboardHeader({ 
     userProfile, 
@@ -192,7 +192,7 @@ export default function DashboardLayout({
           onOpenChat={(client) => setSelectedChatClient(client)} 
       />
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
-          <Suspense fallback={<MultiStepLoaderDemo />}>
+          <Suspense fallback={<CrivoLoader />}>
             {children}
           </Suspense>
       </main>
