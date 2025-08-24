@@ -244,6 +244,7 @@ export async function updateClientFinancials(id: string, financials: {
     proposal_id: financials.proposal_id,
     value: financials.value ? Number(financials.value) : null,
     payment_day: financials.payment_day ? Number(financials.payment_day) : null,
+    // A data da próxima cobrança é sempre o mês seguinte
     first_charge_date: financials.billing_status === 'active' ? format(addMonths(firstChargeDate, 1), 'yyyy-MM-dd') : null,
     billing_status: financials.billing_status,
     updated_at: new Date().toISOString(),
@@ -273,8 +274,6 @@ export async function updateClientFinancials(id: string, financials: {
       
       if (chargeInsertError) {
           console.error('Supabase error creating first charge:', chargeInsertError);
-          // Não retorna um erro fatal aqui, pois o perfil foi atualizado, mas avisa o usuário.
-          // O ideal seria uma transação, mas por simplicidade, faremos assim.
           return { error: { message: `Configuração salva, mas falha ao criar a primeira cobrança: ${chargeInsertError.message}` } };
       }
   }
