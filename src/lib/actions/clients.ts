@@ -237,27 +237,51 @@ export async function updateClientFinancials(id: string, financials: {
     }
   }
 
+  const firstChargeDate = financials.first_charge_date ? new Date(financials.first_charge_date + 'T00:00:00') : new Date();
+
+  // 1. Atualiza os dados financeiros no perfil do cliente
   const financialUpdateData = {
     proposal_id: financials.proposal_id,
     value: financials.value ? Number(financials.value) : null,
     payment_day: financials.payment_day ? Number(financials.payment_day) : null,
-    first_charge_date: financials.first_charge_date || null,
+    first_charge_date: financials.billing_status === 'active' ? format(addMonths(firstChargeDate, 1), 'yyyy-MM-dd') : null,
     billing_status: financials.billing_status,
     updated_at: new Date().toISOString(),
   };
 
-  const { error } = await supabase
+  const { error: clientUpdateError } = await supabase
     .from('clientes')
     .update(financialUpdateData)
     .eq('id', id);
 
-  if (error) {
-    console.error('Supabase error updating financials:', error);
-    return { error: { message: `Não foi possível atualizar as configurações financeiras: ${error.message}` } };
+  if (clientUpdateError) {
+    console.error('Supabase error updating financials:', clientUpdateError);
+    return { error: { message: `Não foi possível atualizar as configurações financeiras: ${clientUpdateError.message}` } };
+  }
+
+  // 2. Cria a primeira cobrança imediatamente se um valor foi fornecido
+  if (financials.value && financials.value > 0) {
+      const { error: chargeInsertError } = await supabase
+        .from('cobrancas')
+        .insert({
+            user_id: user.id,
+            cliente_id: id,
+            due_date: format(firstChargeDate, 'yyyy-MM-dd'),
+            value: Number(financials.value),
+            status: 'pendente',
+        });
+      
+      if (chargeInsertError) {
+          console.error('Supabase error creating first charge:', chargeInsertError);
+          // Não retorna um erro fatal aqui, pois o perfil foi atualizado, mas avisa o usuário.
+          // O ideal seria uma transação, mas por simplicidade, faremos assim.
+          return { error: { message: `Configuração salva, mas falha ao criar a primeira cobrança: ${chargeInsertError.message}` } };
+      }
   }
   
   revalidatePath(`/dashboard/clientes/${id}`);
   revalidatePath('/dashboard/cobrancas');
+  revalidatePath('/dashboard');
   return { error: null };
 }
 

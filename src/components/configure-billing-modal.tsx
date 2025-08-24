@@ -1,10 +1,9 @@
 
-
 'use client'
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { useForm } from 'react-hook-form'
+import { useForm, FormProvider } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
 import {
@@ -36,10 +35,12 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useToast } from '@/hooks/use-toast'
 import { updateClientFinancials } from '@/lib/actions/clients'
-import { Loader2 } from 'lucide-react'
-import type { Proposta } from '@/lib/types'
+import { Loader2, PlusCircle } from 'lucide-react'
+import type { Proposta, Cliente } from '@/lib/types'
+import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar'
 
 const billingSchema = z.object({
+  clienteId: z.string({ required_error: 'É necessário selecionar um cliente.' }),
   proposal_id: z.string().nullable(),
   value: z.coerce.number().min(1, { message: 'O valor deve ser maior que zero.'}),
   payment_day: z.coerce.number().min(1, 'O dia do vencimento é obrigatório.').max(31, 'Dia inválido.'),
@@ -54,6 +55,7 @@ interface ConfigureBillingModalProps {
   onClose: () => void
   onBillingConfigured: () => void
   clientId: string | null
+  clients: Cliente[]
   proposals: Proposta[]
 }
 
@@ -62,6 +64,7 @@ export function ConfigureBillingModal({
     onClose, 
     onBillingConfigured, 
     clientId, 
+    clients,
     proposals,
 }: ConfigureBillingModalProps) {
   const [isLoading, setIsLoading] = useState(false)
@@ -71,6 +74,7 @@ export function ConfigureBillingModal({
   const form = useForm<BillingFormData>({
     resolver: zodResolver(billingSchema),
     defaultValues: {
+        clienteId: clientId || undefined,
         proposal_id: null,
         value: undefined, 
         payment_day: undefined,
@@ -79,19 +83,20 @@ export function ConfigureBillingModal({
     }
   })
 
-  const selectedProposalId = form.watch('proposal_id');
-
   useEffect(() => {
     if (isOpen) {
         form.reset({
-             proposal_id: null,
+            clienteId: clientId || undefined,
+            proposal_id: null,
             value: undefined,
             payment_day: undefined,
             first_charge_date: '',
             billing_status: 'active',
         });
     }
-  }, [isOpen, form]);
+  }, [isOpen, clientId, form]);
+
+  const selectedProposalId = form.watch('proposal_id');
 
   useEffect(() => {
     if (selectedProposalId) {
@@ -105,14 +110,9 @@ export function ConfigureBillingModal({
 
 
   const handleFormSubmit = async (values: BillingFormData) => {
-    if (!clientId) {
-        toast({ variant: 'destructive', title: 'Erro', description: 'Nenhum cliente selecionado.'})
-        return;
-    };
-
     setIsLoading(true);
     
-    const result = await updateClientFinancials(clientId, values);
+    const result = await updateClientFinancials(values.clienteId, values);
     
     setIsLoading(false);
 
@@ -130,7 +130,7 @@ export function ConfigureBillingModal({
     } else {
       toast({
         title: 'Cobrança Configurada!',
-        description: 'A cobrança recorrente foi salva com sucesso.',
+        description: 'A cobrança foi salva e a primeira fatura foi gerada com sucesso.',
       })
       onBillingConfigured();
       onClose();
@@ -141,13 +141,45 @@ export function ConfigureBillingModal({
       <Dialog open={isOpen} onOpenChange={(open) => { if (!open) { onClose(); } }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Configurar Cobrança Recorrente</DialogTitle>
+            <DialogTitle>Configurar Cobrança</DialogTitle>
             <DialogDescription>
-              Defina os detalhes da cobrança para este cliente.
+              Defina os detalhes da cobrança para um cliente. A primeira fatura será gerada imediatamente.
             </DialogDescription>
           </DialogHeader>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 py-4">
+              <FormField
+                control={form.control}
+                name="clienteId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Cliente</FormLabel>
+                     <Select onValueChange={field.onChange} value={field.value} disabled={!!clientId}>
+                      <FormControl>
+                          <SelectTrigger>
+                              <SelectValue placeholder="Selecione um cliente" />
+                          </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                          {clients.map(client => (
+                              <SelectItem key={client.id} value={client.id}>
+                                <div className="flex items-center gap-2">
+                                  <Avatar className="h-6 w-6">
+                                    <AvatarImage src={client.avatar_url || ''} />
+                                    <AvatarFallback className="text-xs">
+                                      {(client.full_name || client.company_name || 'C').charAt(0)}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  <span>{client.full_name || client.company_name}</span>
+                                </div>
+                              </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <FormField
                 control={form.control}
                 name="proposal_id"
@@ -160,7 +192,7 @@ export function ConfigureBillingModal({
                      >
                       <FormControl>
                           <SelectTrigger>
-                              <SelectValue placeholder="Selecione uma proposta" />
+                              <SelectValue placeholder="Selecione para preencher valores" />
                           </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -181,7 +213,7 @@ export function ConfigureBillingModal({
                     name="value"
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel>Valor da Mensalidade (R$)</FormLabel>
+                            <FormLabel>Valor da Cobrança (R$)</FormLabel>
                             <FormControl><Input type="number" step="0.01" placeholder="1500,00" {...field} value={field.value ?? ''} /></FormControl>
                              <FormMessage />
                         </FormItem>
@@ -206,6 +238,7 @@ export function ConfigureBillingModal({
                             <FormItem>
                                 <FormLabel>Data da 1ª Cobrança</FormLabel>
                                 <FormControl><Input type="date" {...field} value={field.value ?? ''} /></FormControl>
+                                <FormDescription className="text-xs">Se deixado em branco, usa a data de hoje.</FormDescription>
                                 <FormMessage />
                             </FormItem>
                         )}
@@ -216,7 +249,12 @@ export function ConfigureBillingModal({
                 name="billing_status"
                 render={({ field }) => (
                   <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
-                    <FormLabel>Ativar Cobrança Automática</FormLabel>
+                    <div className="space-y-0.5">
+                        <FormLabel>Ativar Recorrência</FormLabel>
+                        <FormDescription className="text-xs">
+                           Se ativo, novas cobranças serão geradas automaticamente.
+                        </FormDescription>
+                    </div>
                     <FormControl>
                       <Switch
                         checked={field.value === 'active'}
@@ -231,7 +269,7 @@ export function ConfigureBillingModal({
                 <Button type="button" variant="ghost" onClick={onClose}>Cancelar</Button>
                 <Button type="submit" disabled={isLoading}>
                   {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Salvar Configuração
+                  Salvar e Criar Cobrança
                 </Button>
               </DialogFooter>
             </form>

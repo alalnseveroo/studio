@@ -1,4 +1,5 @@
 
+'use client'
 
 import Link from 'next/link'
 import {
@@ -15,7 +16,9 @@ import {
   Receipt,
   Settings,
   PlusCircle,
+  CreditCard,
 } from 'lucide-react'
+import { useState, useEffect } from 'react'
 
 import {
   Avatar,
@@ -42,12 +45,15 @@ import {
 import { getClients } from '@/lib/actions/clients'
 import { getContracts } from '@/lib/actions/contratos'
 import { getCharges } from '@/lib/actions/cobrancas'
+import { getProposals } from '@/lib/actions/propostas'
 import { getProfile } from '@/lib/actions/profile'
 import { format, isPast } from 'date-fns'
 import { cn } from '@/lib/utils'
-import type { Profile } from '@/lib/types'
+import type { Profile, Cliente, Contrato, Cobranca, Proposta } from '@/lib/types'
 import { DaysOffCalendar } from '@/components/days-off-calendar'
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert'
+import { ConfigureBillingModal } from '@/components/configure-billing-modal'
+
 
 const getStatusClass = (status: string) => {
     switch (status) {
@@ -81,23 +87,56 @@ const getChargeStatusInfo = (status: string, dueDate: string) => {
     return { text: 'Pendente', className: 'border-yellow-500 bg-yellow-500/10 text-yellow-700' };
 }
 
-const QuickActionButton = ({ href, icon: Icon, label }: { href: string, icon: React.ElementType, label: string }) => (
-    <Button asChild variant="outline" className="h-10 shadow-sm hover:shadow-md transition-all group">
-        <Link href={href} className="flex items-center gap-2">
+const QuickActionButton = ({ href, icon: Icon, label, onClick }: { href?: string, icon: React.ElementType, label: string, onClick?: () => void }) => {
+    const content = (
+        <div className="flex items-center gap-2">
             <Icon className="h-0 w-0 opacity-0 transition-all duration-300 group-hover:h-4 group-hover:w-4 group-hover:opacity-100" />
             <span className="text-sm font-normal">{label}</span>
-        </Link>
-    </Button>
-);
+        </div>
+    );
+    
+    if (href) {
+        return (
+            <Button asChild variant="outline" className="h-10 shadow-sm hover:shadow-md transition-all group">
+                <Link href={href}>{content}</Link>
+            </Button>
+        );
+    }
+
+    return (
+        <Button variant="outline" className="h-10 shadow-sm hover:shadow-md transition-all group" onClick={onClick}>
+            {content}
+        </Button>
+    );
+};
 
 
-export default async function DashboardPage() {
-    const [{ data: clients }, { data: contracts }, { data: charges }, { data: profile }] = await Promise.all([
-        getClients(),
-        getContracts(),
-        getCharges(),
-        getProfile() as Promise<{ data: Profile | null }>
-    ]);
+export default function DashboardPage() {
+    const [clients, setClients] = useState<Cliente[]>([]);
+    const [contracts, setContracts] = useState<Contrato[]>([]);
+    const [charges, setCharges] = useState<Cobranca[]>([]);
+    const [proposals, setProposals] = useState<Proposta[]>([]);
+    const [profile, setProfile] = useState<Profile | null>(null);
+    const [isBillingModalOpen, setIsBillingModalOpen] = useState(false);
+
+    const fetchData = async () => {
+        const [{ data: clientsData }, { data: contractsData }, { data: chargesData }, { data: proposalsData }, { data: profileData }] = await Promise.all([
+            getClients(),
+            getContracts(),
+            getCharges(),
+            getProposals(),
+            getProfile() as Promise<{ data: Profile | null }>
+        ]);
+        setClients(clientsData || []);
+        setContracts(contractsData || []);
+        setCharges(chargesData || []);
+        setProposals(proposalsData || []);
+        setProfile(profileData);
+    };
+
+    useEffect(() => {
+        fetchData();
+    }, []);
 
     const totalRevenue = charges?.filter(c => c.status === 'pago').reduce((sum, c) => sum + (c.value || 0), 0) || 0;
     const pendingAmount = charges?.filter(c => c.status === 'pendente' && !isPast(new Date(c.due_date))).reduce((sum, c) => sum + (c.value || 0), 0) || 0;
@@ -109,13 +148,14 @@ export default async function DashboardPage() {
     const isProfileComplete = profile?.is_completed ?? false;
 
   return (
+    <>
     <div className="flex flex-1 flex-col gap-4 sm:gap-6">
       <div className="flex items-center">
         <h1 className="text-lg font-semibold md:text-2xl">Dashboard</h1>
          <div className="ml-auto flex items-center gap-2">
             <QuickActionButton href="/dashboard/clientes" icon={UserPlus} label="Criar Cliente" />
             <QuickActionButton href="/dashboard/contratos" icon={FileSignature} label="Criar Contrato" />
-            <QuickActionButton href="/dashboard/propostas/nova" icon={FilePlus} label="Criar Proposta" />
+            <QuickActionButton onClick={() => setIsBillingModalOpen(true)} icon={CreditCard} label="Enviar Cobrança" />
             <QuickActionButton href="/dashboard/settings/profile" icon={Settings} label="Configurações" />
         </div>
       </div>
@@ -280,5 +320,14 @@ export default async function DashboardPage() {
         </div>
       </div>
     </div>
+     <ConfigureBillingModal
+        isOpen={isBillingModalOpen}
+        onClose={() => setIsBillingModalOpen(false)}
+        clientId={null} // Permite selecionar qualquer cliente
+        clients={clients}
+        proposals={proposals}
+        onBillingConfigured={fetchData}
+      />
+    </>
   )
 }

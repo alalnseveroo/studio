@@ -443,6 +443,7 @@ export default function ClientesPage() {
           setClientForBilling(null);
         }}
         clientId={clientForBilling?.id || newlyCreatedClient?.id}
+        clients={clients}
         proposals={proposals}
         onBillingConfigured={() => fetchInitialData()}
       />
