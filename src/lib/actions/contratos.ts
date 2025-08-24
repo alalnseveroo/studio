@@ -297,7 +297,6 @@ interface SignClientArgs {
 export async function signContractAsClient({ contractId, otp, signatureDataUrl }: SignClientArgs) {
     const supabase = createClient();
     
-    // Busca a versão mais recente do contrato ANTES de qualquer verificação
     const { data: contract, error: contractError } = await supabase
         .from('contratos')
         .select('*, clientes(*), propostas(*)')
@@ -349,10 +348,39 @@ export async function signContractAsClient({ contractId, otp, signatureDataUrl }
         contract: finalContractData as Contrato,
     });
     
-    // Ativa o cliente e deduz o crédito ANTES de finalizar o contrato
     const activationResult = await activateClientAndDeductCredit(contract.cliente_id);
     if (activationResult.error) {
         return { data: null, error: activationResult.error };
+    }
+    
+    const firstChargeDate = format(new Date(), 'yyyy-MM-dd');
+    const { error: clientUpdateError } = await supabase
+        .from('clientes')
+        .update({
+            billing_status: 'active',
+            first_charge_date: firstChargeDate,
+            value: contract.propostas.value,
+            payment_day: contract.propostas.payment_day,
+            proposal_id: contract.proposta_id,
+        })
+        .eq('id', contract.cliente_id);
+
+    if (clientUpdateError) {
+        return { data: null, error: { message: `Erro ao atualizar dados financeiros do cliente: ${clientUpdateError.message}` } };
+    }
+
+    const { error: chargeInsertError } = await supabase
+        .from('cobrancas')
+        .insert({
+            user_id: contract.user_id,
+            cliente_id: contract.cliente_id,
+            due_date: firstChargeDate,
+            value: contract.propostas.value,
+            status: 'pendente',
+        });
+    
+    if (chargeInsertError) {
+        return { data: null, error: { message: `Erro ao criar primeira cobrança: ${chargeInsertError.message}` } };
     }
 
     const { data: updatedContract, error: updateError } = await supabase
@@ -362,8 +390,8 @@ export async function signContractAsClient({ contractId, otp, signatureDataUrl }
             client_signature_data: clientSignatureMetadata,
             client_signature_image_url: signatureDataUrl,
             full_contract_text: finalContractText,
-            client_signature_otp: null, // Limpa o código após o uso
-            client_signature_otp_expires_at: null, // Limpa a data de expiração
+            client_signature_otp: null,
+            client_signature_otp_expires_at: null,
         })
         .eq('id', contractId)
         .select('*, clientes(*), propostas(*)')

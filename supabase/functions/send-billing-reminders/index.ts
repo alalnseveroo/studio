@@ -45,6 +45,7 @@ Deno.serve(async (_req) => {
     const todayStr = format(today, 'yyyy-MM-dd');
 
     // --- 1. GERAÇÃO DE COBRANÇAS RECORRENTES ---
+    // Busca clientes ativos cuja data da próxima cobrança é hoje.
     const { data: activeClients, error: clientsError } = await supabase
         .from('clientes')
         .select('*')
@@ -97,8 +98,8 @@ Deno.serve(async (_req) => {
     if (!pendingCharges || pendingCharges.length === 0) {
       console.log('No pending charges to send reminders for.');
     } else {
-      const tomorrowStr = format(addMonths(today, 0, 1), 'yyyy-MM-dd');
-      const yesterdayStr = format(addMonths(today, 0, -1), 'yyyy-MM-dd');
+      const tomorrowStr = format(new Date(today.getTime() + 24 * 60 * 60 * 1000), 'yyyy-MM-dd');
+      const yesterdayStr = format(new Date(today.getTime() - 24 * 60 * 60 * 1000), 'yyyy-MM-dd');
 
       for (const charge of pendingCharges) {
         try {
