@@ -245,7 +245,7 @@ export default function DashboardPage() {
                   <AccordionTrigger className="text-xs text-muted-foreground hover:no-underline p-0">
                     Total de valores a receber
                   </AccordionTrigger>
-                  <AccordionContent className="bg-muted/50 p-2 rounded-md">
+                  <AccordionContent>
                      <div className="flex flex-row items-center h-10 max-h-14 overflow-x-auto no-scrollbar">
                         {pendingClientsForTooltip.length > 0 ? (
                             <AnimatedTooltip items={pendingClientsForTooltip} />
@@ -268,7 +268,7 @@ export default function DashboardPage() {
                   <AccordionTrigger className="text-xs text-muted-foreground hover:no-underline p-0">
                     Total de valores vencidos
                   </AccordionTrigger>
-                  <AccordionContent className="bg-muted/50 p-2 rounded-md">
+                  <AccordionContent>
                      <div className="flex flex-row items-center h-10 max-h-14 overflow-x-auto no-scrollbar">
                         {overdueClientsForTooltip.length > 0 ? (
                             <AnimatedTooltip items={overdueClientsForTooltip} />
