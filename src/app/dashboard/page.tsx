@@ -179,7 +179,7 @@ export default function DashboardPage() {
       )}
       
       <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
-        <Card style={{ backgroundColor: '#4ade80' }} className="border-none text-white">
+        <Card style={{ backgroundColor: '#4ade80' }} className="text-white">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-normal">
                 Faturamento atual
@@ -241,7 +241,7 @@ export default function DashboardPage() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
            <CardContent>
-            <div className="text-2xl font-bold">{activeClients.length}</div>
+            <div className="text-2xl font-normal">{activeClients.length}</div>
             <div className="flex flex-row items-center mt-2 h-10">
                  {activeClients.length > 0 ? (
                     <AnimatedTooltip items={activeClientsForTooltip} />
@@ -266,7 +266,7 @@ export default function DashboardPage() {
         <Card className="lg:col-span-2">
           <CardHeader className="flex flex-row items-center">
             <div className="grid gap-2">
-              <CardTitle>Contratos Recentes</CardTitle>
+              <CardTitle className="text-base font-semibold">Contratos Recentes</CardTitle>
               <CardDescription>
                 Os últimos contratos gerados no sistema.
               </CardDescription>
@@ -349,7 +349,7 @@ export default function DashboardPage() {
         </Card>
         <div className="lg:col-span-1 bg-[#ff6d24] text-white rounded-lg flex flex-col">
             <CardHeader>
-                <CardTitle className="text-white">Folgas e Feriados</CardTitle>
+                <CardTitle className="text-base font-semibold text-white">Folgas e Feriados</CardTitle>
                 <CardDescription className="text-white/80">Clique em um dia para marcar como folga.</CardDescription>
             </CardHeader>
             <CardContent>
