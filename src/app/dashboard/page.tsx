@@ -215,13 +215,16 @@ export default function DashboardPage() {
                     </div>
                 </>
             ) : (
-                 <div className="flex items-center justify-center h-full">
-                    <Button asChild variant="outline" className="rounded-full h-12 w-12 p-0">
-                        <Link href="/dashboard/clientes">
-                            <Plus className="h-6 w-6 text-muted-foreground" />
-                            <span className="sr-only">Adicionar Cliente</span>
-                        </Link>
-                    </Button>
+                <div className="flex items-center justify-start h-full">
+                    <div className="relative flex items-center -space-x-4">
+                        <div className="size-12 rounded-full bg-gray-200 border-2 border-dashed border-gray-300"></div>
+                        <Button asChild variant="outline" className="relative rounded-full h-12 w-12 p-0 bg-white">
+                            <Link href="/dashboard/clientes">
+                                <Plus className="h-6 w-6 text-muted-foreground" />
+                                <span className="sr-only">Adicionar Cliente</span>
+                            </Link>
+                        </Button>
+                    </div>
                 </div>
             )}
           </CardContent>
