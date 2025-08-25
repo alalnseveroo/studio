@@ -43,6 +43,12 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion"
 import { Progress } from '@/components/ui/progress'
 import { getClients } from '@/lib/actions/clients'
 import { getContracts } from '@/lib/actions/contratos'
@@ -136,17 +142,33 @@ export default function DashboardPage() {
     }, []);
 
     const totalRevenue = charges?.filter(c => c.status === 'pago').reduce((sum, c) => sum + (c.value || 0), 0) || 0;
-    const pendingAmount = charges?.filter(c => c.status === 'pendente' && isClient && !isPast(new Date(c.due_date))).reduce((sum, c) => sum + (c.value || 0), 0) || 0;
-    const overdueAmount = charges?.filter(c => c.status === 'pendente' && isClient && isPast(new Date(c.due_date))).reduce((sum, c) => sum + (c.value || 0), 0) || 0;
+    
+    const pendingCharges = charges?.filter(c => isClient && c.status === 'pendente' && !isPast(new Date(c.due_date))) || [];
+    const overdueCharges = charges?.filter(c => isClient && c.status === 'pendente' && isPast(new Date(c.due_date))) || [];
+
+    const pendingAmount = pendingCharges.reduce((sum, c) => sum + (c.value || 0), 0);
+    const overdueAmount = overdueCharges.reduce((sum, c) => sum + (c.value || 0), 0);
     
     const activeClients = clients?.filter(c => c.billing_status === 'active') || [];
+
     const activeClientsForTooltip = activeClients.map(client => ({
       id: client.id,
       name: client.full_name || client.company_name || 'Cliente',
       designation: client.email || 'E-mail não informado',
-      image: client.avatar_url || 'https://images.unsplash.com/photo-1599566150163-29194dcaad36?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=3387&q=80',
+      image: client.avatar_url || `https://i.pravatar.cc/150?u=${client.id}`,
     }));
+    
+    const createTooltipItemsFromCharges = (chargeList: Cobranca[]) => {
+        return chargeList.map(charge => ({
+            id: charge.clientes.id,
+            name: charge.clientes.full_name || charge.clientes.company_name || 'Cliente',
+            designation: `R$ ${charge.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+            image: charge.clientes.avatar_url || `https://i.pravatar.cc/150?u=${charge.clientes.id}`
+        }))
+    }
 
+    const pendingClientsForTooltip = createTooltipItemsFromCharges(pendingCharges);
+    const overdueClientsForTooltip = createTooltipItemsFromCharges(overdueCharges);
 
     const recentContracts = contracts?.slice(0, 5) || [];
     
@@ -218,9 +240,20 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-normal">R$ {pendingAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-            <p className="text-xs text-muted-foreground">
-              Total de valores a receber
-            </p>
+              <Accordion type="single" collapsible className="w-full">
+                <AccordionItem value="item-1" className="border-b-0">
+                  <AccordionTrigger className="text-xs text-muted-foreground hover:no-underline p-0">
+                    Total de valores a receber
+                  </AccordionTrigger>
+                  <AccordionContent className="pt-2">
+                    <div className="flex flex-row items-center mt-2 h-10">
+                        {pendingClientsForTooltip.length > 0 ? (
+                            <AnimatedTooltip items={pendingClientsForTooltip} />
+                        ) : <p className="text-xs text-muted-foreground">Nenhum cliente com cobranças pendentes.</p> }
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+             </Accordion>
           </CardContent>
         </Card>
         <Card className="border">
@@ -230,9 +263,20 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-normal">R$ {overdueAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-            <p className="text-xs text-muted-foreground">
-              Total de valores vencidos
-            </p>
+             <Accordion type="single" collapsible className="w-full">
+                <AccordionItem value="item-1" className="border-b-0">
+                  <AccordionTrigger className="text-xs text-muted-foreground hover:no-underline p-0">
+                    Total de valores vencidos
+                  </AccordionTrigger>
+                  <AccordionContent className="pt-2">
+                    <div className="flex flex-row items-center mt-2 h-10">
+                        {overdueClientsForTooltip.length > 0 ? (
+                            <AnimatedTooltip items={overdueClientsForTooltip} />
+                        ) : <p className="text-xs text-muted-foreground">Nenhum cliente com cobranças atrasadas.</p> }
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+             </Accordion>
           </CardContent>
         </Card>
         <Card className="border">
@@ -375,5 +419,7 @@ export default function DashboardPage() {
     </>
   )
 }
+
+    
 
     
