@@ -17,6 +17,7 @@ import {
   Settings,
   Plus,
   CreditCard,
+  Pencil,
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 
@@ -179,29 +180,34 @@ export default function DashboardPage() {
       
       <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Faturamento Total (Pago)
-            </CardTitle>
-            <Button variant="ghost" size="icon" className="h-6 w-6 -mr-2 -mt-2" onClick={() => setIsGoalModalOpen(true)}>
-                <Settings className="h-4 w-4 text-muted-foreground" />
-            </Button>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">R$ {totalRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-             {goalAmount > 0 ? (
-                <div className="mt-2 space-y-1">
-                    <p className="text-xs text-muted-foreground">
-                        Meta: R$ {goalAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} ({goalProgress.toFixed(0)}%)
-                    </p>
-                    <Progress value={goalProgress} className="h-2" />
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">
+                Faturamento Total (Pago)
+                </CardTitle>
+                <DollarSign className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+                <div className="text-2xl font-bold">R$ {totalRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                <Progress value={goalProgress} className="h-2 mt-4" />
+                <div className="flex justify-between items-center mt-1">
+                    {goalAmount > 0 ? (
+                        <p className="text-xs text-muted-foreground">
+                            Meta: R$ {goalAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        </p>
+                    ) : (
+                        <div></div> 
+                    )}
+                    <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="text-xs text-muted-foreground p-0 h-auto hover:bg-transparent"
+                        onClick={() => setIsGoalModalOpen(true)}
+                    >
+                        <Pencil className="mr-1 h-3 w-3" />
+                        {goalAmount > 0 ? 'Editar meta' : 'Adicionar meta'}
+                    </Button>
                 </div>
-            ) : (
-                <p className="text-xs text-muted-foreground">
-                    Defina uma meta para acompanhar.
-                </p>
-            )}
-          </CardContent>
+            </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -235,26 +241,24 @@ export default function DashboardPage() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
            <CardContent>
-            {activeClients.length > 0 ? (
-                <>
-                    <div className="text-2xl font-bold">{activeClients.length}</div>
-                    <div className="flex flex-row items-center mt-2">
-                        <AnimatedTooltip items={activeClientsForTooltip} />
-                    </div>
-                </>
-            ) : (
-                <div className="flex items-center justify-start h-full pt-2">
-                    <div className="relative flex items-center -space-x-4">
-                        <div className="size-10 rounded-full bg-gray-100 border-2 border-dashed border-gray-200"></div>
-                        <Button asChild variant="outline" className="relative rounded-full h-10 w-10 p-0 bg-white">
-                            <Link href="/dashboard/clientes">
-                                <Plus className="h-5 w-5 text-muted-foreground" />
-                                <span className="sr-only">Adicionar Cliente</span>
-                            </Link>
-                        </Button>
-                    </div>
-                </div>
-            )}
+            <div className="text-2xl font-bold">{activeClients.length}</div>
+            <div className="flex flex-row items-center mt-2 h-10">
+                 {activeClients.length > 0 ? (
+                    <AnimatedTooltip items={activeClientsForTooltip} />
+                 ) : (
+                    <div className="flex items-center justify-start h-full">
+                        <div className="relative flex items-center -space-x-4">
+                           <div className="size-10 rounded-full bg-gray-100 border-2 border-dashed border-gray-200"></div>
+                           <Button asChild variant="outline" className="relative rounded-full h-10 w-10 p-0 bg-white shadow-sm -ml-6">
+                                <Link href="/dashboard/clientes">
+                                    <Plus className="h-5 w-5 text-muted-foreground" />
+                                    <span className="sr-only">Adicionar Cliente</span>
+                                </Link>
+                           </Button>
+                        </div>
+                   </div>
+                 )}
+            </div>
           </CardContent>
         </Card>
       </div>
