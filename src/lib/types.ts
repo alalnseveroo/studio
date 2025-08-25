@@ -139,6 +139,14 @@ export type DayOff = {
   date: string; // YYYY-MM-DD
   created_at: string;
 };
+
+export type FinancialGoal = {
+  id: string;
+  user_id: string;
+  goal_amount: number;
+  created_at: string;
+  updated_at: string;
+};
     
 
     
@@ -146,6 +154,7 @@ export type DayOff = {
     
 
     
+
 
 
 

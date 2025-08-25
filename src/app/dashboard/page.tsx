@@ -42,18 +42,21 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { Progress } from '@/components/ui/progress'
 import { getClients } from '@/lib/actions/clients'
 import { getContracts } from '@/lib/actions/contratos'
 import { getCharges } from '@/lib/actions/cobrancas'
 import { getProposals } from '@/lib/actions/propostas'
 import { getProfile } from '@/lib/actions/profile'
+import { getFinancialGoal } from '@/lib/actions/goals'
 import { format, isPast } from 'date-fns'
 import { cn } from '@/lib/utils'
-import type { Profile, Cliente, Contrato, Cobranca, Proposta } from '@/lib/types'
+import type { Profile, Cliente, Contrato, Cobranca, Proposta, FinancialGoal } from '@/lib/types'
 import { DaysOffCalendar } from '@/components/days-off-calendar'
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert'
 import { ConfigureBillingModal } from '@/components/configure-billing-modal'
 import { AnimatedTooltip } from '@/components/ui/animated-tooltip'
+import { SetGoalModal } from '@/components/set-goal-modal'
 
 
 const getStatusClass = (status: string) => {
@@ -94,7 +97,9 @@ export default function DashboardPage() {
     const [charges, setCharges] = useState<Cobranca[]>([]);
     const [proposals, setProposals] = useState<Proposta[]>([]);
     const [profile, setProfile] = useState<Profile | null>(null);
+    const [financialGoal, setFinancialGoal] = useState<FinancialGoal | null>(null);
     const [isBillingModalOpen, setIsBillingModalOpen] = useState(false);
+    const [isGoalModalOpen, setIsGoalModalOpen] = useState(false);
     const [isClient, setIsClient] = useState(false);
 
     useEffect(() => {
@@ -102,18 +107,27 @@ export default function DashboardPage() {
     }, []);
 
     const fetchData = async () => {
-        const [{ data: clientsData }, { data: contractsData }, { data: chargesData }, { data: proposalsData }, { data: profileData }] = await Promise.all([
+        const [
+            { data: clientsData }, 
+            { data: contractsData }, 
+            { data: chargesData }, 
+            { data: proposalsData }, 
+            { data: profileData },
+            { data: goalData }
+        ] = await Promise.all([
             getClients(),
             getContracts(),
             getCharges(),
             getProposals(),
-            getProfile() as Promise<{ data: Profile | null }>
+            getProfile() as Promise<{ data: Profile | null }>,
+            getFinancialGoal()
         ]);
         setClients(clientsData || []);
         setContracts(contractsData || []);
         setCharges(chargesData || []);
         setProposals(proposalsData || []);
         setProfile(profileData);
+        setFinancialGoal(goalData);
     };
 
     useEffect(() => {
@@ -137,6 +151,9 @@ export default function DashboardPage() {
     
     const isProfileComplete = profile?.is_completed ?? false;
     const displayName = profile?.full_name?.split(' ')[0] || (profile?.company_name || 'Bem-vindo(a)');
+
+    const goalAmount = financialGoal?.goal_amount || 0;
+    const goalProgress = goalAmount > 0 ? (totalRevenue / goalAmount) * 100 : 0;
 
 
   return (
@@ -166,13 +183,24 @@ export default function DashboardPage() {
             <CardTitle className="text-sm font-medium">
               Faturamento Total (Pago)
             </CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+            <Button variant="ghost" size="icon" className="h-6 w-6 -mr-2 -mt-2" onClick={() => setIsGoalModalOpen(true)}>
+                <Settings className="h-4 w-4 text-muted-foreground" />
+            </Button>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">R$ {totalRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-            <p className="text-xs text-muted-foreground">
-              Total de valores recebidos
-            </p>
+             {goalAmount > 0 ? (
+                <div className="mt-2 space-y-1">
+                    <p className="text-xs text-muted-foreground">
+                        Meta: R$ {goalAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} ({goalProgress.toFixed(0)}%)
+                    </p>
+                    <Progress value={goalProgress} className="h-2" />
+                </div>
+            ) : (
+                <p className="text-xs text-muted-foreground">
+                    Defina uma meta para acompanhar.
+                </p>
+            )}
           </CardContent>
         </Card>
         <Card>
@@ -206,7 +234,7 @@ export default function DashboardPage() {
             <CardTitle className="text-sm font-medium">Clientes Ativos</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-           <CardContent className="flex flex-col justify-center h-24">
+           <CardContent>
             {activeClients.length > 0 ? (
                 <>
                     <div className="text-2xl font-bold">{activeClients.length}</div>
@@ -215,12 +243,12 @@ export default function DashboardPage() {
                     </div>
                 </>
             ) : (
-                <div className="flex items-center justify-start h-full">
+                <div className="flex items-center justify-start h-full pt-2">
                     <div className="relative flex items-center -space-x-4">
-                        <div className="size-12 rounded-full bg-gray-200 border-2 border-dashed border-gray-300"></div>
-                        <Button asChild variant="outline" className="relative rounded-full h-12 w-12 p-0 bg-white">
+                        <div className="size-10 rounded-full bg-gray-100 border-2 border-dashed border-gray-200"></div>
+                        <Button asChild variant="outline" className="relative rounded-full h-10 w-10 p-0 bg-white">
                             <Link href="/dashboard/clientes">
-                                <Plus className="h-6 w-6 text-muted-foreground" />
+                                <Plus className="h-5 w-5 text-muted-foreground" />
                                 <span className="sr-only">Adicionar Cliente</span>
                             </Link>
                         </Button>
@@ -333,6 +361,12 @@ export default function DashboardPage() {
         clients={clients}
         proposals={proposals}
         onBillingConfigured={fetchData}
+      />
+      <SetGoalModal
+        isOpen={isGoalModalOpen}
+        onClose={() => setIsGoalModalOpen(false)}
+        onGoalSet={fetchData}
+        currentGoal={financialGoal}
       />
     </>
   )
