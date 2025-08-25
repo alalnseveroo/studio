@@ -245,11 +245,11 @@ export default function DashboardPage() {
                   <AccordionTrigger className="text-xs text-muted-foreground hover:no-underline p-0">
                     Total de valores a receber
                   </AccordionTrigger>
-                  <AccordionContent className="pt-2">
-                    <div className="flex flex-row items-center mt-2 h-10">
+                  <AccordionContent className="bg-muted/50 p-2 rounded-md">
+                     <div className="flex flex-row items-center h-10 max-h-14 overflow-x-auto no-scrollbar">
                         {pendingClientsForTooltip.length > 0 ? (
                             <AnimatedTooltip items={pendingClientsForTooltip} />
-                        ) : <p className="text-xs text-muted-foreground">Nenhum cliente com cobranças pendentes.</p> }
+                        ) : <p className="text-xs text-muted-foreground px-2">Nenhum cliente com cobranças pendentes.</p> }
                     </div>
                   </AccordionContent>
                 </AccordionItem>
@@ -268,11 +268,11 @@ export default function DashboardPage() {
                   <AccordionTrigger className="text-xs text-muted-foreground hover:no-underline p-0">
                     Total de valores vencidos
                   </AccordionTrigger>
-                  <AccordionContent className="pt-2">
-                    <div className="flex flex-row items-center mt-2 h-10">
+                  <AccordionContent className="bg-muted/50 p-2 rounded-md">
+                     <div className="flex flex-row items-center h-10 max-h-14 overflow-x-auto no-scrollbar">
                         {overdueClientsForTooltip.length > 0 ? (
                             <AnimatedTooltip items={overdueClientsForTooltip} />
-                        ) : <p className="text-xs text-muted-foreground">Nenhum cliente com cobranças atrasadas.</p> }
+                        ) : <p className="text-xs text-muted-foreground px-2">Nenhum cliente com cobranças atrasadas.</p> }
                     </div>
                   </AccordionContent>
                 </AccordionItem>
