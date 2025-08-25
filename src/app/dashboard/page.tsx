@@ -133,11 +133,11 @@ export default function DashboardPage() {
   return (
     <>
     <div className="flex flex-1 flex-col gap-4 sm:gap-6">
-      <div className="flex items-center">
+       <div className="flex items-center">
         <h1 className="text-lg font-semibold md:text-2xl">
-          {isClient ? `Olá, ${displayName}.` : `Olá, Bem-vindo(a).`}
+            {isClient && `Olá, ${displayName}.`}
         </h1>
-      </div>
+       </div>
 
       {isProfileComplete && !profile?.pix_key && (
         <Alert variant="destructive" className="border-red-500/50 bg-red-500/10 text-red-700">
