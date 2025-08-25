@@ -94,6 +94,11 @@ export default function DashboardPage() {
     const [proposals, setProposals] = useState<Proposta[]>([]);
     const [profile, setProfile] = useState<Profile | null>(null);
     const [isBillingModalOpen, setIsBillingModalOpen] = useState(false);
+    const [isClient, setIsClient] = useState(false);
+
+    useEffect(() => {
+      setIsClient(true);
+    }, []);
 
     const fetchData = async () => {
         const [{ data: clientsData }, { data: contractsData }, { data: chargesData }, { data: proposalsData }, { data: profileData }] = await Promise.all([
@@ -129,7 +134,9 @@ export default function DashboardPage() {
     <>
     <div className="flex flex-1 flex-col gap-4 sm:gap-6">
       <div className="flex items-center">
-        <h1 className="text-lg font-semibold md:text-2xl">Olá, {displayName}.</h1>
+        <h1 className="text-lg font-semibold md:text-2xl">
+          {isClient ? `Olá, ${displayName}.` : `Olá, Bem-vindo(a).`}
+        </h1>
       </div>
 
       {isProfileComplete && !profile?.pix_key && (
@@ -303,3 +310,5 @@ export default function DashboardPage() {
     </>
   )
 }
+
+  
