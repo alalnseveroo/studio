@@ -44,7 +44,7 @@ export const AnimatedTooltip = ({
       {items.map((item, idx) => (
         <div
           className="group relative -mr-4"
-          key={item.name}
+          key={item.id}
           onMouseEnter={() => setHoveredIndex(item.id)}
           onMouseLeave={() => setHoveredIndex(null)}
         >
@@ -92,5 +92,3 @@ export const AnimatedTooltip = ({
     </>
   );
 };
-
-    
