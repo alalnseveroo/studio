@@ -87,30 +87,6 @@ const getChargeStatusInfo = (status: string, dueDate: string) => {
     return { text: 'Pendente', className: 'border-yellow-500 bg-yellow-500/10 text-yellow-700' };
 }
 
-const QuickActionButton = ({ href, icon: Icon, label, onClick }: { href?: string, icon: React.ElementType, label: string, onClick?: () => void }) => {
-    const content = (
-        <div className="flex items-center gap-2">
-            <Icon className="h-0 w-0 opacity-0 transition-all duration-300 group-hover:h-4 group-hover:w-4 group-hover:opacity-100" />
-            <span className="text-sm font-normal">{label}</span>
-        </div>
-    );
-    
-    if (href) {
-        return (
-            <Button asChild variant="outline" className="h-10 shadow-sm hover:shadow-md transition-all group">
-                <Link href={href}>{content}</Link>
-            </Button>
-        );
-    }
-
-    return (
-        <Button variant="outline" className="h-10 shadow-sm hover:shadow-md transition-all group" onClick={onClick}>
-            {content}
-        </Button>
-    );
-};
-
-
 export default function DashboardPage() {
     const [clients, setClients] = useState<Cliente[]>([]);
     const [contracts, setContracts] = useState<Contrato[]>([]);
@@ -146,12 +122,14 @@ export default function DashboardPage() {
     const recentContracts = contracts?.slice(0, 5) || [];
     
     const isProfileComplete = profile?.is_completed ?? false;
+    const displayName = profile?.full_name?.split(' ')[0] || (profile?.company_name || 'Bem-vindo(a)');
+
 
   return (
     <>
     <div className="flex flex-1 flex-col gap-4 sm:gap-6">
       <div className="flex items-center">
-        <h1 className="text-lg font-semibold md:text-2xl">Dashboard</h1>
+        <h1 className="text-lg font-semibold md:text-2xl">Olá, {displayName}.</h1>
       </div>
 
       {isProfileComplete && !profile?.pix_key && (
@@ -165,52 +143,52 @@ export default function DashboardPage() {
       )}
       
       <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
-        <Card>
+        <Card className="aspect-square flex flex-col">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
               Faturamento Total (Pago)
             </CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
+          <CardContent className="flex-1 flex flex-col justify-center">
             <div className="text-2xl font-bold">R$ {totalRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
             <p className="text-xs text-muted-foreground">
               Total de valores recebidos
             </p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="aspect-square flex flex-col">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
               Cobranças Pendentes
             </CardTitle>
             <BadgeCent className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
+          <CardContent className="flex-1 flex flex-col justify-center">
             <div className="text-2xl font-bold">R$ {pendingAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
             <p className="text-xs text-muted-foreground">
               Total de valores a receber
             </p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="aspect-square flex flex-col">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Contas Atrasadas</CardTitle>
             <AlertTriangle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
+          <CardContent className="flex-1 flex flex-col justify-center">
             <div className="text-2xl font-bold">R$ {overdueAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
             <p className="text-xs text-muted-foreground">
               Total de valores vencidos
             </p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="aspect-square flex flex-col">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Clientes Ativos</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
+          <CardContent className="flex-1 flex flex-col justify-center">
             <div className="text-2xl font-bold">{activeClients}</div>
             <p className="text-xs text-muted-foreground">
               Clientes com cobrança recorrente
