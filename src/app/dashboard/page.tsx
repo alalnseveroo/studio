@@ -309,7 +309,7 @@ export default function DashboardPage() {
              )}
           </CardContent>
         </Card>
-        <div className="lg:col-span-1 bg-black text-white rounded-lg flex flex-col">
+        <div className="lg:col-span-1 bg-[#ff6d24] text-white rounded-lg flex flex-col">
             <CardHeader>
                 <CardTitle className="text-white">Folgas e Feriados</CardTitle>
                 <CardDescription className="text-white/80">Clique em um dia para marcar como folga.</CardDescription>
