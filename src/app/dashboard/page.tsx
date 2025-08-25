@@ -82,11 +82,11 @@ const getStatusText = (status: string) => {
     }
 }
   
-const getChargeStatusInfo = (status: string, dueDate: string) => {
+const getChargeStatusInfo = (status: string, dueDate: string, isClient: boolean) => {
     if (status === 'pago') {
       return { text: 'Pago', className: 'border-green-500 bg-green-500/10 text-green-700' };
     }
-    if (isPast(new Date(dueDate))) {
+    if (isClient && isPast(new Date(dueDate))) {
       return { text: 'Atrasado', className: 'border-red-500 bg-red-500/10 text-red-700' };
     }
     return { text: 'Pendente', className: 'border-yellow-500 bg-yellow-500/10 text-yellow-700' };
@@ -136,8 +136,8 @@ export default function DashboardPage() {
     }, []);
 
     const totalRevenue = charges?.filter(c => c.status === 'pago').reduce((sum, c) => sum + (c.value || 0), 0) || 0;
-    const pendingAmount = charges?.filter(c => c.status === 'pendente' && !isPast(new Date(c.due_date))).reduce((sum, c) => sum + (c.value || 0), 0) || 0;
-    const overdueAmount = charges?.filter(c => c.status === 'pendente' && isPast(new Date(c.due_date))).reduce((sum, c) => sum + (c.value || 0), 0) || 0;
+    const pendingAmount = charges?.filter(c => c.status === 'pendente' && isClient && !isPast(new Date(c.due_date))).reduce((sum, c) => sum + (c.value || 0), 0) || 0;
+    const overdueAmount = charges?.filter(c => c.status === 'pendente' && isClient && isPast(new Date(c.due_date))).reduce((sum, c) => sum + (c.value || 0), 0) || 0;
     
     const activeClients = clients?.filter(c => c.billing_status === 'active') || [];
     const activeClientsForTooltip = activeClients.map(client => ({
@@ -181,7 +181,7 @@ export default function DashboardPage() {
       <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
         <Card style={{ backgroundColor: '#4ade80' }} className="text-white">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-normal">
+                <CardTitle className="text-sm font-medium">
                 Faturamento atual
                 </CardTitle>
                 <DollarSign className="h-4 w-4 text-white/70" />
@@ -321,7 +321,7 @@ export default function DashboardPage() {
                                     </Badge>
                                 </TableCell>
                                 <TableCell className="hidden md:table-cell lg:hidden xl:table-cell">
-                                    {format(new Date(contract.created_at), 'dd/MM/yyyy')}
+                                    {isClient && format(new Date(contract.created_at), 'dd/MM/yyyy')}
                                 </TableCell>
                                 <TableCell className="text-right">R$ {(contract.propostas?.value ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
                             </TableRow>
@@ -375,3 +375,5 @@ export default function DashboardPage() {
     </>
   )
 }
+
+    

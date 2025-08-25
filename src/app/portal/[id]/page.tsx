@@ -58,6 +58,11 @@ export default function ClientPortalPage() {
 
   const [activeContractTab, setActiveContractTab] = useState<'pending' | 'contracted'>('pending');
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [isClientSide, setIsClientSide] = useState(false);
+
+  useEffect(() => {
+    setIsClientSide(true);
+  }, []);
 
   const { toast } = useToast()
   
@@ -65,7 +70,7 @@ export default function ClientPortalPage() {
     if (status === 'pago') {
       return { text: 'Pago', className: 'bg-green-100 text-green-800' };
     }
-    if (isPast(new Date(dueDate))) {
+    if (isClientSide && isPast(new Date(dueDate))) {
       return { text: 'Atrasado', className: 'bg-red-100 text-red-800' };
     }
     return { text: 'Pendente', className: 'bg-yellow-100 text-yellow-800' };
@@ -306,7 +311,7 @@ export default function ClientPortalPage() {
                         const isInvoiceAvailable = charge.status === 'pago' && !!charge.invoice_url;
                         return (
                          <TableRow key={charge.id}>
-                            <TableCell>{format(new Date(charge.due_date), 'dd/MM/yyyy')}</TableCell>
+                            <TableCell>{isClientSide ? format(new Date(charge.due_date), 'dd/MM/yyyy') : ''}</TableCell>
                             <TableCell>R$ {Number(charge.value).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
                             <TableCell><Badge variant="outline" className={cn("font-normal w-24 justify-center", status.className)}>{status.text}</Badge></TableCell>
                             <TableCell className="text-right space-x-2">
@@ -396,3 +401,5 @@ export default function ClientPortalPage() {
     </>
   )
 }
+
+    

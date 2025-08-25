@@ -157,7 +157,12 @@ export default function ClienteEditPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<StepName>('info');
   const [editingStep, setEditingStep] = useState<StepName | null>(null);
+  const [isClientSide, setIsClientSide] = useState(false);
   const { toast } = useToast();
+
+  useEffect(() => {
+    setIsClientSide(true);
+  }, []);
 
   const methods = useForm<ClientFormData>({
     resolver: zodResolver(combinedSchema),
@@ -400,6 +405,7 @@ export default function ClienteEditPage() {
                 proposals={proposals} 
                 charges={charges}
                 onMarkAsPaid={handleMarkAsPaid}
+                isClientSide={isClientSide}
             />
           </TabsContent>
         </Tabs>
@@ -670,19 +676,20 @@ interface FinancialStepProps extends StepProps {
     proposals: Proposta[];
     charges: Cobranca[];
     onMarkAsPaid: (chargeId: string) => Promise<void>;
+    isClientSide: boolean;
 }
 
-const getStatusInfo = (status: string, dueDate: string) => {
+const getStatusInfo = (status: string, dueDate: string, isClientSide: boolean) => {
     if (status === 'pago') {
       return { text: 'Pago', className: 'border-green-500 bg-green-500/10 text-green-700' };
     }
-    if (isPast(new Date(dueDate))) {
+    if (isClientSide && isPast(new Date(dueDate))) {
       return { text: 'Atrasado', className: 'border-red-500 bg-red-500/10 text-red-700' };
     }
     return { text: 'Pendente', className: 'border-yellow-500 bg-yellow-500/10 text-yellow-700' };
 }
 
-function FinancialStep({ isEditing, setEditingStep, onSave, isSaving, proposals, charges, onMarkAsPaid }: FinancialStepProps) {
+function FinancialStep({ isEditing, setEditingStep, onSave, isSaving, proposals, charges, onMarkAsPaid, isClientSide }: FinancialStepProps) {
   const methods = useFormContext<ClientFormData>();
   const clientData = methods.getValues();
   const selectedProposalId = methods.watch('proposal_id');
@@ -796,7 +803,7 @@ function FinancialStep({ isEditing, setEditingStep, onSave, isSaving, proposals,
                     <Button type="button" onClick={onSave} disabled={isSaving}>{isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Salvar Configuração'}</Button>
                 </CardContent>
             </Card>
-             <ChargeHistory charges={charges} onMarkAsPaid={onMarkAsPaid} />
+             <ChargeHistory charges={charges} onMarkAsPaid={onMarkAsPaid} isClientSide={isClientSide} />
             </div>
         )
     }
@@ -822,7 +829,7 @@ function FinancialStep({ isEditing, setEditingStep, onSave, isSaving, proposals,
                         <Calendar className="mr-2 h-4 w-4 text-muted-foreground" />
                         <strong>Vencimento:</strong>&nbsp;Todo dia {clientData.payment_day || 'N/A'}
                     </p>
-                     {clientData.first_charge_date && (
+                     {clientData.first_charge_date && isClientSide && (
                         <p className="flex items-center">
                             <Calendar className="mr-2 h-4 w-4 text-muted-foreground" />
                             <strong>Início das cobranças:</strong>&nbsp;{format(new Date(clientData.first_charge_date), 'dd/MM/yyyy')}
@@ -841,12 +848,12 @@ function FinancialStep({ isEditing, setEditingStep, onSave, isSaving, proposals,
                     )}
                 </CardContent>
             </Card>
-             <ChargeHistory charges={charges} onMarkAsPaid={onMarkAsPaid} />
+             <ChargeHistory charges={charges} onMarkAsPaid={onMarkAsPaid} isClientSide={isClientSide} />
         </div>
     )
 }
 
-function ChargeHistory({ charges, onMarkAsPaid }: { charges: Cobranca[], onMarkAsPaid: (id: string) => Promise<void> }) {
+function ChargeHistory({ charges, onMarkAsPaid, isClientSide }: { charges: Cobranca[], onMarkAsPaid: (id: string) => Promise<void>, isClientSide: boolean }) {
     return (
         <Card>
             <CardHeader>
@@ -871,10 +878,10 @@ function ChargeHistory({ charges, onMarkAsPaid }: { charges: Cobranca[], onMarkA
                         </TableHeader>
                         <TableBody>
                             {charges.map(charge => {
-                                const status = getStatusInfo(charge.status, charge.due_date);
+                                const status = getStatusInfo(charge.status, charge.due_date, isClientSide);
                                 return (
                                 <TableRow key={charge.id}>
-                                    <TableCell>{format(new Date(charge.due_date), 'dd/MM/yyyy')}</TableCell>
+                                    <TableCell>{isClientSide ? format(new Date(charge.due_date), 'dd/MM/yyyy') : ''}</TableCell>
                                     <TableCell>R$ {Number(charge.value).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
                                     <TableCell>
                                         <Badge variant="outline" className={cn("font-normal", status.className)}>{status.text}</Badge>
@@ -917,5 +924,7 @@ function ChargeHistory({ charges, onMarkAsPaid }: { charges: Cobranca[], onMarkA
 
     
 
+
+    
 
     
