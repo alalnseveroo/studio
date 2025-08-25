@@ -152,12 +152,6 @@ export default function DashboardPage() {
     <div className="flex flex-1 flex-col gap-4 sm:gap-6">
       <div className="flex items-center">
         <h1 className="text-lg font-semibold md:text-2xl">Dashboard</h1>
-         <div className="ml-auto flex items-center gap-2">
-            <QuickActionButton href="/dashboard/clientes" icon={UserPlus} label="Criar Cliente" />
-            <QuickActionButton href="/dashboard/contratos" icon={FileSignature} label="Criar Contrato" />
-            <QuickActionButton onClick={() => setIsBillingModalOpen(true)} icon={CreditCard} label="Enviar Cobrança" />
-            <QuickActionButton href="/dashboard/settings/profile" icon={Settings} label="Configurações" />
-        </div>
       </div>
 
       {isProfileComplete && !profile?.pix_key && (

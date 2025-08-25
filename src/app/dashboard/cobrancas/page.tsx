@@ -13,9 +13,9 @@ import {
 } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Send, FileWarning, UserPlus, FilePlus, Link2, BadgeCheck } from 'lucide-react'
+import { Send, FileWarning, UserPlus, FilePlus, Link2, BadgeCheck, PlusCircle } from 'lucide-react'
 import { getCharges, markChargeAsPaid } from '@/lib/actions/cobrancas'
-import type { Cobranca, Profile } from '@/lib/types'
+import type { Cobranca, Profile, Cliente, Proposta } from '@/lib/types'
 import { format, isPast } from 'date-fns'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { useToast } from '@/hooks/use-toast'
@@ -24,16 +24,22 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 import { getProfile } from '@/lib/actions/profile'
+import { getClients } from '@/lib/actions/clients'
+import { getProposals } from '@/lib/actions/propostas'
 import { InvoiceTooltip } from '@/components/invoice-tooltip'
 import Link from 'next/link'
+import { ConfigureBillingModal } from '@/components/configure-billing-modal'
 
 
 export default function CobrancasPage() {
   const [charges, setCharges] = useState<Cobranca[]>([])
+  const [clients, setClients] = useState<Cliente[]>([])
+  const [proposals, setProposals] = useState<Proposta[]>([])
   const [isSending, setIsSending] = useState<string | null>(null);
   const [providerProfile, setProviderProfile] = useState<Profile | null>(null)
   const { toast } = useToast()
   const [isLoading, setIsLoading] = useState(true);
+  const [isBillingModalOpen, setIsBillingModalOpen] = useState(false)
 
   const getStatusInfo = (status: string, dueDate: string) => {
     if (status === 'pago') {
@@ -46,9 +52,11 @@ export default function CobrancasPage() {
   }
 
   const fetchData = async () => {
-      const [{ data: chargesData, error: chargesError }, { data: profileData }] = await Promise.all([
+      const [{ data: chargesData, error: chargesError }, { data: profileData }, { data: clientsData }, { data: proposalsData }] = await Promise.all([
         getCharges(),
-        getProfile()
+        getProfile(),
+        getClients(),
+        getProposals(),
       ]);
 
       if (chargesError || !chargesData) {
@@ -62,6 +70,8 @@ export default function CobrancasPage() {
       }
       
       setProviderProfile(profileData as Profile | null);
+      setClients(clientsData || [])
+      setProposals(proposalsData || [])
       setIsLoading(false);
     }
 
@@ -113,6 +123,12 @@ export default function CobrancasPage() {
     <div className="flex flex-1 flex-col gap-4 p-4 sm:gap-6 sm:p-10">
         <div className="flex items-center">
             <h1 className="text-lg font-semibold md:text-2xl">Gestão de Cobranças</h1>
+            <div className="ml-auto">
+                <Button onClick={() => setIsBillingModalOpen(true)}>
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Enviar Cobrança
+                </Button>
+            </div>
         </div>
 
         <Card>
@@ -260,6 +276,15 @@ export default function CobrancasPage() {
             </TabsContent>
         </Tabs>
     </div>
+
+    <ConfigureBillingModal
+      isOpen={isBillingModalOpen}
+      onClose={() => setIsBillingModalOpen(false)}
+      onBillingConfigured={fetchData}
+      clientId={null}
+      clients={clients}
+      proposals={proposals}
+    />
     </>
   )
 }
