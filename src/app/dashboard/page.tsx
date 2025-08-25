@@ -15,7 +15,7 @@ import {
   FilePlus,
   Receipt,
   Settings,
-  PlusCircle,
+  Plus,
   CreditCard,
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
@@ -143,9 +143,11 @@ export default function DashboardPage() {
     <>
     <div className="flex flex-1 flex-col gap-4 sm:gap-6">
        <div className="flex items-center">
-        <h1 className="text-lg font-semibold md:text-2xl">
-            {isClient && `Olá, ${displayName}.`}
-        </h1>
+         {isClient && (
+            <h1 className="text-lg font-semibold md:text-2xl">
+                Olá, {displayName}.
+            </h1>
+         )}
        </div>
 
       {isProfileComplete && !profile?.pix_key && (
@@ -204,11 +206,24 @@ export default function DashboardPage() {
             <CardTitle className="text-sm font-medium">Clientes Ativos</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
-             <div className="text-2xl font-bold">{activeClients.length}</div>
-              <div className="flex flex-row items-center justify-start mt-2">
-                 <AnimatedTooltip items={activeClientsForTooltip} />
-              </div>
+           <CardContent className="flex flex-col justify-center h-24">
+            {activeClients.length > 0 ? (
+                <>
+                    <div className="text-2xl font-bold">{activeClients.length}</div>
+                    <div className="flex flex-row items-center mt-2">
+                        <AnimatedTooltip items={activeClientsForTooltip} />
+                    </div>
+                </>
+            ) : (
+                 <div className="flex items-center justify-center h-full">
+                    <Button asChild variant="outline" className="rounded-full h-12 w-12 p-0">
+                        <Link href="/dashboard/clientes">
+                            <Plus className="h-6 w-6 text-muted-foreground" />
+                            <span className="sr-only">Adicionar Cliente</span>
+                        </Link>
+                    </Button>
+                </div>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -319,5 +334,3 @@ export default function DashboardPage() {
     </>
   )
 }
-
-    
