@@ -187,7 +187,7 @@ export default function DashboardPage() {
                 <DollarSign className="h-4 w-4 text-white/70" />
             </CardHeader>
             <CardContent>
-                <div className="text-4xl font-normal">R$ {totalRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                <div className="text-2xl font-normal">R$ {totalRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                 <Progress value={goalProgress} className="h-2 mt-4 bg-white" indicatorClassName="bg-[#022c22]" />
                 <div className="flex justify-between items-center mt-1">
                     {goalAmount > 0 ? (
@@ -217,7 +217,7 @@ export default function DashboardPage() {
             <BadgeCent className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">R$ {pendingAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+            <div className="text-2xl font-normal">R$ {pendingAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
             <p className="text-xs text-muted-foreground">
               Total de valores a receber
             </p>
@@ -229,7 +229,7 @@ export default function DashboardPage() {
             <AlertTriangle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">R$ {overdueAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+            <div className="text-2xl font-normal">R$ {overdueAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
             <p className="text-xs text-muted-foreground">
               Total de valores vencidos
             </p>
