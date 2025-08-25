@@ -53,6 +53,7 @@ import type { Profile, Cliente, Contrato, Cobranca, Proposta } from '@/lib/types
 import { DaysOffCalendar } from '@/components/days-off-calendar'
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert'
 import { ConfigureBillingModal } from '@/components/configure-billing-modal'
+import { AnimatedTooltip } from '@/components/ui/animated-tooltip'
 
 
 const getStatusClass = (status: string) => {
@@ -122,7 +123,15 @@ export default function DashboardPage() {
     const totalRevenue = charges?.filter(c => c.status === 'pago').reduce((sum, c) => sum + (c.value || 0), 0) || 0;
     const pendingAmount = charges?.filter(c => c.status === 'pendente' && !isPast(new Date(c.due_date))).reduce((sum, c) => sum + (c.value || 0), 0) || 0;
     const overdueAmount = charges?.filter(c => c.status === 'pendente' && isPast(new Date(c.due_date))).reduce((sum, c) => sum + (c.value || 0), 0) || 0;
-    const activeClients = clients?.filter(c => c.billing_status === 'active').length || 0;
+    
+    const activeClients = clients?.filter(c => c.billing_status === 'active') || [];
+    const activeClientsForTooltip = activeClients.map(client => ({
+      id: client.id,
+      name: client.full_name || client.company_name || 'Cliente',
+      designation: client.email || 'E-mail não informado',
+      image: client.avatar_url || 'https://images.unsplash.com/photo-1599566150163-29194dcaad36?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=3387&q=80',
+    }));
+
 
     const recentContracts = contracts?.slice(0, 5) || [];
     
@@ -196,10 +205,10 @@ export default function DashboardPage() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{activeClients}</div>
-            <p className="text-xs text-muted-foreground">
-              Clientes com cobrança recorrente
-            </p>
+             <div className="text-2xl font-bold">{activeClients.length}</div>
+              <div className="flex flex-row items-center justify-start mt-2">
+                 <AnimatedTooltip items={activeClientsForTooltip} />
+              </div>
           </CardContent>
         </Card>
       </div>
@@ -310,3 +319,5 @@ export default function DashboardPage() {
     </>
   )
 }
+
+    
