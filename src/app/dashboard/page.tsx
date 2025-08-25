@@ -179,19 +179,19 @@ export default function DashboardPage() {
       )}
       
       <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
-        <Card>
+        <Card style={{ backgroundColor: '#eab308' }} className="border-none text-white">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                Faturamento Total (Pago)
+                <CardTitle className="text-base font-medium">
+                Faturamento atual
                 </CardTitle>
-                <DollarSign className="h-4 w-4 text-muted-foreground" />
+                <DollarSign className="h-4 w-4 text-white/70" />
             </CardHeader>
             <CardContent>
-                <div className="text-2xl font-bold">R$ {totalRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-                <Progress value={goalProgress} className="h-2 mt-4" />
+                <div className="text-4xl font-bold">R$ {totalRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                <Progress value={goalProgress} className="h-2 mt-4 bg-white" indicatorClassName="bg-[#022c22]" />
                 <div className="flex justify-between items-center mt-1">
                     {goalAmount > 0 ? (
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-xs text-white/80">
                             Meta: R$ {goalAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                         </p>
                     ) : (
@@ -200,7 +200,7 @@ export default function DashboardPage() {
                     <Button 
                         variant="ghost" 
                         size="sm" 
-                        className="text-xs text-muted-foreground p-0 h-auto hover:bg-transparent"
+                        className="text-xs text-white/80 p-0 h-auto hover:bg-transparent hover:text-white"
                         onClick={() => setIsGoalModalOpen(true)}
                     >
                         <Pencil className="mr-1 h-3 w-3" />
@@ -375,3 +375,5 @@ export default function DashboardPage() {
     </>
   )
 }
+
+    
