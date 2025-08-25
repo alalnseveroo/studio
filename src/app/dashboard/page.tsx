@@ -179,7 +179,7 @@ export default function DashboardPage() {
       )}
       
       <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
-        <Card style={{ backgroundColor: '#eab308' }} className="border-none text-white">
+        <Card style={{ backgroundColor: '#4ade80' }} className="border-none text-white">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-base font-medium">
                 Faturamento atual
@@ -375,5 +375,3 @@ export default function DashboardPage() {
     </>
   )
 }
-
-    
