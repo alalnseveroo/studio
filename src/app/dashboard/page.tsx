@@ -20,6 +20,9 @@ import {
   CreditCard,
   Pencil,
   CheckCircle,
+  User as UserIcon,
+  ChevronsUpDown,
+  Check,
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 
@@ -68,7 +71,9 @@ import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert'
 import { ConfigureBillingModal } from '@/components/configure-billing-modal'
 import { AnimatedTooltip } from '@/components/ui/animated-tooltip'
 import { SetGoalModal } from '@/components/set-goal-modal'
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from '@/components/ui/command'
+
 import { Input } from '@/components/ui/input'
 import { useForm } from 'react-hook-form'
 
@@ -107,15 +112,27 @@ const getChargeStatusInfo = (status: string, dueDate: string, isClient: boolean)
 
 function TaskList({ tasks, clients, onTaskUpdate, onTaskCreate }: { tasks: Task[], clients: Cliente[], onTaskUpdate: (id: string, is_completed: boolean) => void, onTaskCreate: (description: string, clientId: string | null) => void }) {
     const [filteredClientId, setFilteredClientId] = useState<string>('all');
-    const { register, handleSubmit, reset, setValue, watch } = useForm<{ description: string; clientId: string | null }>();
+    const [open, setOpen] = useState(false);
+    const { register, handleSubmit, reset, setValue, watch, getValues } = useForm<{ description: string; clientId: string | null }>({
+        defaultValues: { description: '', clientId: null }
+    });
+
+    const selectedClientId = watch('clientId');
+    const selectedClient = clients.find(c => c.id === selectedClientId);
 
     const filteredTasks = tasks.filter(task => 
         filteredClientId === 'all' || task.client_id === filteredClientId
     );
 
-    const handleCreate = (data: { description: string; clientId: string | null }) => {
-        onTaskCreate(data.description, data.clientId);
-        reset({ description: '', clientId: null });
+    const handleCreateOnEnter = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            const values = getValues();
+            if (values.description.trim()) {
+                onTaskCreate(values.description, values.clientId);
+                reset({ description: '', clientId: values.clientId }); // Mantém o cliente selecionado
+            }
+        }
     }
     
     const clientForAvatar = (task: Task) => {
@@ -131,23 +148,55 @@ function TaskList({ tasks, clients, onTaskUpdate, onTaskCreate }: { tasks: Task[
     return (
         <div className="flex flex-col h-full">
             <div className="px-4 pt-4 pb-2">
-                 <form onSubmit={handleSubmit(handleCreate)} className="flex items-center gap-2">
-                    <Input {...register("description", { required: true })} placeholder="Adicionar nova tarefa..." className="flex-1 h-9" />
-                     <Select onValueChange={(value) => setValue('clientId', value === 'null' ? null : value)}>
-                        <SelectTrigger className="w-[150px] h-9">
-                            <SelectValue placeholder="Vincular cliente..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="null">Geral</SelectItem>
-                            {clients.map(client => (
-                                <SelectItem key={client.id} value={client.id}>{client.full_name || client.company_name}</SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                     <Button type="submit" size="icon" variant="ghost" className="h-9 w-9">
-                        <Plus className="h-4 w-4" />
-                     </Button>
-                </form>
+                 <div className="relative">
+                    <Input 
+                        {...register("description")} 
+                        placeholder="Aperte ENTER para adicionar" 
+                        className="h-10 pr-12 rounded-full"
+                        onKeyDown={handleCreateOnEnter}
+                    />
+                     <Popover open={open} onOpenChange={setOpen}>
+                        <PopoverTrigger asChild>
+                           <Button variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full">
+                                <Avatar className="h-7 w-7">
+                                    <AvatarImage src={selectedClient?.avatar_url || ''} />
+                                    <AvatarFallback className="bg-muted text-muted-foreground">
+                                        <UserIcon className="h-4 w-4" />
+                                    </AvatarFallback>
+                                </Avatar>
+                           </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[250px] p-0">
+                             <Command>
+                                <CommandInput placeholder="Vincular cliente..." />
+                                <CommandEmpty>Nenhum cliente encontrado.</CommandEmpty>
+                                <CommandGroup>
+                                <CommandItem
+                                    onSelect={() => {
+                                        setValue('clientId', null);
+                                        setOpen(false);
+                                    }}
+                                >
+                                    Geral (sem vínculo)
+                                </CommandItem>
+                                {clients.map(client => (
+                                    <CommandItem
+                                        key={client.id}
+                                        value={client.id}
+                                        onSelect={() => {
+                                            setValue('clientId', client.id)
+                                            setOpen(false)
+                                        }}
+                                    >
+                                     <Check className={cn("mr-2 h-4 w-4", selectedClientId === client.id ? "opacity-100" : "opacity-0")} />
+                                      {client.full_name || client.company_name}
+                                    </CommandItem>
+                                ))}
+                                </CommandGroup>
+                            </Command>
+                        </PopoverContent>
+                    </Popover>
+                </div>
             </div>
             <div className="flex-1 overflow-y-auto px-4">
                 {filteredTasks.length > 0 ? filteredTasks.map(task => (
@@ -487,16 +536,7 @@ export default function DashboardPage() {
              )}
           </CardContent>
         </Card>
-        <Card className="bg-[#ff6d24] text-white">
-            <CardHeader>
-                <CardTitle className="text-base font-semibold text-white">Folgas e Feriados</CardTitle>
-                <CardDescription className="text-white/80">Clique em um dia para marcar como folga.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <DaysOffCalendar />
-            </CardContent>
-        </Card>
-        <Card className="lg:col-span-1 border flex flex-col">
+        <Card className="lg:col-span-1 border">
            <CardHeader>
                 <CardTitle className="text-base font-semibold">Lista de Tarefas</CardTitle>
                 <CardDescription>
@@ -505,6 +545,15 @@ export default function DashboardPage() {
             </CardHeader>
              <CardContent className="p-0 flex-1">
                 <TaskList tasks={tasks} clients={clients} onTaskUpdate={handleTaskUpdate} onTaskCreate={handleTaskCreate} />
+            </CardContent>
+        </Card>
+        <Card className="bg-[#ff6d24] text-white">
+            <CardHeader>
+                <CardTitle className="text-base font-semibold text-white">Folgas e Feriados</CardTitle>
+                <CardDescription className="text-white/80">Clique em um dia para marcar como folga.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <DaysOffCalendar />
             </CardContent>
         </Card>
         <Card className="lg:col-span-2 border">
