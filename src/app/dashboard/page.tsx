@@ -3,6 +3,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import {
   ArrowUpRight,
   Users,
@@ -559,8 +560,16 @@ export default function DashboardPage() {
         <Card className="lg:col-span-2 border">
             {/* Placeholder para Pendencias Financeiras */}
         </Card>
-         <Card className="lg:col-span-2 border">
-            {/* Placeholder para Banner */}
+         <Card className="lg:col-span-2 border p-0 overflow-hidden">
+            <Link href="/dashboard/settings/public-profile" className="block w-full h-full">
+                <Image 
+                    src="https://pouynmrblzvwlhrfyins.supabase.co/storage/v1/object/public/icons/public/Frame%202.png" 
+                    alt="Banner de perfil público"
+                    width={600}
+                    height={250}
+                    className="w-full h-full object-cover"
+                />
+            </Link>
         </Card>
       </div>
     </div>
