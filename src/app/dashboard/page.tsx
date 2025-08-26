@@ -18,6 +18,7 @@ import {
   Plus,
   CreditCard,
   Pencil,
+  CheckCircle,
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 
@@ -50,20 +51,25 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion"
 import { Progress } from '@/components/ui/progress'
+import { Checkbox } from '@/components/ui/checkbox'
 import { getClients } from '@/lib/actions/clients'
 import { getContracts } from '@/lib/actions/contratos'
 import { getCharges } from '@/lib/actions/cobrancas'
 import { getProposals } from '@/lib/actions/propostas'
 import { getProfile } from '@/lib/actions/profile'
 import { getFinancialGoal } from '@/lib/actions/goals'
+import { getTasks, createTask, updateTask } from '@/lib/actions/tasks'
 import { format, isPast } from 'date-fns'
 import { cn } from '@/lib/utils'
-import type { Profile, Cliente, Contrato, Cobranca, Proposta, FinancialGoal } from '@/lib/types'
+import type { Profile, Cliente, Contrato, Cobranca, Proposta, FinancialGoal, Task } from '@/lib/types'
 import { DaysOffCalendar } from '@/components/days-off-calendar'
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert'
 import { ConfigureBillingModal } from '@/components/configure-billing-modal'
 import { AnimatedTooltip } from '@/components/ui/animated-tooltip'
 import { SetGoalModal } from '@/components/set-goal-modal'
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
+import { Input } from '@/components/ui/input'
+import { useForm } from 'react-hook-form'
 
 
 const getStatusClass = (status: string) => {
@@ -98,6 +104,69 @@ const getChargeStatusInfo = (status: string, dueDate: string, isClient: boolean)
     return { text: 'Pendente', className: 'border-yellow-500 bg-yellow-500/10 text-yellow-700' };
 }
 
+function TaskList({ tasks, clients, onTaskUpdate, onTaskCreate }: { tasks: Task[], clients: Cliente[], onTaskUpdate: (id: string, is_completed: boolean) => void, onTaskCreate: (description: string, clientId: string | null) => void }) {
+    const [filteredClientId, setFilteredClientId] = useState<string>('all');
+    const { register, handleSubmit, reset } = useForm<{ description: string }>();
+
+    const filteredTasks = tasks.filter(task => 
+        filteredClientId === 'all' || task.client_id === filteredClientId
+    );
+
+    const handleCreate = (data: { description: string }) => {
+        const clientId = filteredClientId === 'all' ? null : filteredClientId;
+        onTaskCreate(data.description, clientId);
+        reset();
+    }
+
+    return (
+        <div className="flex flex-col h-full">
+            <div className="px-4 pt-4 pb-2">
+                 <Select value={filteredClientId} onValueChange={setFilteredClientId}>
+                    <SelectTrigger>
+                        <SelectValue placeholder="Filtrar por cliente..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">Todos os Clientes</SelectItem>
+                        {clients.map(client => (
+                            <SelectItem key={client.id} value={client.id}>{client.full_name || client.company_name}</SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+            </div>
+            <div className="flex-1 overflow-y-auto px-4">
+                {filteredTasks.length > 0 ? filteredTasks.map(task => (
+                    <div key={task.id} className="flex items-center space-x-2 py-2 border-b last:border-b-0">
+                        <Checkbox 
+                            id={`task-${task.id}`} 
+                            checked={task.is_completed}
+                            onCheckedChange={(checked) => onTaskUpdate(task.id, !!checked)}
+                        />
+                        <label
+                            htmlFor={`task-${task.id}`}
+                            className={cn("text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70", task.is_completed && "line-through text-muted-foreground")}
+                        >
+                            {task.description}
+                        </label>
+                        {filteredClientId === 'all' && (
+                             <Badge variant="secondary" className="ml-auto font-normal">{task.clientes?.full_name || task.clientes?.company_name}</Badge>
+                        )}
+                    </div>
+                )) : (
+                    <p className="text-sm text-muted-foreground text-center py-8">Nenhuma tarefa encontrada.</p>
+                )}
+            </div>
+             <form onSubmit={handleSubmit(handleCreate)} className="p-4 border-t">
+                <div className="relative">
+                    <Input {...register("description", { required: true })} placeholder="Adicionar nova tarefa..." className="pr-10" />
+                     <Button type="submit" size="icon" variant="ghost" className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8">
+                        <Plus className="h-4 w-4" />
+                     </Button>
+                </div>
+            </form>
+        </div>
+    )
+}
+
 export default function DashboardPage() {
     const [clients, setClients] = useState<Cliente[]>([]);
     const [contracts, setContracts] = useState<Contrato[]>([]);
@@ -105,6 +174,7 @@ export default function DashboardPage() {
     const [proposals, setProposals] = useState<Proposta[]>([]);
     const [profile, setProfile] = useState<Profile | null>(null);
     const [financialGoal, setFinancialGoal] = useState<FinancialGoal | null>(null);
+    const [tasks, setTasks] = useState<Task[]>([]);
     const [isBillingModalOpen, setIsBillingModalOpen] = useState(false);
     const [isGoalModalOpen, setIsGoalModalOpen] = useState(false);
     const [isClient, setIsClient] = useState(false);
@@ -120,14 +190,16 @@ export default function DashboardPage() {
             { data: chargesData }, 
             { data: proposalsData }, 
             { data: profileData },
-            { data: goalData }
+            { data: goalData },
+            { data: tasksData }
         ] = await Promise.all([
             getClients(),
             getContracts(),
             getCharges(),
             getProposals(),
             getProfile() as Promise<{ data: Profile | null }>,
-            getFinancialGoal()
+            getFinancialGoal(),
+            getTasks()
         ]);
         setClients(clientsData || []);
         setContracts(contractsData || []);
@@ -135,11 +207,28 @@ export default function DashboardPage() {
         setProposals(proposalsData || []);
         setProfile(profileData);
         setFinancialGoal(goalData);
+        setTasks(tasksData || []);
     };
 
     useEffect(() => {
         fetchData();
     }, []);
+
+    const handleTaskUpdate = async (id: string, is_completed: boolean) => {
+        setTasks(tasks.map(t => t.id === id ? { ...t, is_completed } : t)); // Optimistic update
+        await updateTask(id, is_completed);
+        await fetchData(); // Resync with DB
+    };
+
+    const handleTaskCreate = async (description: string, clientId: string | null) => {
+        if (!clientId && clients.length > 0) {
+            clientId = clients[0].id; // Default to first client if none selected
+        }
+        if (clientId) {
+            await createTask(description, clientId);
+            await fetchData();
+        }
+    };
 
     const totalRevenue = charges?.filter(c => c.status === 'pago').reduce((sum, c) => sum + (c.value || 0), 0) || 0;
     
@@ -401,15 +490,15 @@ export default function DashboardPage() {
                 <DaysOffCalendar />
             </CardContent>
         </Card>
-        <Card className="lg:col-span-1 border">
+        <Card className="lg:col-span-1 border flex flex-col">
            <CardHeader>
                 <CardTitle className="text-base font-semibold">Lista de Tarefas</CardTitle>
                 <CardDescription>
-                    Funcionalidade em breve.
+                    Adicione e gerencie suas pendências.
                 </CardDescription>
             </CardHeader>
-             <CardContent>
-                {/* Conteúdo da lista de tarefas virá aqui */}
+             <CardContent className="p-0 flex-1">
+                <TaskList tasks={tasks} clients={clients} onTaskUpdate={handleTaskUpdate} onTaskCreate={handleTaskCreate} />
             </CardContent>
         </Card>
         <Card className="lg:col-span-2 border">
@@ -437,5 +526,3 @@ export default function DashboardPage() {
     </>
   )
 }
-
-    

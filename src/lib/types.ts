@@ -147,15 +147,15 @@ export type FinancialGoal = {
   created_at: string;
   updated_at: string;
 };
-    
 
-    
-
-    
-
-    
-
-
-
-
-
+export type Task = {
+  id: string;
+  user_id: string;
+  client_id: string;
+  description: string;
+  is_completed: boolean;
+  due_date: string | null;
+  created_at: string;
+  updated_at: string;
+  clientes: Cliente; // Join com clientes
+};

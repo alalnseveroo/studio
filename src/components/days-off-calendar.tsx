@@ -1,5 +1,4 @@
 
-
 'use client'
 
 import * as React from 'react'
@@ -116,7 +115,7 @@ export function DaysOffCalendar() {
   const dayOffDates = React.useMemo(() => daysOff.map(d => parseISO(d.date)), [daysOff])
 
   return (
-      <div className="w-full">
+      <div className="w-full bg-[#ff6d24] rounded-lg">
         <Calendar
           locale={ptBR}
           mode="single"
