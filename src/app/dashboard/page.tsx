@@ -143,8 +143,9 @@ export default function DashboardPage() {
 
     const totalRevenue = charges?.filter(c => c.status === 'pago').reduce((sum, c) => sum + (c.value || 0), 0) || 0;
     
-    const pendingCharges = charges?.filter(c => isClient && c.status === 'pendente' && !isPast(new Date(c.due_date))) || [];
-    const overdueCharges = charges?.filter(c => isClient && c.status === 'pendente' && isPast(new Date(c.due_date))) || [];
+    const pendingCharges = charges?.filter(c => c.status === 'pendente' && (!isClient || !isPast(new Date(c.due_date)))) || [];
+    const overdueCharges = charges?.filter(c => c.status === 'pendente' && isClient && isPast(new Date(c.due_date))) || [];
+
 
     const pendingAmount = pendingCharges.reduce((sum, c) => sum + (c.value || 0), 0);
     const overdueAmount = overdueCharges.reduce((sum, c) => sum + (c.value || 0), 0);
@@ -391,10 +392,10 @@ export default function DashboardPage() {
              )}
           </CardContent>
         </Card>
-        <Card className="lg:col-span-1 bg-[#ff6d24] text-white rounded-lg flex flex-col">
+        <Card className="lg:col-span-1 border">
             <CardHeader>
-                <CardTitle className="text-base font-semibold text-white">Folgas e Feriados</CardTitle>
-                <CardDescription className="text-white/80">Clique em um dia para marcar como folga.</CardDescription>
+                <CardTitle className="text-base font-semibold">Folgas e Feriados</CardTitle>
+                <CardDescription className="text-muted-foreground">Clique em um dia para marcar como folga.</CardDescription>
             </CardHeader>
             <CardContent>
                 <DaysOffCalendar />
@@ -436,3 +437,5 @@ export default function DashboardPage() {
     </>
   )
 }
+
+    
