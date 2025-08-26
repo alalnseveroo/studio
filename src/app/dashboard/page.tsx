@@ -1,4 +1,5 @@
 
+
 'use client'
 
 import Link from 'next/link'
@@ -147,7 +148,7 @@ function TaskList({ tasks, clients, onTaskUpdate, onTaskCreate }: { tasks: Task[
                         >
                             {task.description}
                         </label>
-                        {filteredClientId === 'all' && (
+                        {filteredClientId === 'all' && task.clientes && (
                              <Badge variant="secondary" className="ml-auto font-normal">{task.clientes?.full_name || task.clientes?.company_name}</Badge>
                         )}
                     </div>
@@ -221,6 +222,7 @@ export default function DashboardPage() {
     };
 
     const handleTaskCreate = async (description: string, clientId: string | null) => {
+        if (!description.trim()) return;
         if (!clientId && clients.length > 0) {
             clientId = clients[0].id; // Default to first client if none selected
         }
@@ -481,10 +483,10 @@ export default function DashboardPage() {
              )}
           </CardContent>
         </Card>
-        <Card className="lg:col-span-1 border">
+        <Card className="lg:col-span-1 bg-[#ff6d24] text-white">
             <CardHeader>
                 <CardTitle className="text-base font-semibold">Folgas e Feriados</CardTitle>
-                <CardDescription className="text-muted-foreground">Clique em um dia para marcar como folga.</CardDescription>
+                <CardDescription className="text-white/80">Clique em um dia para marcar como folga.</CardDescription>
             </CardHeader>
             <CardContent>
                 <DaysOffCalendar />
