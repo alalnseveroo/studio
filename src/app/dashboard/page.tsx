@@ -107,36 +107,51 @@ const getChargeStatusInfo = (status: string, dueDate: string, isClient: boolean)
 
 function TaskList({ tasks, clients, onTaskUpdate, onTaskCreate }: { tasks: Task[], clients: Cliente[], onTaskUpdate: (id: string, is_completed: boolean) => void, onTaskCreate: (description: string, clientId: string | null) => void }) {
     const [filteredClientId, setFilteredClientId] = useState<string>('all');
-    const { register, handleSubmit, reset } = useForm<{ description: string }>();
+    const { register, handleSubmit, reset, setValue, watch } = useForm<{ description: string; clientId: string | null }>();
 
     const filteredTasks = tasks.filter(task => 
         filteredClientId === 'all' || task.client_id === filteredClientId
     );
 
-    const handleCreate = (data: { description: string }) => {
-        const clientId = filteredClientId === 'all' ? null : filteredClientId;
-        onTaskCreate(data.description, clientId);
-        reset();
+    const handleCreate = (data: { description: string; clientId: string | null }) => {
+        onTaskCreate(data.description, data.clientId);
+        reset({ description: '', clientId: null });
     }
+    
+    const clientForAvatar = (task: Task) => {
+        if (!task.clientes) return [];
+        return [{
+            id: task.clientes.id,
+            name: task.clientes.full_name || task.clientes.company_name || 'Cliente',
+            designation: `Tarefa: ${task.description.substring(0, 20)}...`,
+            image: task.clientes.avatar_url || `https://i.pravatar.cc/150?u=${task.clientes.id}`
+        }]
+    };
 
     return (
         <div className="flex flex-col h-full">
             <div className="px-4 pt-4 pb-2">
-                 <Select value={filteredClientId} onValueChange={setFilteredClientId}>
-                    <SelectTrigger>
-                        <SelectValue placeholder="Filtrar por cliente..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="all">Todos os Clientes</SelectItem>
-                        {clients.map(client => (
-                            <SelectItem key={client.id} value={client.id}>{client.full_name || client.company_name}</SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
+                 <form onSubmit={handleSubmit(handleCreate)} className="flex items-center gap-2">
+                    <Input {...register("description", { required: true })} placeholder="Adicionar nova tarefa..." className="flex-1 h-9" />
+                     <Select onValueChange={(value) => setValue('clientId', value === 'null' ? null : value)}>
+                        <SelectTrigger className="w-[150px] h-9">
+                            <SelectValue placeholder="Vincular cliente..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="null">Geral</SelectItem>
+                            {clients.map(client => (
+                                <SelectItem key={client.id} value={client.id}>{client.full_name || client.company_name}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                     <Button type="submit" size="icon" variant="ghost" className="h-9 w-9">
+                        <Plus className="h-4 w-4" />
+                     </Button>
+                </form>
             </div>
             <div className="flex-1 overflow-y-auto px-4">
                 {filteredTasks.length > 0 ? filteredTasks.map(task => (
-                    <div key={task.id} className="flex items-center space-x-2 py-2 border-b last:border-b-0">
+                    <div key={task.id} className="flex items-center space-x-3 py-2.5 border-b last:border-b-0">
                         <Checkbox 
                             id={`task-${task.id}`} 
                             checked={task.is_completed}
@@ -144,26 +159,20 @@ function TaskList({ tasks, clients, onTaskUpdate, onTaskCreate }: { tasks: Task[
                         />
                         <label
                             htmlFor={`task-${task.id}`}
-                            className={cn("text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70", task.is_completed && "line-through text-muted-foreground")}
+                            className={cn("text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex-1", task.is_completed && "line-through text-muted-foreground")}
                         >
                             {task.description}
                         </label>
-                        {filteredClientId === 'all' && task.clientes && (
-                             <Badge variant="secondary" className="ml-auto font-normal">{task.clientes?.full_name || task.clientes?.company_name}</Badge>
+                        {task.clientes && (
+                            <div className="flex items-center ml-auto">
+                                <AnimatedTooltip items={clientForAvatar(task)} />
+                            </div>
                         )}
                     </div>
                 )) : (
                     <p className="text-sm text-muted-foreground text-center py-8">Nenhuma tarefa encontrada.</p>
                 )}
             </div>
-             <form onSubmit={handleSubmit(handleCreate)} className="p-4 border-t">
-                <div className="relative">
-                    <Input {...register("description", { required: true })} placeholder="Adicionar nova tarefa..." className="pr-10" />
-                     <Button type="submit" size="icon" variant="ghost" className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8">
-                        <Plus className="h-4 w-4" />
-                     </Button>
-                </div>
-            </form>
         </div>
     )
 }
@@ -223,13 +232,8 @@ export default function DashboardPage() {
 
     const handleTaskCreate = async (description: string, clientId: string | null) => {
         if (!description.trim()) return;
-        if (!clientId && clients.length > 0) {
-            clientId = clients[0].id; // Default to first client if none selected
-        }
-        if (clientId) {
-            await createTask(description, clientId);
-            await fetchData();
-        }
+        await createTask(description, clientId);
+        await fetchData();
     };
 
     const totalRevenue = charges?.filter(c => c.status === 'pago').reduce((sum, c) => sum + (c.value || 0), 0) || 0;
@@ -483,9 +487,9 @@ export default function DashboardPage() {
              )}
           </CardContent>
         </Card>
-        <Card className="lg:col-span-1 bg-[#ff6d24] text-white">
+        <Card className="bg-[#ff6d24] text-white">
             <CardHeader>
-                <CardTitle className="text-base font-semibold">Folgas e Feriados</CardTitle>
+                <CardTitle className="text-base font-semibold text-white">Folgas e Feriados</CardTitle>
                 <CardDescription className="text-white/80">Clique em um dia para marcar como folga.</CardDescription>
             </CardHeader>
             <CardContent>

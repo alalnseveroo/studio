@@ -14,7 +14,7 @@ export async function getTasks() {
 
   const { data, error } = await supabase
     .from('tasks')
-    .select('*, clientes(full_name, company_name)')
+    .select('*, clientes(*)')
     .eq('user_id', user.id)
     .order('created_at', { ascending: false });
 
@@ -26,7 +26,7 @@ export async function getTasks() {
   return { data, error: null }
 }
 
-export async function createTask(description: string, client_id: string) {
+export async function createTask(description: string, client_id: string | null) {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -42,7 +42,7 @@ export async function createTask(description: string, client_id: string) {
     .from('tasks')
     .insert({
       user_id: user.id,
-      client_id,
+      client_id: client_id, // Pode ser null
       description,
     });
 
