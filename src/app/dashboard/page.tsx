@@ -210,7 +210,7 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent>
                 <div className="text-2xl font-normal">R$ {totalRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-                <Progress value={goalProgress} className="h-2 mt-4" />
+                <Progress value={goalProgress} className="h-2 mt-4" indicatorClassName="bg-primary" />
                 <div className="flex justify-between items-center mt-1">
                     {goalAmount > 0 ? (
                         <p className="text-xs text-muted-foreground">
@@ -306,7 +306,7 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       </div>
-      <div className="grid gap-4 md:gap-8 lg:grid-cols-3">
+      <div className="grid gap-4 md:gap-8 lg:grid-cols-4">
         <Card className="lg:col-span-2 border">
           <CardHeader className="flex flex-row items-center">
             <div className="grid gap-2">
@@ -391,7 +391,7 @@ export default function DashboardPage() {
              )}
           </CardContent>
         </Card>
-        <div className="lg:col-span-1 bg-[#ff6d24] text-white rounded-lg flex flex-col">
+        <Card className="lg:col-span-1 bg-[#ff6d24] text-white rounded-lg flex flex-col">
             <CardHeader>
                 <CardTitle className="text-base font-semibold text-white">Folgas e Feriados</CardTitle>
                 <CardDescription className="text-white/80">Clique em um dia para marcar como folga.</CardDescription>
@@ -399,7 +399,24 @@ export default function DashboardPage() {
             <CardContent>
                 <DaysOffCalendar />
             </CardContent>
-        </div>
+        </Card>
+        <Card className="lg:col-span-1 border">
+           <CardHeader>
+                <CardTitle className="text-base font-semibold">Lista de Tarefas</CardTitle>
+                <CardDescription>
+                    Funcionalidade em breve.
+                </CardDescription>
+            </CardHeader>
+             <CardContent>
+                {/* Conteúdo da lista de tarefas virá aqui */}
+            </CardContent>
+        </Card>
+        <Card className="lg:col-span-2 border">
+            {/* Placeholder para Pendencias Financeiras */}
+        </Card>
+         <Card className="lg:col-span-2 border">
+            {/* Placeholder para Banner */}
+        </Card>
       </div>
     </div>
      <ConfigureBillingModal
