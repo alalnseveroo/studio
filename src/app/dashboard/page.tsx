@@ -287,11 +287,8 @@ export default function DashboardPage() {
     const totalRevenue = charges?.filter(c => c.status === 'pago').reduce((sum, c) => sum + (c.value || 0), 0) || 0;
     
     const pendingCharges = charges?.filter(c => c.status === 'pendente' && (!isClient || !isPast(new Date(c.due_date)))) || [];
-    const overdueCharges = charges?.filter(c => c.status === 'pendente' && isClient && isPast(new Date(c.due_date))) || [];
-
-
+    
     const pendingAmount = pendingCharges.reduce((sum, c) => sum + (c.value || 0), 0);
-    const overdueAmount = overdueCharges.reduce((sum, c) => sum + (c.value || 0), 0);
     
     const activeClients = clients?.filter(c => c.billing_status === 'active') || [];
 
@@ -312,7 +309,6 @@ export default function DashboardPage() {
     }
 
     const pendingClientsForTooltip = createTooltipItemsFromCharges(pendingCharges);
-    const overdueClientsForTooltip = createTooltipItemsFromCharges(overdueCharges);
 
     const recentContracts = contracts?.slice(0, 5) || [];
     
@@ -345,6 +341,17 @@ export default function DashboardPage() {
       )}
       
       <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
+        <Card className="border p-0 overflow-hidden">
+            <Link href="/dashboard/settings/buy-credits" className="block w-full h-full">
+                <Image 
+                    src="https://pouynmrblzvwlhrfyins.supabase.co/storage/v1/object/public/icons/banner%20pqueno%20(2).png"
+                    alt="Banner para comprar créditos"
+                    width={300}
+                    height={150}
+                    className="w-full h-full object-cover"
+                />
+            </Link>
+        </Card>
         <Card className="border">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">
@@ -399,17 +406,6 @@ export default function DashboardPage() {
                 </AccordionItem>
              </Accordion>
           </CardContent>
-        </Card>
-         <Card className="border p-0 overflow-hidden">
-            <Link href="/dashboard/settings/buy-credits" className="block w-full h-full">
-                <Image 
-                    src="https://pouynmrblzvwlhrfyins.supabase.co/storage/v1/object/public/icons/banner%20pqueno%20(1).png"
-                    alt="Banner para comprar créditos"
-                    width={300}
-                    height={150}
-                    className="w-full h-full object-cover"
-                />
-            </Link>
         </Card>
         <Card className="border">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -523,10 +519,7 @@ export default function DashboardPage() {
              )}
           </CardContent>
         </Card>
-        <Card className="lg:col-span-1 border h-96">
-           <TaskList tasks={tasks} clients={clients} onTaskUpdate={handleTaskUpdate} onTaskCreate={handleTaskCreate} />
-        </Card>
-        <Card className="lg:col-span-1 h-96 bg-[#ff6d24] text-white">
+        <Card className="lg:col-span-1 border h-96 bg-[#ff6d24] text-white">
             <CardHeader>
                 <CardTitle className="text-base font-semibold text-white">Folgas e Feriados</CardTitle>
             </CardHeader>
@@ -534,11 +527,8 @@ export default function DashboardPage() {
                 <DaysOffCalendar />
             </CardContent>
         </Card>
-        <Card className="lg:col-span-2 border">
-            {/* Placeholder para Pendencias Financeiras */}
-        </Card>
-         <Card className="lg:col-span-2 border p-0 overflow-hidden">
-            {/* O banner grande foi removido daqui */}
+        <Card className="lg:col-span-1 border h-96">
+           <TaskList tasks={tasks} clients={clients} onTaskUpdate={handleTaskUpdate} onTaskCreate={handleTaskCreate} />
         </Card>
       </div>
     </div>
