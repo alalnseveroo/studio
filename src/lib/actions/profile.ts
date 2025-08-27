@@ -3,9 +3,11 @@
 
 import { createClient } from '@/lib/supabase/server'
 import type { ProfileFormData } from '@/app/dashboard/settings/profile/page';
+import type { PublicProfileData } from '@/app/dashboard/settings/public-profile/page';
 import { sendProfileWebhook } from './webhook';
 import { sendTransactionalEmail } from '../brevo';
 import { getOrCreateAsaasCustomer } from '../asaas';
+import { revalidatePath } from 'next/cache';
 
 const AVATAR_USER_MALE = 'https://pouynmrblzvwlhrfyins.supabase.co/storage/v1/object/public/icons/AvatarUser/avatar-assist-homem.png';
 const AVATAR_USER_FEMALE = 'https://pouynmrblzvwlhrfyins.supabase.co/storage/v1/object/public/icons/AvatarUser/avatar-assist-muler.png';
@@ -87,6 +89,64 @@ export async function saveProfile(formData: ProfileFormData & { is_completed: bo
 
   return { error: null }
 }
+
+
+export async function savePublicProfile(formData: PublicProfileData) {
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+        return { error: { message: 'Usuário não autenticado.' } };
+    }
+
+    const { data: existingProfile, error: existingError } = await supabase
+        .from('profiles')
+        .select('slug')
+        .neq('id', user.id)
+        .eq('slug', formData.slug)
+        .single();
+    
+    if (existingProfile) {
+        return { error: { message: 'Esta URL personalizada já está em uso por outro usuário. Por favor, escolha outra.' } };
+    }
+     if (existingError && existingError.code !== 'PGRST116') { // Ignore 'not found'
+        return { error: { message: `Erro ao verificar URL: ${existingError.message}` } };
+    }
+
+    const publicProfileData = {
+        slug: formData.slug,
+        title: formData.title,
+        location: formData.location,
+        availability: formData.availability,
+        responseTime: formData.responseTime,
+        bio: formData.bio,
+        specialties: formData.specialties,
+        services: formData.services,
+        tools: formData.tools,
+        certifications: formData.certifications,
+        testimonials: formData.testimonials,
+        public_profile_completed: true,
+        updated_at: new Date().toISOString(),
+    };
+
+    const { data, error } = await supabase
+        .from('profiles')
+        .update(publicProfileData)
+        .eq('id', user.id)
+        .select()
+        .single();
+    
+    if (error) {
+        console.error('Error updating public profile:', error);
+        return { error: { message: `Não foi possível salvar o perfil público: ${error.message}` } };
+    }
+
+    revalidatePath('/dashboard/settings/public-profile');
+    revalidatePath(`/assistente/${data.slug}`);
+    
+    return { data, error: null };
+}
+
 
 
 export async function getProfile(userId?: string) {

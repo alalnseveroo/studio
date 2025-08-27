@@ -1,5 +1,19 @@
 
 
+export type Tag = {
+  value: string;
+  label: string;
+};
+
+export type Testimonial = {
+  client: string;
+  text: string;
+};
+
+export type Certification = {
+  text: string;
+};
+
 export type Cliente = {
   id: string;
   user_id: string;
@@ -77,7 +91,21 @@ export type Profile = {
   avatar_url: string | null;
   phone?: string | null;
   asaas_customer_id?: string | null;
-  pix_key?: string | null; // Adicionado campo para a chave pix
+  pix_key?: string | null;
+
+  // Public Profile Fields
+  slug?: string;
+  title?: string;
+  location?: string;
+  availability?: 'Disponível' | 'Vagas Limitadas';
+  responseTime?: string;
+  bio?: string;
+  specialties?: Tag[];
+  services?: Tag[];
+  tools?: Tag[];
+  certifications?: Certification[];
+  testimonials?: Testimonial[];
+  public_profile_completed?: boolean;
 };
 
 export type Contrato = {

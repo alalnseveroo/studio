@@ -2,7 +2,7 @@
 'use client'
 
 import * as React from 'react'
-import { useForm, useFieldArray } from 'react-hook-form'
+import { useForm, useFieldArray, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
 import { Stepper, Step, StepLabel } from '@/components/stepper'
@@ -13,9 +13,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
-import { Loader2, User, Briefcase, Award, MessageSquare, Link as LinkIcon, Check, ArrowRight, ArrowLeft, Trash2, Plus } from 'lucide-react'
+import { Loader2, User, Briefcase, Award, Link as LinkIcon, Check, ArrowRight, ArrowLeft, Trash2, Plus } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { TagsInput } from '@/components/ui/tags-input'
+import { savePublicProfile, getProfile } from '@/lib/actions/profile'
+import type { Profile } from '@/lib/types'
 
 
 const STEPS = [
@@ -25,10 +27,14 @@ const STEPS = [
   { id: 'finalize', label: 'Finalizar', icon: LinkIcon },
 ]
 
+const tagSchema = z.object({
+  value: z.string(),
+  label: z.string(),
+});
+
 const publicProfileSchema = z.object({
   // Step 1
-  slug: z.string().min(3, 'A URL deve ter pelo menos 3 caracteres.'),
-  fullName: z.string().min(3, 'O nome é obrigatório.'),
+  slug: z.string().min(3, 'A URL deve ter pelo menos 3 caracteres.').regex(/^[a-z0-9-]+$/, 'Use apenas letras minúsculas, números e hifens.'),
   title: z.string().min(5, 'O título é obrigatório.'),
   location: z.string().min(3, 'A localização é obrigatória.'),
   availability: z.enum(['Disponível', 'Vagas Limitadas']),
@@ -36,9 +42,9 @@ const publicProfileSchema = z.object({
   
   // Step 2
   bio: z.string().min(20, 'A apresentação deve ter pelo menos 20 caracteres.'),
-  specialties: z.array(z.object({ value: z.string(), label: z.string() })).min(1, 'Adicione pelo menos uma especialidade.'),
-  services: z.array(z.object({ value: z.string(), label: z.string() })).min(1, 'Adicione pelo menos um serviço.'),
-  tools: z.array(z.object({ value: z.string(), label: z.string() })).min(1, 'Adicione pelo menos uma ferramenta.'),
+  specialties: z.array(tagSchema).min(1, 'Adicione pelo menos uma especialidade.'),
+  services: z.array(tagSchema).min(1, 'Adicione pelo menos um serviço.'),
+  tools: z.array(tagSchema).min(1, 'Adicione pelo menos uma ferramenta.'),
 
   // Step 3
   certifications: z.array(z.object({ text: z.string().min(3, 'A certificação não pode estar vazia.') })).min(1, 'Adicione pelo menos uma certificação.'),
@@ -48,18 +54,17 @@ const publicProfileSchema = z.object({
   })).min(1, 'Adicione pelo menos um depoimento.'),
 });
 
-type PublicProfileData = z.infer<typeof publicProfileSchema>;
+export type PublicProfileData = z.infer<typeof publicProfileSchema>;
 
 export default function PublicProfilePage() {
   const [activeStep, setActiveStep] = React.useState(0)
-  const [isLoading, setIsLoading] = React.useState(false)
+  const [isLoading, setIsLoading] = React.useState(true)
   const { toast } = useToast()
 
   const form = useForm<PublicProfileData>({
     resolver: zodResolver(publicProfileSchema),
     defaultValues: {
         slug: '',
-        fullName: '',
         title: '',
         location: '',
         availability: 'Disponível',
@@ -73,6 +78,31 @@ export default function PublicProfilePage() {
     },
   });
 
+  React.useEffect(() => {
+    const fetchProfileData = async () => {
+      setIsLoading(true);
+      const { data } = await getProfile();
+      if (data) {
+        const profile = data as Profile;
+        form.reset({
+          slug: profile.slug || '',
+          title: profile.title || '',
+          location: profile.location || '',
+          availability: profile.availability || 'Disponível',
+          responseTime: profile.responseTime || '',
+          bio: profile.bio || '',
+          specialties: profile.specialties || [],
+          services: profile.services || [],
+          tools: profile.tools || [],
+          certifications: profile.certifications && profile.certifications.length > 0 ? profile.certifications : [{ text: '' }],
+          testimonials: profile.testimonials && profile.testimonials.length > 0 ? profile.testimonials : [{ client: '', text: '' }],
+        })
+      }
+      setIsLoading(false);
+    }
+    fetchProfileData();
+  }, [form]);
+
   const { fields: certFields, append: appendCert, remove: removeCert } = useFieldArray({
     control: form.control,
     name: "certifications",
@@ -84,7 +114,6 @@ export default function PublicProfilePage() {
   });
   
   const handleNext = async () => {
-     // Validação virá aqui
      setActiveStep((prev) => prev + 1)
   }
 
@@ -92,14 +121,28 @@ export default function PublicProfilePage() {
     setActiveStep((prev) => prev - 1)
   }
 
-  const onSubmit = (data: PublicProfileData) => {
+  const onSubmit = async (data: PublicProfileData) => {
     setIsLoading(true);
-    console.log(data);
-    // Simular salvamento
-    setTimeout(() => {
-        setIsLoading(false);
-        toast({ title: "Perfil Salvo!", description: "Seu perfil público foi atualizado com sucesso."})
-    }, 1500)
+    const result = await savePublicProfile(data);
+    setIsLoading(false);
+
+    if (result.error) {
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao salvar',
+        description: result.error.message,
+      });
+    } else {
+      toast({
+        title: "Perfil Salvo!",
+        description: "Seu perfil público foi atualizado com sucesso.",
+        className: 'bg-green-100 border-green-200 text-green-800'
+      });
+    }
+  }
+  
+  if (isLoading) {
+    return <div className="flex justify-center items-center h-96"><Loader2 className="h-8 w-8 animate-spin" /></div>;
   }
   
   return (
@@ -126,9 +169,6 @@ export default function PublicProfilePage() {
                             <CardDescription>Como você se apresenta ao mundo.</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                             <FormField control={form.control} name="fullName" render={({ field }) => (
-                                <FormItem><FormLabel>Nome Completo</FormLabel><FormControl><Input placeholder="Ana Carolina Silva" {...field} /></FormControl><FormMessage /></FormItem>
-                            )} />
                             <FormField control={form.control} name="title" render={({ field }) => (
                                 <FormItem><FormLabel>Título Profissional</FormLabel><FormControl><Input placeholder="Especialista em Gestão Médica" {...field} /></FormControl><FormMessage /></FormItem>
                             )} />
@@ -138,7 +178,7 @@ export default function PublicProfilePage() {
                             <div className="grid grid-cols-2 gap-4">
                                <FormField control={form.control} name="availability" render={({ field }) => (
                                     <FormItem><FormLabel>Disponibilidade</FormLabel>
-                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                        <Select onValueChange={field.onChange} value={field.value}>
                                             <FormControl><SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger></FormControl>
                                             <SelectContent>
                                                 <SelectItem value="Disponível">Disponível</SelectItem>
@@ -165,15 +205,46 @@ export default function PublicProfilePage() {
                             <FormField control={form.control} name="bio" render={({ field }) => (
                                 <FormItem><FormLabel>Apresentação / Bio</FormLabel><FormControl><Textarea rows={4} placeholder="Especialista em gestão médica com 5+ anos de experiência..." {...field} /></FormControl><FormMessage /></FormItem>
                             )} />
-                            <FormField control={form.control} name="specialties" render={({ field }) => (
-                                <FormItem><FormLabel>Especialidades</FormLabel><FormControl><TagsInput placeholder="Adicione especialidades..." tags={field.value} setTags={field.onChange} /></FormControl><FormMessage /></FormItem>
-                            )} />
-                            <FormField control={form.control} name="services" render={({ field }) => (
-                                <FormItem><FormLabel>Serviços Prestados</FormLabel><FormControl><TagsInput placeholder="Adicione serviços..." tags={field.value} setTags={field.onChange} /></FormControl><FormMessage /></FormItem>
-                            )} />
-                             <FormField control={form.control} name="tools" render={({ field }) => (
-                                <FormItem><FormLabel>Ferramentas que Domina</FormLabel><FormControl><TagsInput placeholder="Adicione ferramentas..." tags={field.value} setTags={field.onChange} /></FormControl><FormMessage /></FormItem>
-                            )} />
+                           
+                            <Controller
+                                name="specialties"
+                                control={form.control}
+                                render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Especialidades</FormLabel>
+                                  <FormControl>
+                                      <TagsInput placeholder="Adicione especialidades..." tags={field.value} setTags={(newTags) => field.onChange(newTags)} />
+                                  </FormControl>
+                                   <FormMessage />
+                                </FormItem>
+                                )}
+                            />
+                             <Controller
+                                name="services"
+                                control={form.control}
+                                render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Serviços Prestados</FormLabel>
+                                  <FormControl>
+                                      <TagsInput placeholder="Adicione serviços..." tags={field.value} setTags={(newTags) => field.onChange(newTags)} />
+                                  </FormControl>
+                                   <FormMessage />
+                                </FormItem>
+                                )}
+                            />
+                            <Controller
+                                name="tools"
+                                control={form.control}
+                                render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Ferramentas que Domina</FormLabel>
+                                  <FormControl>
+                                      <TagsInput placeholder="Adicione ferramentas..." tags={field.value} setTags={(newTags) => field.onChange(newTags)} />
+                                  </FormControl>
+                                   <FormMessage />
+                                </FormItem>
+                                )}
+                            />
                         </CardContent>
                      </Card>
                 )}
@@ -201,6 +272,7 @@ export default function PublicProfilePage() {
                                     />
                                 ))}
                                 <Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => appendCert({ text: '' })}><Plus className="mr-2 h-4 w-4"/>Adicionar Certificação</Button>
+                                <FormMessage>{form.formState.errors.certifications?.message}</FormMessage>
                             </div>
                              <Separator />
                             <div>
@@ -208,15 +280,16 @@ export default function PublicProfilePage() {
                                 {testiFields.map((field, index) => (
                                     <div key={field.id} className="mt-2 space-y-2 rounded-md border p-4 relative">
                                         <FormField control={form.control} name={`testimonials.${index}.client`} render={({ field }) => (
-                                            <FormItem><FormLabel className="text-xs">Nome do Cliente</FormLabel><FormControl><Input placeholder="Dr. Carlos Mendes" {...field} /></FormControl></FormItem>
+                                            <FormItem><FormLabel className="text-xs">Nome do Cliente</FormLabel><FormControl><Input placeholder="Dr. Carlos Mendes" {...field} /></FormControl><FormMessage /></FormItem>
                                         )} />
                                         <FormField control={form.control} name={`testimonials.${index}.text`} render={({ field }) => (
-                                            <FormItem><FormLabel className="text-xs">Depoimento</FormLabel><FormControl><Textarea rows={3} placeholder="Ana revolucionou meu consultório..." {...field} /></FormControl></FormItem>
+                                            <FormItem><FormLabel className="text-xs">Depoimento</FormLabel><FormControl><Textarea rows={3} placeholder="Ana revolucionou meu consultório..." {...field} /></FormControl><FormMessage /></FormItem>
                                         )} />
                                          <Button type="button" variant="destructive" size="icon" className="absolute top-2 right-2 h-7 w-7" onClick={() => removeTesti(index)} disabled={testiFields.length <= 1}><Trash2 className="h-4 w-4" /></Button>
                                     </div>
                                 ))}
                                  <Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => appendTesti({ client: '', text: '' })}><Plus className="mr-2 h-4 w-4"/>Adicionar Depoimento</Button>
+                                 <FormMessage>{form.formState.errors.testimonials?.message}</FormMessage>
                             </div>
                         </CardContent>
                      </Card>
@@ -232,7 +305,7 @@ export default function PublicProfilePage() {
                             <FormField control={form.control} name="slug" render={({ field }) => (
                                 <FormItem><FormLabel>Seu link</FormLabel>
                                     <div className="flex items-center">
-                                        <span className="text-sm text-muted-foreground rounded-l-md border border-r-0 bg-muted px-3 py-2">crivo.com.br/</span>
+                                        <span className="text-sm text-muted-foreground rounded-l-md border border-r-0 bg-muted px-3 py-2">crivo.pro/assistente/</span>
                                         <FormControl><Input placeholder="ana-silva" {...field} className="rounded-l-none" /></FormControl>
                                     </div>
                                 <FormMessage /></FormItem>
