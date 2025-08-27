@@ -112,18 +112,13 @@ const getChargeStatusInfo = (status: string, dueDate: string, isClient: boolean)
 }
 
 function TaskList({ tasks, clients, onTaskUpdate, onTaskCreate }: { tasks: Task[], clients: Cliente[], onTaskUpdate: (id: string, is_completed: boolean) => void, onTaskCreate: (description: string, clientId: string | null) => void }) {
-    const [filteredClientId, setFilteredClientId] = useState<string>('all');
-    const [open, setOpen] = useState(false);
     const { register, handleSubmit, reset, setValue, watch, getValues } = useForm<{ description: string; clientId: string | null }>({
         defaultValues: { description: '', clientId: null }
     });
+    const [open, setOpen] = useState(false);
 
     const selectedClientId = watch('clientId');
     const selectedClient = clients.find(c => c.id === selectedClientId);
-
-    const filteredTasks = tasks.filter(task => 
-        filteredClientId === 'all' || task.client_id === filteredClientId
-    );
 
     const handleCreateOnEnter = (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === 'Enter') {
@@ -131,7 +126,7 @@ function TaskList({ tasks, clients, onTaskUpdate, onTaskCreate }: { tasks: Task[
             const values = getValues();
             if (values.description.trim()) {
                 onTaskCreate(values.description, values.clientId);
-                reset({ description: '', clientId: values.clientId }); // Mantém o cliente selecionado
+                reset({ description: '', clientId: values.clientId }); 
             }
         }
     }
@@ -148,59 +143,62 @@ function TaskList({ tasks, clients, onTaskUpdate, onTaskCreate }: { tasks: Task[
 
     return (
         <div className="flex flex-col h-full">
-            <div className="px-4 pt-4 pb-2">
-                 <div className="relative">
-                    <Input 
-                        {...register("description")} 
-                        placeholder="Aperte ENTER para adicionar" 
-                        className="h-10 pr-12 rounded-full"
-                        onKeyDown={handleCreateOnEnter}
-                    />
-                     <Popover open={open} onOpenChange={setOpen}>
-                        <PopoverTrigger asChild>
-                           <Button variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full">
-                                <Avatar className="h-7 w-7">
-                                    <AvatarImage src={selectedClient?.avatar_url || ''} />
-                                    <AvatarFallback className="bg-muted text-muted-foreground">
-                                        <UserIcon className="h-4 w-4" />
-                                    </AvatarFallback>
-                                </Avatar>
-                           </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-[250px] p-0">
-                             <Command>
-                                <CommandInput placeholder="Vincular cliente..." />
-                                <CommandEmpty>Nenhum cliente encontrado.</CommandEmpty>
-                                <CommandGroup>
-                                <CommandItem
-                                    onSelect={() => {
-                                        setValue('clientId', null);
-                                        setOpen(false);
-                                    }}
-                                >
-                                    Geral (sem vínculo)
-                                </CommandItem>
-                                {clients.map(client => (
+            <CardHeader>
+                <CardTitle className="text-base font-semibold">Lista de Tarefas</CardTitle>
+                <CardDescription>
+                     <div className="relative">
+                        <Input 
+                            {...register("description")} 
+                            placeholder="Aperte ENTER para adicionar" 
+                            className="h-10 pr-12 rounded-full"
+                            onKeyDown={handleCreateOnEnter}
+                        />
+                         <Popover open={open} onOpenChange={setOpen}>
+                            <PopoverTrigger asChild>
+                               <Button variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full">
+                                    <Avatar className="h-7 w-7">
+                                        <AvatarImage src={selectedClient?.avatar_url || ''} />
+                                        <AvatarFallback className="bg-muted text-muted-foreground">
+                                            <UserIcon className="h-4 w-4" />
+                                        </AvatarFallback>
+                                    </Avatar>
+                               </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-[250px] p-0">
+                                 <Command>
+                                    <CommandInput placeholder="Vincular cliente..." />
+                                    <CommandEmpty>Nenhum cliente encontrado.</CommandEmpty>
+                                    <CommandGroup>
                                     <CommandItem
-                                        key={client.id}
-                                        value={client.id}
                                         onSelect={() => {
-                                            setValue('clientId', client.id)
-                                            setOpen(false)
+                                            setValue('clientId', null);
+                                            setOpen(false);
                                         }}
                                     >
-                                     <Check className={cn("mr-2 h-4 w-4", selectedClientId === client.id ? "opacity-100" : "opacity-0")} />
-                                      {client.full_name || client.company_name}
+                                        Geral (sem vínculo)
                                     </CommandItem>
-                                ))}
-                                </CommandGroup>
-                            </Command>
-                        </PopoverContent>
-                    </Popover>
-                </div>
-            </div>
-            <div className="flex-1 overflow-y-auto px-4">
-                {filteredTasks.length > 0 ? filteredTasks.map(task => (
+                                    {clients.map(client => (
+                                        <CommandItem
+                                            key={client.id}
+                                            value={client.id}
+                                            onSelect={() => {
+                                                setValue('clientId', client.id)
+                                                setOpen(false)
+                                            }}
+                                        >
+                                         <Check className={cn("mr-2 h-4 w-4", selectedClientId === client.id ? "opacity-100" : "opacity-0")} />
+                                          {client.full_name || client.company_name}
+                                        </CommandItem>
+                                    ))}
+                                    </CommandGroup>
+                                </Command>
+                            </PopoverContent>
+                        </Popover>
+                    </div>
+                </CardDescription>
+            </CardHeader>
+             <CardContent className="p-0 flex-1 overflow-y-auto px-4">
+                {tasks.length > 0 ? tasks.map(task => (
                     <div key={task.id} className="flex items-center space-x-3 py-2.5 border-b last:border-b-0">
                         <Checkbox 
                             id={`task-${task.id}`} 
@@ -222,7 +220,7 @@ function TaskList({ tasks, clients, onTaskUpdate, onTaskCreate }: { tasks: Task[
                 )) : (
                     <p className="text-sm text-muted-foreground text-center py-8">Nenhuma tarefa encontrada.</p>
                 )}
-            </div>
+            </CardContent>
         </div>
     )
 }
@@ -434,7 +432,7 @@ export default function DashboardPage() {
             <div className="text-2xl font-normal">{activeClients.length}</div>
             <div className="flex flex-row items-center mt-2 h-10">
                  {activeClients.length > 0 ? (
-                    <AnimatedTooltip items={activeClientsForTooltip} />
+                    <AnimatedTooltip items={activeClientsForTooltip} direction="right"/>
                  ) : (
                     <div className="flex items-center justify-start h-full">
                         <div className="relative flex items-center -space-x-4">
@@ -453,7 +451,7 @@ export default function DashboardPage() {
         </Card>
       </div>
       <div className="grid gap-4 md:gap-8 lg:grid-cols-4">
-        <Card className="lg:col-span-2 border">
+        <Card className="lg:col-span-2 border h-96">
           <CardHeader className="flex flex-row items-center">
             <div className="grid gap-2">
               <CardTitle className="text-base font-semibold">Contratos Recentes</CardTitle>
@@ -537,18 +535,10 @@ export default function DashboardPage() {
              )}
           </CardContent>
         </Card>
-        <Card className="lg:col-span-1 border">
-           <CardHeader>
-                <CardTitle className="text-base font-semibold">Lista de Tarefas</CardTitle>
-                <CardDescription>
-                    Adicione e gerencie suas pendências.
-                </CardDescription>
-            </CardHeader>
-             <CardContent className="p-0 flex-1">
-                <TaskList tasks={tasks} clients={clients} onTaskUpdate={handleTaskUpdate} onTaskCreate={handleTaskCreate} />
-            </CardContent>
+        <Card className="lg:col-span-1 border h-96">
+           <TaskList tasks={tasks} clients={clients} onTaskUpdate={handleTaskUpdate} onTaskCreate={handleTaskCreate} />
         </Card>
-        <Card className="bg-[#ff6d24] text-white">
+        <Card className="h-96 bg-[#ff6d24] text-white">
             <CardHeader>
                 <CardTitle className="text-base font-semibold text-white">Folgas e Feriados</CardTitle>
                 <CardDescription className="text-white/80">Clique em um dia para marcar como folga.</CardDescription>

@@ -10,9 +10,11 @@ import {
   useSpring,
 } from "framer-motion";
 import Image from "next/image";
+import { cn } from "@/lib/utils";
 
 export const AnimatedTooltip = ({
   items,
+  direction = "left"
 }: {
   items: {
     id: string;
@@ -20,6 +22,7 @@ export const AnimatedTooltip = ({
     designation: string;
     image: string;
   }[];
+  direction?: "left" | "right";
 }) => {
   const [hoveredIndex, setHoveredIndex] = useState<string | null>(null);
   const springConfig = { stiffness: 100, damping: 15 };
@@ -68,7 +71,10 @@ export const AnimatedTooltip = ({
                   rotate: rotate,
                   whiteSpace: "nowrap",
                 }}
-                className="absolute -top-14 right-full z-50 mr-2 flex flex-col items-center justify-center rounded-md bg-black px-4 py-2 text-xs shadow-xl"
+                className={cn(
+                  "absolute -top-14 z-50 flex flex-col items-center justify-center rounded-md bg-black px-4 py-2 text-xs shadow-xl",
+                  direction === 'left' ? 'right-full ml-2' : 'left-full mr-2'
+                )}
               >
                 <div className="absolute inset-x-10 -bottom-px z-30 h-px w-[20%] bg-gradient-to-r from-transparent via-emerald-500 to-transparent" />
                 <div className="absolute -bottom-px left-10 z-30 h-px w-[40%] bg-gradient-to-r from-transparent via-sky-500 to-transparent" />
