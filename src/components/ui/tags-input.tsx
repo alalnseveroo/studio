@@ -1,3 +1,4 @@
+
 "use client"
 
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
@@ -38,6 +39,12 @@ export interface TagsInputProps extends React.ComponentPropsWithoutRef<typeof Co
 const groupVariants = {
   default: "flex flex-wrap gap-2 rounded-md border border-input p-2.5 text-sm ring-offset-background",
   ghost: "flex flex-wrap gap-2",
+}
+
+// Internal component to safely use the useCommandState hook
+const CommandState = ({ children }: { children: (count: number) => React.ReactNode }) => {
+  const count = useCommandState((state) => state.filtered.count)
+  return <>{children(count)}</>
 }
 
 const TagsInput = forwardRef<HTMLDivElement, TagsInputProps>(
@@ -130,8 +137,6 @@ const TagsInput = forwardRef<HTMLDivElement, TagsInputProps>(
       (option) => !tags.some((tag) => tag.value === option.value)
     )
 
-    const count = useCommandState((state) => state.filtered.count)
-
     return (
       <div ref={ref} className={cn(groupVariants["default"], className)} style={style}>
         {tags.map((tag) => (
@@ -161,23 +166,26 @@ const TagsInput = forwardRef<HTMLDivElement, TagsInputProps>(
             disabled={disabled}
             readOnly={readOnly}
           />
-
-          <CommandList className="absolute top-full z-10 mt-2 w-full rounded-md border bg-popover text-popover-foreground shadow-md">
-            {isFocused && enableAutocomplete && filteredAutocompleteOptions && (
-              <CommandGroup>
-                {filteredAutocompleteOptions.map((option) => (
-                  <CommandItem
-                    key={option.value}
-                    onSelect={() => addTag(option)}
-                    className="flex cursor-pointer items-center gap-2"
-                  >
-                    <Tag className="h-4 w-4" />
-                    {option.label}
-                  </CommandItem>
-                ))}
-              </CommandGroup>
+          <CommandState>
+            {(count) => (
+              <CommandList className="absolute top-full z-10 mt-2 w-full rounded-md border bg-popover text-popover-foreground shadow-md">
+                {isFocused && enableAutocomplete && filteredAutocompleteOptions && count > 0 && (
+                  <CommandGroup>
+                    {filteredAutocompleteOptions.map((option) => (
+                      <CommandItem
+                        key={option.value}
+                        onSelect={() => addTag(option)}
+                        className="flex cursor-pointer items-center gap-2"
+                      >
+                        <Tag className="h-4 w-4" />
+                        {option.label}
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                )}
+              </CommandList>
             )}
-          </CommandList>
+          </CommandState>
         </Command>
       </div>
     )
