@@ -212,8 +212,8 @@ function TaskList({ tasks, clients, onTaskUpdate, onTaskCreate }: { tasks: Task[
                             {task.description}
                         </label>
                         {task.clientes && (
-                            <div className="flex items-center ml-auto">
-                                <AnimatedTooltip items={clientForAvatar(task)} />
+                            <div className="flex items-center ml-auto pr-2">
+                                <AnimatedTooltip items={clientForAvatar(task)} direction="left" />
                             </div>
                         )}
                     </div>
@@ -402,29 +402,6 @@ export default function DashboardPage() {
         </Card>
         <Card className="border">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Contas Atrasadas</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-normal">R$ {overdueAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-             <Accordion type="single" collapsible className="w-full">
-                <AccordionItem value="item-1" className="border-b-0">
-                  <AccordionTrigger className="text-xs text-muted-foreground hover:no-underline p-0">
-                    Total de valores vencidos
-                  </AccordionTrigger>
-                  <AccordionContent>
-                     <div className="flex flex-row items-center h-10 max-h-14 overflow-x-auto no-scrollbar">
-                        {overdueClientsForTooltip.length > 0 ? (
-                            <AnimatedTooltip items={overdueClientsForTooltip} />
-                        ) : <p className="text-xs text-muted-foreground px-2">Nenhum cliente com cobranças atrasadas.</p> }
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-             </Accordion>
-          </CardContent>
-        </Card>
-        <Card className="border">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Clientes Ativos</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
@@ -447,6 +424,29 @@ export default function DashboardPage() {
                    </div>
                  )}
             </div>
+          </CardContent>
+        </Card>
+        <Card className="border">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Contas Atrasadas</CardTitle>
+            <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-normal">R$ {overdueAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+             <Accordion type="single" collapsible className="w-full">
+                <AccordionItem value="item-1" className="border-b-0">
+                  <AccordionTrigger className="text-xs text-muted-foreground hover:no-underline p-0">
+                    Total de valores vencidos
+                  </AccordionTrigger>
+                  <AccordionContent>
+                     <div className="flex flex-row items-center h-10 max-h-14 overflow-x-auto no-scrollbar">
+                        {overdueClientsForTooltip.length > 0 ? (
+                            <AnimatedTooltip items={overdueClientsForTooltip} />
+                        ) : <p className="text-xs text-muted-foreground px-2">Nenhum cliente com cobranças atrasadas.</p> }
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+             </Accordion>
           </CardContent>
         </Card>
       </div>
@@ -541,7 +541,6 @@ export default function DashboardPage() {
         <Card className="h-96 bg-[#ff6d24] text-white">
             <CardHeader>
                 <CardTitle className="text-base font-semibold text-white">Folgas e Feriados</CardTitle>
-                <CardDescription className="text-white/80">Clique em um dia para marcar como folga.</CardDescription>
             </CardHeader>
             <CardContent>
                 <DaysOffCalendar />

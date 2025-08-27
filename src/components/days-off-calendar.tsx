@@ -138,9 +138,9 @@ export function DaysOffCalendar() {
             nav_button_previous: "absolute left-1 text-white",
             nav_button_next: "absolute right-1 text-white",
             head_row: "flex w-full mt-2",
-            head_cell: "text-white/80 rounded-md w-9 font-normal text-[0.8rem] flex-1 justify-center text-center",
+            head_cell: "text-white/80 rounded-md w-8 font-normal text-[0.75rem] flex-1 justify-center text-center",
             row: "flex w-full mt-2",
-            day: "h-9 w-9 p-0 font-normal aria-selected:opacity-100 text-white",
+            day: "h-8 w-8 p-0 font-normal aria-selected:opacity-100 text-white text-xs",
             day_selected: "bg-pink-200 text-pink-800 hover:bg-pink-300 focus:bg-pink-300",
             day_today: "bg-white/20 text-white",
           }}
