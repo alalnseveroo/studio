@@ -353,7 +353,7 @@ export default function DashboardPage() {
                 <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-                <div className="text-2xl font-normal">R$ {totalRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                <div className="text-2xl font-bold">R$ {totalRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                 <Progress value={goalProgress} className="h-2 mt-4" indicatorClassName="bg-primary" />
                 <div className="flex justify-between items-center mt-1">
                     {goalAmount > 0 ? (
@@ -383,7 +383,7 @@ export default function DashboardPage() {
             <BadgeCent className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-normal">R$ {pendingAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+            <div className="text-2xl font-bold">R$ {pendingAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
               <Accordion type="single" collapsible className="w-full">
                 <AccordionItem value="item-1" className="border-b-0">
                   <AccordionTrigger className="text-xs text-muted-foreground hover:no-underline p-0">
@@ -400,13 +400,24 @@ export default function DashboardPage() {
              </Accordion>
           </CardContent>
         </Card>
+         <Card className="border p-0 overflow-hidden">
+            <Link href="/dashboard/settings/buy-credits" className="block w-full h-full">
+                <Image 
+                    src="https://pouynmrblzvwlhrfyins.supabase.co/storage/v1/object/public/icons/banner%20pqueno%20(1).png"
+                    alt="Banner para comprar créditos"
+                    width={300}
+                    height={150}
+                    className="w-full h-full object-cover"
+                />
+            </Link>
+        </Card>
         <Card className="border">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Clientes Ativos</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
            <CardContent>
-            <div className="text-2xl font-normal">{activeClients.length}</div>
+            <div className="text-2xl font-bold">{activeClients.length}</div>
             <div className="flex flex-row items-center mt-2 h-10">
                  {activeClients.length > 0 ? (
                     <AnimatedTooltip items={activeClientsForTooltip} direction="right"/>
@@ -424,29 +435,6 @@ export default function DashboardPage() {
                    </div>
                  )}
             </div>
-          </CardContent>
-        </Card>
-        <Card className="border">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Contas Atrasadas</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-normal">R$ {overdueAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-             <Accordion type="single" collapsible className="w-full">
-                <AccordionItem value="item-1" className="border-b-0">
-                  <AccordionTrigger className="text-xs text-muted-foreground hover:no-underline p-0">
-                    Total de valores vencidos
-                  </AccordionTrigger>
-                  <AccordionContent>
-                     <div className="flex flex-row items-center h-10 max-h-14 overflow-x-auto no-scrollbar">
-                        {overdueClientsForTooltip.length > 0 ? (
-                            <AnimatedTooltip items={overdueClientsForTooltip} />
-                        ) : <p className="text-xs text-muted-foreground px-2">Nenhum cliente com cobranças atrasadas.</p> }
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-             </Accordion>
           </CardContent>
         </Card>
       </div>
@@ -538,7 +526,7 @@ export default function DashboardPage() {
         <Card className="lg:col-span-1 border h-96">
            <TaskList tasks={tasks} clients={clients} onTaskUpdate={handleTaskUpdate} onTaskCreate={handleTaskCreate} />
         </Card>
-        <Card className="h-96 bg-[#ff6d24] text-white">
+        <Card className="lg:col-span-1 h-96 bg-[#ff6d24] text-white">
             <CardHeader>
                 <CardTitle className="text-base font-semibold text-white">Folgas e Feriados</CardTitle>
             </CardHeader>
@@ -550,15 +538,7 @@ export default function DashboardPage() {
             {/* Placeholder para Pendencias Financeiras */}
         </Card>
          <Card className="lg:col-span-2 border p-0 overflow-hidden">
-            <Link href="/dashboard/settings/public-profile" className="block w-full h-full">
-                <Image 
-                    src="https://pouynmrblzvwlhrfyins.supabase.co/storage/v1/object/public/icons/public/Frame%202.png" 
-                    alt="Banner de perfil público"
-                    width={600}
-                    height={250}
-                    className="w-full h-full object-cover"
-                />
-            </Link>
+            {/* O banner grande foi removido daqui */}
         </Card>
       </div>
     </div>
@@ -579,3 +559,5 @@ export default function DashboardPage() {
     </>
   )
 }
+
+    
