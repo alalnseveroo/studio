@@ -201,11 +201,11 @@ export default function ProfilePage() {
       setIsLoading(true);
       const { data } = await getProfile();
       if (data) {
-        // Agora sempre carrega os dados para edição, em vez de bloquear
         loadProfileData(data as Profile);
         if (data.is_completed) {
-            // Se já está completo, podemos deixar o usuário na etapa final para revisar/salvar
             setCurrentStep(STEPS.SIGNATURE);
+        } else {
+            setCurrentStep(STEPS.TYPE);
         }
       }
       setIsLoading(false);
