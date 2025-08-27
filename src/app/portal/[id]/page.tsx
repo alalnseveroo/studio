@@ -1,4 +1,5 @@
 
+
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
@@ -211,7 +212,7 @@ export default function ClientPortalPage() {
                     <p className="text-[#60758a] text-sm font-normal leading-normal">Sua assistente dedicada para todas as suas necessidades.</p>
                   </div>
                    <Button asChild variant="outline" className="w-fit">
-                        <Link href={`/assistente/${provider?.id}`}> {/* Ajustar para slug se disponível */}
+                        <Link href={`/assistente/${provider?.slug}`}>
                             Ver Perfil Público <ArrowUpRight className="ml-2 h-4 w-4"/>
                         </Link>
                     </Button>
@@ -401,5 +402,3 @@ export default function ClientPortalPage() {
     </>
   )
 }
-
-    

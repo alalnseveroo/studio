@@ -347,7 +347,7 @@ export default function ClienteEditPage() {
   const isAddressComplete = addressSchema.safeParse(methods.getValues()).success;
   const isFinancialComplete = financialSchema.safeParse(methods.getValues()).success;
 
-  if (!client) {
+  if (!isClientSide || !client) {
      return <PageLoadingSkeleton />;
   }
   
@@ -404,7 +404,7 @@ export default function ClienteEditPage() {
                 isSaving={isSaving} 
                 proposals={proposals} 
                 charges={charges}
-                onMarkAsPaid={handleMarkAsPaid}
+                onMarkAsPaid={onMarkAsPaid}
                 isClientSide={isClientSide}
             />
           </TabsContent>

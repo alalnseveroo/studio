@@ -101,11 +101,11 @@ const getStatusText = (status: string) => {
     }
 }
   
-const getChargeStatusInfo = (status: string, dueDate: string, isClient: boolean) => {
+const getChargeStatusInfo = (status: string, dueDate: string, isClientSide: boolean) => {
     if (status === 'pago') {
       return { text: 'Pago', className: 'border-green-500 bg-green-500/10 text-green-700' };
     }
-    if (isClient && isPast(new Date(dueDate))) {
+    if (isClientSide && isPast(new Date(dueDate))) {
       return { text: 'Atrasado', className: 'border-red-500 bg-red-500/10 text-red-700' };
     }
     return { text: 'Pendente', className: 'border-yellow-500 bg-yellow-500/10 text-yellow-700' };
@@ -235,10 +235,10 @@ export default function DashboardPage() {
     const [tasks, setTasks] = useState<Task[]>([]);
     const [isBillingModalOpen, setIsBillingModalOpen] = useState(false);
     const [isGoalModalOpen, setIsGoalModalOpen] = useState(false);
-    const [isClient, setIsClient] = useState(false);
+    const [isClientSide, setIsClientSide] = useState(false);
 
     useEffect(() => {
-      setIsClient(true);
+      setIsClientSide(true);
     }, []);
 
     const fetchData = async () => {
@@ -286,7 +286,7 @@ export default function DashboardPage() {
 
     const totalRevenue = charges?.filter(c => c.status === 'pago').reduce((sum, c) => sum + (c.value || 0), 0) || 0;
     
-    const pendingCharges = charges?.filter(c => c.status === 'pendente' && (!isClient || !isPast(new Date(c.due_date)))) || [];
+    const pendingCharges = charges?.filter(c => c.status === 'pendente' && (!isClientSide || !isPast(new Date(c.due_date)))) || [];
     
     const pendingAmount = pendingCharges.reduce((sum, c) => sum + (c.value || 0), 0);
     
@@ -323,7 +323,7 @@ export default function DashboardPage() {
     <>
     <div className="flex flex-1 flex-col gap-4 sm:gap-6">
        <div className="flex items-center">
-         {isClient && (
+         {isClientSide && (
             <h1 className="text-lg font-semibold md:text-2xl">
                 Olá, {displayName}.
             </h1>
@@ -493,7 +493,7 @@ export default function DashboardPage() {
                                     </Badge>
                                 </TableCell>
                                 <TableCell className="hidden md:table-cell lg:hidden xl:table-cell">
-                                    {isClient && format(new Date(contract.created_at), 'dd/MM/yyyy')}
+                                    {isClientSide && format(new Date(contract.created_at), 'dd/MM/yyyy')}
                                 </TableCell>
                                 <TableCell className="text-right">R$ {(contract.propostas?.value ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
                             </TableRow>
@@ -549,5 +549,3 @@ export default function DashboardPage() {
     </>
   )
 }
-
-    
