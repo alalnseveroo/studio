@@ -34,7 +34,7 @@ export async function middleware(request: NextRequest) {
               headers: request.headers,
             },
           })
-          response.cookies.set({ name, value, ...options })
+          response.cookies.set({ name, value: '', ...options })
         },
       },
     }
@@ -51,10 +51,6 @@ export async function middleware(request: NextRequest) {
                        request.nextUrl.pathname.startsWith('/assistente/');
 
 
-  if (!user && !isPublicPath) {
-    return NextResponse.redirect(new URL('/', request.url))
-  }
-  
   if (!user && request.nextUrl.pathname.startsWith('/dashboard')) {
     return NextResponse.redirect(new URL('/', request.url))
   }

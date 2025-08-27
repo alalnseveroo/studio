@@ -114,6 +114,7 @@ export async function savePublicProfile(formData: PublicProfileData) {
     }
 
     const publicProfileData = {
+        avatar_url: formData.avatar_url,
         slug: formData.slug,
         title: formData.title,
         location: formData.location,

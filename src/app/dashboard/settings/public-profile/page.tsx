@@ -13,11 +13,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
-import { Loader2, User, Briefcase, Award, Link as LinkIcon, Check, ArrowRight, ArrowLeft, Trash2, Plus } from 'lucide-react'
+import { Loader2, User, Briefcase, Award, Link as LinkIcon, Check, ArrowRight, ArrowLeft, Trash2, Plus, Upload } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { TagsInput } from '@/components/ui/tags-input'
 import { savePublicProfile, getProfile } from '@/lib/actions/profile'
 import type { Profile } from '@/lib/types'
+import { createClient } from '@/lib/supabase/client'
+import Image from 'next/image'
 
 
 const STEPS = [
@@ -34,6 +36,7 @@ const tagSchema = z.object({
 
 const publicProfileSchema = z.object({
   // Step 1
+  avatar_url: z.string().optional(),
   slug: z.string().min(3, 'A URL deve ter pelo menos 3 caracteres.').regex(/^[a-z0-9-]+$/, 'Use apenas letras minúsculas, números e hifens.'),
   title: z.string().min(5, 'O título é obrigatório.'),
   location: z.string().min(3, 'A localização é obrigatória.'),
@@ -59,11 +62,15 @@ export type PublicProfileData = z.infer<typeof publicProfileSchema>;
 export default function PublicProfilePage() {
   const [activeStep, setActiveStep] = React.useState(0)
   const [isLoading, setIsLoading] = React.useState(true)
+  const [isUploading, setIsUploading] = React.useState(false);
+  const [avatarPreview, setAvatarPreview] = React.useState<string | null>(null);
   const { toast } = useToast()
+  const avatarFileRef = React.useRef<HTMLInputElement>(null);
 
   const form = useForm<PublicProfileData>({
     resolver: zodResolver(publicProfileSchema),
     defaultValues: {
+        avatar_url: '',
         slug: '',
         title: '',
         location: '',
@@ -85,6 +92,7 @@ export default function PublicProfilePage() {
       if (data) {
         const profile = data as Profile;
         form.reset({
+          avatar_url: profile.avatar_url || '',
           slug: profile.slug || '',
           title: profile.title || '',
           location: profile.location || '',
@@ -97,6 +105,9 @@ export default function PublicProfilePage() {
           certifications: profile.certifications && profile.certifications.length > 0 ? profile.certifications : [{ text: '' }],
           testimonials: profile.testimonials && profile.testimonials.length > 0 ? profile.testimonials : [{ client: '', text: '' }],
         })
+        if (profile.avatar_url) {
+            setAvatarPreview(profile.avatar_url)
+        }
       }
       setIsLoading(false);
     }
@@ -112,6 +123,37 @@ export default function PublicProfilePage() {
     control: form.control,
     name: "testimonials",
   });
+  
+  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+        toast({ variant: 'destructive', title: 'Erro', description: 'Usuário não autenticado.' });
+        setIsUploading(false);
+        return;
+    }
+    
+    const filePath = `avatars/${user.id}/${Date.now()}_${file.name}`;
+
+    const { error } = await supabase.storage.from('public').upload(filePath, file);
+
+    if (error) {
+        toast({ variant: 'destructive', title: 'Erro de Upload', description: error.message });
+        setIsUploading(false);
+        return;
+    }
+
+    const { data: { publicUrl } } = supabase.storage.from('public').getPublicUrl(filePath);
+
+    setAvatarPreview(publicUrl);
+    form.setValue('avatar_url', publicUrl, { shouldValidate: true });
+    setIsUploading(false);
+  };
   
   const handleNext = async () => {
      setActiveStep((prev) => prev + 1)
@@ -168,7 +210,47 @@ export default function PublicProfilePage() {
                             <CardTitle>Informações Básicas</CardTitle>
                             <CardDescription>Como você se apresenta ao mundo.</CardDescription>
                         </CardHeader>
-                        <CardContent className="space-y-4">
+                        <CardContent className="space-y-6">
+                             <FormField
+                                name="avatar_url"
+                                control={form.control}
+                                render={() => (
+                                    <FormItem>
+                                        <FormLabel>Foto de Perfil</FormLabel>
+                                        <div className="flex items-center gap-4">
+                                            <div className="relative">
+                                                {isUploading ? (
+                                                    <div className="w-24 h-24 rounded-full bg-muted flex items-center justify-center">
+                                                        <Loader2 className="w-8 h-8 animate-spin" />
+                                                    </div>
+                                                ) : (
+                                                    <Image 
+                                                        src={avatarPreview || '/placeholder.svg'}
+                                                        alt="Avatar preview"
+                                                        width={96}
+                                                        height={96}
+                                                        className="w-24 h-24 rounded-full object-cover border"
+                                                    />
+                                                )}
+                                            </div>
+                                            <Button type="button" variant="outline" onClick={() => avatarFileRef.current?.click()}>
+                                                <Upload className="mr-2 h-4 w-4" />
+                                                Trocar Foto
+                                            </Button>
+                                            <FormControl>
+                                                <Input 
+                                                    type="file"
+                                                    ref={avatarFileRef}
+                                                    className="hidden"
+                                                    onChange={handleAvatarUpload}
+                                                    accept="image/png, image/jpeg, image/webp"
+                                                />
+                                            </FormControl>
+                                        </div>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                             />
                             <FormField control={form.control} name="title" render={({ field }) => (
                                 <FormItem><FormLabel>Título Profissional</FormLabel><FormControl><Input placeholder="Especialista em Gestão Médica" {...field} /></FormControl><FormMessage /></FormItem>
                             )} />
