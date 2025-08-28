@@ -38,7 +38,12 @@ export async function getSquads() {
 
     const { data, error } = await supabase
         .from('squads')
-        .select('*')
+        .select(`
+            *,
+            squad_clients (
+                clientes (*)
+            )
+        `)
         .eq('agency_id', user.id)
         .order('created_at', { ascending: false });
 

@@ -92,7 +92,7 @@ export type Profile = {
   phone?: string | null;
   asaas_customer_id?: string | null;
   pix_key?: string | null;
-  is_agency?: boolean; // Novo campo para o Modo Agência
+  is_agency?: boolean; 
 
   // Public Profile Fields
   slug?: string;
@@ -107,6 +107,9 @@ export type Profile = {
   certifications?: Certification[];
   testimonials?: Testimonial[];
   public_profile_completed?: boolean;
+  horasTrabalho?: number;
+  clientesAtendidos?: number;
+  avaliacaoMedia?: number;
 };
 
 export type Contrato = {
@@ -196,4 +199,5 @@ export type Squad = {
     assistant_id: string | null;
     created_at: string;
     updated_at: string | null;
+    squad_clients: { clientes: Cliente }[];
 }

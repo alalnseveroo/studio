@@ -1,4 +1,5 @@
 
+
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -21,8 +22,9 @@ import { Users2, PlusCircle, Loader2 } from "lucide-react"
 import { createSquad, getSquads } from '@/lib/actions/squads'
 import { useToast } from '@/hooks/use-toast'
 import type { Squad } from '@/lib/types'
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { AnimatedTooltip } from '@/components/ui/animated-tooltip'
 
 const squadSchema = z.object({
   name: z.string().min(3, { message: "O nome do squad deve ter pelo menos 3 caracteres." }),
@@ -150,19 +152,36 @@ export default function SquadsPage() {
                     </div>
                 ) : (
                     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                        {squads.map(squad => (
-                             <Card key={squad.id}>
-                                <CardHeader>
-                                    <CardTitle>{squad.name}</CardTitle>
-                                    <CardDescription>Gerenciado por: N/A</CardDescription>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="flex -space-x-2 overflow-hidden">
-                                        <p className="text-sm text-muted-foreground">Nenhum cliente no squad.</p>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        ))}
+                        {squads.map(squad => {
+                            const clientsInSquad = squad.squad_clients.map(sc => ({
+                                id: sc.clientes.id,
+                                name: sc.clientes.full_name || sc.clientes.company_name || 'Cliente',
+                                designation: sc.clientes.email || 'E-mail não informado',
+                                image: sc.clientes.avatar_url || `https://i.pravatar.cc/150?u=${sc.clientes.id}`,
+                            }))
+
+                            return (
+                                <Card key={squad.id} className="flex flex-col">
+                                    <CardHeader>
+                                        <CardTitle>{squad.name}</CardTitle>
+                                        <CardDescription>Gerenciado por: N/A</CardDescription>
+                                    </CardHeader>
+                                    <CardContent className="flex-1">
+                                        <p className="text-sm font-medium mb-2">Clientes ({clientsInSquad.length})</p>
+                                        {clientsInSquad.length > 0 ? (
+                                            <div className="flex items-center -space-x-2">
+                                                 <AnimatedTooltip items={clientsInSquad} />
+                                            </div>
+                                        ) : (
+                                            <p className="text-sm text-muted-foreground">Nenhum cliente no squad.</p>
+                                        )}
+                                    </CardContent>
+                                    <CardFooter>
+                                        <Button variant="outline" size="sm" className="w-full" disabled>Gerenciar Squad</Button>
+                                    </CardFooter>
+                                </Card>
+                            )
+                        })}
                     </div>
                 )}
             </div>
