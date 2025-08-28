@@ -1,4 +1,5 @@
 
+
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
@@ -62,7 +63,8 @@ export async function saveProfile(formData: ProfileFormData & { is_completed: bo
     asaas_customer_id: asaasCustomer.id,
     pix_key: formData.pix_key,
     credits: 1, 
-    plan_type: 'per_client', 
+    plan_type: 'per_client',
+    is_agency: formData.is_agency,
   };
 
   const { data: savedProfile, error } = await supabase.from('profiles').upsert(profileData).select().single();

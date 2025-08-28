@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input'
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -30,6 +31,7 @@ import { cn } from '@/lib/utils'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from '@/components/ui/command'
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter } from '@/components/ui/alert-dialog'
+import { Switch } from '@/components/ui/switch'
 
 const STEPS = {
   TYPE: 1,
@@ -42,6 +44,7 @@ const STEPS = {
 const profileSchema = z.object({
   personType: z.enum(['cpf', 'cnpj'], { required_error: "Selecione o tipo de pessoa."}),
   sex: z.enum(['male', 'female'], { required_error: 'Por favor, selecione o sexo.' }),
+  is_agency: z.boolean().default(false),
   
   // PF Fields
   fullName: z.string().min(3, 'O nome completo é obrigatório.'),
@@ -153,6 +156,7 @@ export default function ProfilePage() {
     defaultValues: {
       personType: 'cpf',
       sex: undefined,
+      is_agency: false,
       fullName: '',
       nationality: 'Brasileira',
       cpf: '',
@@ -175,6 +179,7 @@ export default function ProfilePage() {
     form.reset({
       personType: data.person_type || 'cpf',
       sex: data.sex,
+      is_agency: data.is_agency || false,
       fullName: data.full_name || '',
       nationality: data.nationality || 'Brasileira',
       cpf: data.cpf || '',
@@ -217,7 +222,7 @@ export default function ProfilePage() {
   const personType = form.watch('personType');
   
   const stepFields: Record<number, (keyof ProfileFormData)[]> = {
-    [STEPS.TYPE]: ['personType'],
+    [STEPS.TYPE]: ['personType', 'is_agency'],
     [STEPS.PERSONAL]: ['sex', 'fullName', 'nationality', 'cpf', 'phone', 'pix_key'],
     [STEPS.COMPANY]: ['companyName', 'cnpj', 'pix_key'],
     [STEPS.ADDRESS]: ['cep', 'street', 'number', 'neighborhood', 'city', 'state'],
@@ -404,10 +409,32 @@ export default function ProfilePage() {
                                     </FormItem>
                                 )}
                             />
+                            {personType === 'cnpj' && (
+                                <FormField
+                                    control={form.control}
+                                    name="is_agency"
+                                    render={({ field }) => (
+                                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 mt-4">
+                                        <div className="space-y-0.5">
+                                        <FormLabel className="text-base">Ativar Modo Agência</FormLabel>
+                                        <FormDescription>
+                                            Gerencie squads, secretárias e relatórios de produtividade.
+                                        </FormDescription>
+                                        </div>
+                                        <FormControl>
+                                        <Switch
+                                            checked={field.value}
+                                            onCheckedChange={field.onChange}
+                                        />
+                                        </FormControl>
+                                    </FormItem>
+                                    )}
+                                />
+                            )}
                             <Alert variant="default" className="mt-6">
                                 <Info className="h-4 w-4" />
                                 <AlertDescription className="text-xs">
-                                    Atenção: Após avançar, esta escolha não poderá ser alterada. Certifique-se de selecionar a opção correta para suas necessidades.
+                                    Atenção: Após avançar, a escolha entre Pessoa Física e Jurídica não poderá ser alterada.
                                 </AlertDescription>
                             </Alert>
                             <Button type="button" onClick={() => setCurrentStep(STEPS.PERSONAL)} className="w-full mt-8">

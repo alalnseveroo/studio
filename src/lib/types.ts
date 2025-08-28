@@ -92,6 +92,7 @@ export type Profile = {
   phone?: string | null;
   asaas_customer_id?: string | null;
   pix_key?: string | null;
+  is_agency?: boolean; // Novo campo para o Modo Agência
 
   // Public Profile Fields
   slug?: string;
