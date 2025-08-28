@@ -353,7 +353,7 @@ function ContratosPageComponent() {
 
 export default function ContratosPage() {
     return (
-        <Suspense fallback={<div>Carregando...</div>}>
+        <Suspense fallback={<div></div>}>
             <ContratosPageComponent />
         </Suspense>
     )

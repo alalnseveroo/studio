@@ -81,7 +81,7 @@ export default function SquadsPage() {
                     <h1 className="text-lg font-semibold md:text-2xl">Squads</h1>
                 </div>
                  <div className="flex flex-1 items-center justify-center">
-                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                    
                  </div>
             </div>
         )
