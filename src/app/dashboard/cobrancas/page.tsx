@@ -29,7 +29,45 @@ import { getProposals } from '@/lib/actions/propostas'
 import { InvoiceTooltip } from '@/components/invoice-tooltip'
 import Link from 'next/link'
 import { ConfigureBillingModal } from '@/components/configure-billing-modal'
+import { Skeleton } from '@/components/ui/skeleton'
 
+
+function ChargesTableSkeleton() {
+    return (
+        <Card>
+            <CardHeader>
+                <Skeleton className="h-6 w-1/3" />
+                <Skeleton className="h-4 w-2/3" />
+            </CardHeader>
+            <CardContent>
+                 <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead><Skeleton className="h-5 w-24" /></TableHead>
+                            <TableHead><Skeleton className="h-5 w-20" /></TableHead>
+                            <TableHead><Skeleton className="h-5 w-24" /></TableHead>
+                            <TableHead><Skeleton className="h-5 w-20" /></TableHead>
+                            <TableHead><Skeleton className="h-5 w-24" /></TableHead>
+                            <TableHead className="text-center"><Skeleton className="h-5 w-20" /></TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {Array.from({ length: 3 }).map((_, i) => (
+                             <TableRow key={i}>
+                                <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+                                <TableCell><Skeleton className="h-5 w-20" /></TableCell>
+                                <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                                <TableCell><Skeleton className="h-6 w-20 rounded-md" /></TableCell>
+                                <TableCell><Skeleton className="h-6 w-24 rounded-md" /></TableCell>
+                                <TableCell><div className="flex justify-center gap-2"><Skeleton className="h-8 w-8" /><Skeleton className="h-8 w-8" /></div></TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+            </CardContent>
+        </Card>
+    )
+}
 
 export default function CobrancasPage() {
   const [charges, setCharges] = useState<Cobranca[]>([])
@@ -40,6 +78,11 @@ export default function CobrancasPage() {
   const { toast } = useToast()
   const [isLoading, setIsLoading] = useState(true);
   const [isBillingModalOpen, setIsBillingModalOpen] = useState(false)
+  const [isClientSide, setIsClientSide] = useState(false);
+
+  useEffect(() => {
+    setIsClientSide(true);
+  }, [])
 
   const getStatusInfo = (status: string, dueDate: string) => {
     if (status === 'pago') {
@@ -52,6 +95,7 @@ export default function CobrancasPage() {
   }
 
   const fetchData = async () => {
+      setIsLoading(true);
       const [{ data: chargesData, error: chargesError }, { data: profileData }, { data: clientsData }, { data: proposalsData }] = await Promise.all([
         getCharges(),
         getProfile(),
@@ -167,7 +211,7 @@ export default function CobrancasPage() {
                 <TabsTrigger value="historico" disabled>Histórico de Envios (em breve)</TabsTrigger>
             </TabsList>
             <TabsContent value="recorrentes">
-                {isLoading ? null : charges.length === 0 ? (
+                {isLoading ? <ChargesTableSkeleton /> : charges.length === 0 ? (
                 <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm py-24">
                     <div className="flex flex-col items-center gap-1 text-center">
                     <FileWarning className="h-10 w-10 text-muted-foreground" />
@@ -202,7 +246,7 @@ export default function CobrancasPage() {
                         <TableBody>
                         {charges.map((charge) => {
                           if (!charge.clientes) return null; // Safety check
-                          const status = getStatusInfo(charge.status, charge.due_date);
+                          const status = isClientSide ? getStatusInfo(charge.status, charge.due_date) : { text: '', className: '' };
                           const clientName = charge.clientes.full_name || charge.clientes.company_name;
 
                           return (
@@ -217,7 +261,7 @@ export default function CobrancasPage() {
                                 </div>
                             </TableCell>
                             <TableCell>
-                                {format(new Date(charge.due_date), 'dd/MM/yyyy')}
+                                {isClientSide ? format(new Date(charge.due_date), 'dd/MM/yyyy') : ''}
                             </TableCell>
                             <TableCell>
                                 {charge.value ? `${Number(charge.value).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : 'N/A'}

@@ -1,4 +1,5 @@
 
+
 'use client'
 
 import { useState, useEffect, Suspense } from 'react'
@@ -34,6 +35,7 @@ import { useRouter, usePathname } from 'next/navigation'
 import { ChatModal } from '@/components/chat-modal'
 import { Badge } from '@/components/ui/badge'
 import { CrivoLoader } from '@/components/crivo-loader'
+import { Skeleton } from '@/components/ui/skeleton'
 
 function DashboardHeader({ 
     userProfile, 
@@ -163,8 +165,7 @@ export default function DashboardLayout({
 }) {
   const [userProfile, setUserProfile] = useState<(Profile & { email: string }) | null>(null)
   const [selectedChatClient, setSelectedChatClient] = useState<Cliente | null>(null);
-  const [isAnimating, setIsAnimating] = useState(false);
-
+  
   const router = useRouter();
   const pathname = usePathname();
 
@@ -193,8 +194,8 @@ export default function DashboardLayout({
           userProfile={userProfile} 
           onOpenChat={(client) => setSelectedChatClient(client)} 
       />
-      <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
-        <Suspense fallback={<CrivoLoader isAnimating={true} />}>
+      <main className="flex flex-1 flex-col">
+        <Suspense fallback={<div className="flex-1 p-10"><Skeleton className="w-full h-full" /></div>}>
             {children}
         </Suspense>
       </main>

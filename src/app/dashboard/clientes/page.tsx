@@ -1,4 +1,5 @@
 
+
 'use client'
 
 import * as React from 'react'
@@ -54,13 +55,66 @@ import type { Cliente, Contrato, Profile } from '@/lib/types'
 import { getContracts } from '@/lib/actions/contratos'
 import { getProfile } from '@/lib/actions/profile'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { ArrowUpDown, ChevronDown, Copy, PlusCircle, Trash2, MoreHorizontal, Check, Link2, FilePen } from 'lucide-react'
+import { ArrowUpDown, ChevronDown, Copy, PlusCircle, Trash2, MoreHorizontal, Check, Link2, FilePen, FileWarning } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useToast } from '@/hooks/use-toast'
 import { CreateContractModal } from '@/components/create-contract-modal'
 import { getProposals } from '@/lib/actions/propostas'
+import { Skeleton } from '@/components/ui/skeleton'
 
-// This is the new component for the data table
+
+function ClientsTableSkeleton() {
+    return (
+        <div className="space-y-4">
+            <div className="flex items-center justify-between">
+                <Skeleton className="h-10 w-64" />
+                <div className="flex items-center gap-2">
+                    <Skeleton className="h-10 w-24" />
+                    <Skeleton className="h-10 w-32" />
+                </div>
+            </div>
+            <div className="rounded-md border">
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead className="w-[48px]"><Skeleton className="h-5 w-5" /></TableHead>
+                            <TableHead><Skeleton className="h-5 w-32" /></TableHead>
+                            <TableHead><Skeleton className="h-5 w-24" /></TableHead>
+                            <TableHead><Skeleton className="h-5 w-48" /></TableHead>
+                            <TableHead className="text-center"><Skeleton className="h-5 w-20" /></TableHead>
+                            <TableHead className="w-[80px] text-right"><Skeleton className="h-5 w-16" /></TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {Array.from({ length: 5 }).map((_, i) => (
+                             <TableRow key={i}>
+                                <TableCell><Skeleton className="h-5 w-5" /></TableCell>
+                                <TableCell>
+                                    <div className="flex items-center gap-3">
+                                        <Skeleton className="h-8 w-8 rounded-full" />
+                                        <div className="space-y-1">
+                                            <Skeleton className="h-4 w-32" />
+                                            <Skeleton className="h-3 w-40" />
+                                        </div>
+                                    </div>
+                                </TableCell>
+                                <TableCell><Skeleton className="h-6 w-24 rounded-md" /></TableCell>
+                                <TableCell><Skeleton className="h-4 w-48" /></TableCell>
+                                <TableCell><Skeleton className="h-6 w-20 mx-auto" /></TableCell>
+                                <TableCell><Skeleton className="h-6 w-16 ml-auto" /></TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+            </div>
+             <div className="flex items-center justify-end space-x-2">
+                <Skeleton className="h-9 w-24" />
+                <Skeleton className="h-9 w-24" />
+            </div>
+        </div>
+    )
+}
+
 function ClientsDataTable() {
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
@@ -78,11 +132,13 @@ function ClientsDataTable() {
   const [isBulkDeleteConfirmOpen, setIsBulkDeleteConfirmOpen] = React.useState(false)
   const [clientForContract, setClientForContract] = React.useState<Cliente | null>(null)
   const [copiedClientId, setCopiedClientId] = React.useState<string | null>(null);
+  const [isLoading, setIsLoading] = React.useState(true);
 
   const router = useRouter()
   const { toast } = useToast()
 
-  const fetchData = async () => {
+  const fetchData = React.useCallback(async () => {
+    setIsLoading(true);
     const [{ data: clientData }, { data: profileData }, { data: contractsData }] = await Promise.all([
       getClients(),
       getProfile(),
@@ -91,11 +147,12 @@ function ClientsDataTable() {
     setClients(clientData || [])
     setContracts(contractsData || []);
     setProfile(profileData as Profile | null);
-  }
+    setIsLoading(false);
+  }, [])
 
   React.useEffect(() => {
     fetchData()
-  }, [])
+  }, [fetchData])
   
   const openContractModalForClient = (client: Cliente) => {
     if (profile && profile.credits <= 0) {
@@ -302,6 +359,9 @@ function ClientsDataTable() {
   
   const selectedRowsForDeletion = table.getFilteredSelectedRowModel().rows.map(row => row.original);
 
+  if (isLoading) {
+      return <ClientsTableSkeleton />;
+  }
 
   return (
     <>
@@ -401,7 +461,11 @@ function ClientsDataTable() {
                   colSpan={columns.length}
                   className="h-24 text-center"
                 >
-                  Nenhum cliente encontrado.
+                  <div className="flex flex-col items-center gap-2">
+                    <FileWarning className="h-8 w-8 text-muted-foreground" />
+                    <p className="font-medium">Nenhum cliente encontrado.</p>
+                    <p className="text-sm text-muted-foreground">Tente adicionar seu primeiro cliente para começar.</p>
+                  </div>
                 </TableCell>
               </TableRow>
             )}

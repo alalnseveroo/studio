@@ -36,7 +36,36 @@ import { useToast } from '@/hooks/use-toast'
 import { ChatInterface } from '@/components/chat-interface'
 import { PortalCalendar } from '@/components/portal-calendar'
 import { StaticPixQRCode } from '@/components/static-pix-qrcode'
+import { Skeleton } from '@/components/ui/skeleton'
 
+function PortalSkeleton() {
+    return (
+         <div className="px-4 md:px-40 flex flex-1 justify-center py-5">
+          <div className="layout-content-container flex flex-col max-w-[960px] flex-1 animate-pulse">
+            <div className="flex flex-wrap justify-between gap-3 p-4">
+                <Skeleton className="h-10 w-72 rounded-lg" />
+            </div>
+            
+            <Skeleton className="h-8 w-60 rounded-lg mx-4 my-5" />
+            <div className="p-4">
+                <Skeleton className="h-40 w-full rounded-lg" />
+            </div>
+
+            <Skeleton className="h-8 w-60 rounded-lg mx-4 my-5" />
+            <div className="p-4 space-y-4">
+                <Skeleton className="h-12 w-full rounded-lg" />
+                <Skeleton className="h-12 w-full rounded-lg" />
+                <Skeleton className="h-12 w-full rounded-lg" />
+            </div>
+
+            <Skeleton className="h-8 w-60 rounded-lg mx-4 my-5" />
+             <div className="px-4 py-3">
+                 <Skeleton className="h-48 w-full rounded-lg" />
+             </div>
+          </div>
+        </div>
+    )
+}
 
 export default function ClientPortalPage() {
   const params = useParams()
@@ -132,8 +161,23 @@ export default function ClientPortalPage() {
   };
 
 
-  if (isLoading && !client) {
-    return <div className="flex min-h-screen items-center justify-center bg-white"><Loader2 className="h-10 w-10 animate-spin text-gray-700"/></div>
+  if (isLoading) {
+    return (
+        <div className="relative flex size-full min-h-screen flex-col bg-white group/design-root overflow-x-hidden">
+            <header className="flex items-center justify-between whitespace-nowrap border-b border-solid border-b-[#f0f2f5] px-10 py-3">
+                 <div className="flex items-center gap-4 text-[#111418]">
+                    <Skeleton className="h-6 w-20" />
+                 </div>
+                 <div className="flex items-center gap-9">
+                    <Skeleton className="h-5 w-20" />
+                    <Skeleton className="h-5 w-20" />
+                    <Skeleton className="h-5 w-20" />
+                    <Skeleton className="h-10 w-10 rounded-full" />
+                </div>
+            </header>
+            <PortalSkeleton />
+        </div>
+    )
   }
 
   if (error || !client) {

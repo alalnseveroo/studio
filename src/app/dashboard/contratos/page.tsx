@@ -44,6 +44,44 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { cn } from '@/lib/utils'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useToast } from '@/hooks/use-toast'
+import { Skeleton } from '@/components/ui/skeleton'
+
+function ContractsTableSkeleton() {
+    return (
+        <Card>
+            <CardContent className="p-0">
+                <Table>
+                    <TableHeader>
+                        <TableRow className="bg-muted/50 hover:bg-muted/50">
+                             <TableHead className="w-[60px]"><Skeleton className="h-5 w-5" /></TableHead>
+                             <TableHead><Skeleton className="h-5 w-20" /></TableHead>
+                             <TableHead><Skeleton className="h-5 w-32" /></TableHead>
+                             <TableHead className="hidden md:table-cell"><Skeleton className="h-5 w-28" /></TableHead>
+                             <TableHead className="hidden lg:table-cell"><Skeleton className="h-5 w-24" /></TableHead>
+                             <TableHead className="hidden lg:table-cell"><Skeleton className="h-5 w-24" /></TableHead>
+                             <TableHead className="hidden md:table-cell"><Skeleton className="h-5 w-28" /></TableHead>
+                             <TableHead className="w-[100px] text-center"><Skeleton className="h-5 w-20 mx-auto" /></TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                         {Array.from({ length: 5 }).map((_, i) => (
+                            <TableRow key={i} className="h-12">
+                                <TableCell><Skeleton className="h-5 w-5" /></TableCell>
+                                <TableCell><Skeleton className="h-5 w-20" /></TableCell>
+                                <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+                                <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-28" /></TableCell>
+                                <TableCell className="hidden lg:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
+                                <TableCell className="hidden lg:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
+                                <TableCell className="hidden md:table-cell"><Skeleton className="h-6 w-28 rounded-md" /></TableCell>
+                                <TableCell><div className="flex justify-center gap-1"><Skeleton className="h-8 w-8" /><Skeleton className="h-8 w-8" /></div></TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+            </CardContent>
+        </Card>
+    )
+}
 
 function ContratosPageComponent() {
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -57,8 +95,14 @@ function ContratosPageComponent() {
   const [isBulkDeleteConfirmOpen, setIsBulkDeleteConfirmOpen] = useState(false)
   const { toast } = useToast()
   const [isLoading, setIsLoading] = useState(true);
+  const [isClientSide, setIsClientSide] = useState(false);
+
+  useEffect(() => {
+    setIsClientSide(true);
+  }, []);
 
   const fetchAllData = async () => {
+    setIsLoading(true);
     const [
       { data: contractsData }, 
       { data: clientsData }, 
@@ -212,7 +256,7 @@ function ContratosPageComponent() {
         </div>
 
 
-        {isLoading ? null : filteredAndSortedContracts.length === 0 ? (
+        {isLoading ? <ContractsTableSkeleton /> : filteredAndSortedContracts.length === 0 ? (
           <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm py-24">
             <div className="flex flex-col items-center gap-1 text-center">
               <FileSignature className="h-10 w-10 text-muted-foreground" />
@@ -272,7 +316,7 @@ function ContratosPageComponent() {
                         {contract.propostas?.value ? `R$ ${Number(contract.propostas.value).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : 'N/A'}
                       </TableCell>
                       <TableCell className="hidden py-1 lg:table-cell">
-                        {format(new Date(contract.created_at), 'dd/MM/yyyy')}
+                        {isClientSide ? format(new Date(contract.created_at), 'dd/MM/yyyy') : ''}
                       </TableCell>
                       <TableCell className="hidden py-1 md:table-cell">
                         <Badge variant="outline" className={cn("font-normal", getStatusClass(contract.status))}>
@@ -353,7 +397,7 @@ function ContratosPageComponent() {
 
 export default function ContratosPage() {
     return (
-        <Suspense fallback={<div></div>}>
+        <Suspense fallback={<ContractsTableSkeleton />}>
             <ContratosPageComponent />
         </Suspense>
     )

@@ -77,7 +77,36 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from '
 
 import { Input } from '@/components/ui/input'
 import { useForm } from 'react-hook-form'
+import { Skeleton } from '@/components/ui/skeleton'
 
+function DashboardSkeleton() {
+    return (
+        <div className="flex flex-1 flex-col gap-4 sm:gap-6">
+            <div className="flex items-center">
+                <Skeleton className="h-8 w-40 rounded-lg" />
+            </div>
+            
+            <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
+                <Skeleton className="h-[180px] w-full rounded-lg" />
+                <Skeleton className="h-[180px] w-full rounded-lg" />
+                <Skeleton className="h-[180px] w-full rounded-lg" />
+                <Skeleton className="h-[180px] w-full rounded-lg" />
+            </div>
+
+             <div className="grid gap-4 md:gap-8 lg:grid-cols-4">
+                <div className="lg:col-span-2 space-y-4">
+                    <Skeleton className="h-96 w-full rounded-lg" />
+                </div>
+                 <div className="lg:col-span-1 space-y-4">
+                    <Skeleton className="h-96 w-full rounded-lg" />
+                </div>
+                 <div className="lg:col-span-1 space-y-4">
+                    <Skeleton className="h-96 w-full rounded-lg" />
+                </div>
+             </div>
+        </div>
+    )
+}
 
 const getStatusClass = (status: string) => {
     switch (status) {
@@ -236,12 +265,14 @@ export default function DashboardPage() {
     const [isBillingModalOpen, setIsBillingModalOpen] = useState(false);
     const [isGoalModalOpen, setIsGoalModalOpen] = useState(false);
     const [isClientSide, setIsClientSide] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
       setIsClientSide(true);
     }, []);
 
     const fetchData = async () => {
+        setIsLoading(true);
         const [
             { data: clientsData }, 
             { data: contractsData }, 
@@ -266,6 +297,7 @@ export default function DashboardPage() {
         setProfile(profileData);
         setFinancialGoal(goalData);
         setTasks(tasksData || []);
+        setIsLoading(false);
     };
 
     useEffect(() => {
@@ -318,7 +350,10 @@ export default function DashboardPage() {
     const goalAmount = financialGoal?.goal_amount || 0;
     const goalProgress = goalAmount > 0 ? (totalRevenue / goalAmount) * 100 : 0;
 
-
+  if (isLoading) {
+      return <DashboardSkeleton />;
+  }
+  
   return (
     <>
     <div className="flex flex-1 flex-col gap-4 sm:gap-6">

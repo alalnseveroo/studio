@@ -9,6 +9,30 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { PlusCircle, FileText, CheckCircle } from 'lucide-react'
 import { getProposals } from '@/lib/actions/propostas'
 import type { Proposta } from '@/lib/types'
+import { Skeleton } from '@/components/ui/skeleton'
+
+function ProposalsGridSkeleton() {
+    return (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {Array.from({ length: 3 }).map((_, i) => (
+                <Card key={i}>
+                    <CardHeader>
+                        <Skeleton className="h-6 w-2/3" />
+                        <Skeleton className="h-4 w-1/3" />
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                        <Skeleton className="h-4 w-full" />
+                        <Skeleton className="h-4 w-5/6" />
+                        <Skeleton className="h-4 w-3/4" />
+                    </CardContent>
+                    <CardFooter>
+                        <Skeleton className="h-9 w-full" />
+                    </CardFooter>
+                </Card>
+            ))}
+        </div>
+    )
+}
 
 export default function PropostasPage() {
   const [proposals, setProposals] = useState<Proposta[]>([])
@@ -16,6 +40,7 @@ export default function PropostasPage() {
 
   useEffect(() => {
     async function fetchProposals() {
+      setIsLoading(true);
       const { data } = await getProposals()
       setProposals(data || [])
       setIsLoading(false);
@@ -40,7 +65,7 @@ export default function PropostasPage() {
         </div>
       </div>
 
-      {isLoading ? null : proposals.length === 0 ? (
+      {isLoading ? <ProposalsGridSkeleton /> : proposals.length === 0 ? (
         <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm py-24">
           <div className="flex flex-col items-center gap-1 text-center">
             <FileText className="h-10 w-10 text-muted-foreground" />

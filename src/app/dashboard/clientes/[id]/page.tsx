@@ -158,6 +158,7 @@ export default function ClienteEditPage() {
   const [activeTab, setActiveTab] = useState<StepName>('info');
   const [editingStep, setEditingStep] = useState<StepName | null>(null);
   const [isClientSide, setIsClientSide] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -217,6 +218,7 @@ export default function ClienteEditPage() {
 
   const fetchClientData = useCallback(async () => {
     if (!clientId) return;
+    setIsLoading(true);
 
     const [{ data, error }, { data: proposalsData }, {data: chargesData}] = await Promise.all([
         getClientById(clientId),
@@ -226,6 +228,7 @@ export default function ClienteEditPage() {
     
     if (error) {
       toast({ variant: 'destructive', title: 'Erro ao Carregar Cliente', description: error.message });
+      setIsLoading(false);
       return;
     } 
     
@@ -265,6 +268,7 @@ export default function ClienteEditPage() {
       methods.reset(defaultValues as ClientFormData);
       setEditingStep(null);
     }
+    setIsLoading(false);
   }, [clientId, toast, methods]);
 
   useEffect(() => {
@@ -347,7 +351,7 @@ export default function ClienteEditPage() {
   const isAddressComplete = addressSchema.safeParse(methods.getValues()).success;
   const isFinancialComplete = financialSchema.safeParse(methods.getValues()).success;
 
-  if (!isClientSide || !client) {
+  if (isLoading) {
      return <PageLoadingSkeleton />;
   }
   
@@ -362,14 +366,14 @@ export default function ClienteEditPage() {
               </Link>
             </Button>
             <Avatar className="h-24 w-24">
-            <AvatarImage src={client.avatar_url || ''} alt="Avatar do Cliente" />
-            <AvatarFallback>{(client.full_name || client.company_name || 'C').charAt(0)}</AvatarFallback>
+            <AvatarImage src={client?.avatar_url || ''} alt="Avatar do Cliente" />
+            <AvatarFallback>{(client?.full_name || client?.company_name || 'C').charAt(0)}</AvatarFallback>
             </Avatar>
             <div>
-                <h2 className="text-2xl font-bold">{client.full_name || client.company_name}</h2>
+                <h2 className="text-2xl font-bold">{client?.full_name || client?.company_name}</h2>
                 <div className="flex items-center gap-2 mt-2">
                     <Badge variant="outline" className="border-green-500 bg-green-500/10 text-green-700">Ativo</Badge>
-                    <Badge variant="secondary">{client.person_type === 'cpf' ? 'Pessoa Física' : 'Pessoa Jurídica'}</Badge>
+                    <Badge variant="secondary">{client?.person_type === 'cpf' ? 'Pessoa Física' : 'Pessoa Jurídica'}</Badge>
                 </div>
             </div>
         </div>
