@@ -118,7 +118,7 @@ type StepName = 'info' | 'address' | 'financial';
 
 function PageLoadingSkeleton() {
     return (
-        <div className="flex flex-1 flex-col gap-6 p-4 sm:p-10">
+        <div className="flex flex-1 flex-col gap-6">
             <div className="flex items-center gap-4">
                 <Skeleton className="h-7 w-7" />
                 <Skeleton className="h-24 w-24 rounded-full" />
@@ -357,7 +357,7 @@ export default function ClienteEditPage() {
   
   return (
     <FormProvider {...methods}>
-      <div className="flex flex-1 flex-col gap-6 p-4 sm:p-10">
+      <div className="flex flex-1 flex-col">
         <div className="flex items-center gap-4">
              <Button asChild variant="outline" size="icon" className="h-7 w-7">
               <Link href="/dashboard/clientes">
@@ -378,7 +378,7 @@ export default function ClienteEditPage() {
             </div>
         </div>
 
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as StepName)} className="w-full">
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as StepName)} className="w-full mt-6">
           <TabsList className="grid w-full grid-cols-3 bg-gray-100">
              <TabsTrigger value="info" disabled={editingStep !== null && editingStep !== 'info'}>
                 {isInfoComplete && editingStep !== 'info' && <CheckCircle className="mr-2 h-4 w-4 text-green-500" />}
@@ -916,19 +916,3 @@ function ChargeHistory({ charges, onMarkAsPaid, isClientSide }: { charges: Cobra
         </Card>
     )
 }
-    
-
-    
-
-    
-
-    
-
-
-
-    
-
-
-    
-
-    

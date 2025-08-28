@@ -130,11 +130,11 @@ const getStatusText = (status: string) => {
     }
 }
   
-const getChargeStatusInfo = (status: string, dueDate: string) => {
+const getChargeStatusInfo = (status: string, dueDate: string, isClientSide: boolean) => {
     if (status === 'pago') {
       return { text: 'Pago', className: 'border-green-500 bg-green-500/10 text-green-700' };
     }
-    if (isPast(new Date(dueDate))) {
+    if (isClientSide && isPast(new Date(dueDate))) {
       return { text: 'Atrasado', className: 'border-red-500 bg-red-500/10 text-red-700' };
     }
     return { text: 'Pendente', className: 'border-yellow-500 bg-yellow-500/10 text-yellow-700' };

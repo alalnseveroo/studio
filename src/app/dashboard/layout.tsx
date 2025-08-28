@@ -194,7 +194,7 @@ export default function DashboardLayout({
           userProfile={userProfile} 
           onOpenChat={(client) => setSelectedChatClient(client)} 
       />
-      <main className="flex flex-1 flex-col">
+      <main className="flex flex-1 flex-col gap-4 p-4 sm:gap-6 sm:p-10">
         <Suspense fallback={<div className="flex-1 p-10"><Skeleton className="w-full h-full" /></div>}>
             {children}
         </Suspense>

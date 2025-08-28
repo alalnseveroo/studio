@@ -164,7 +164,7 @@ export default function CobrancasPage() {
 
   return (
     <>
-    <div className="flex flex-1 flex-col gap-4 p-4 sm:gap-6 sm:p-10">
+    <div className="flex flex-1 flex-col">
         <div className="flex items-center">
             <h1 className="text-lg font-semibold md:text-2xl">Gestão de Cobranças</h1>
             <div className="ml-auto">
@@ -175,7 +175,7 @@ export default function CobrancasPage() {
             </div>
         </div>
 
-        <Card>
+        <Card className="mt-4">
             <CardHeader>
                 <CardTitle>Como Funciona a Cobrança?</CardTitle>
                 <CardDescription>Siga os passos no botão "Adicionar Cliente" para criar uma nova cobrança.</CardDescription>
@@ -205,7 +205,7 @@ export default function CobrancasPage() {
             </CardContent>
         </Card>
 
-        <Tabs defaultValue="recorrentes" className="w-full">
+        <Tabs defaultValue="recorrentes" className="w-full mt-6">
             <TabsList>
                 <TabsTrigger value="recorrentes">Cobranças Recorrentes</TabsTrigger>
                 <TabsTrigger value="historico" disabled>Histórico de Envios (em breve)</TabsTrigger>

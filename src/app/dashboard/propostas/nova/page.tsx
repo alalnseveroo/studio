@@ -128,7 +128,7 @@ export default function NovaPropostaPage() {
 
   return (
     <>
-    <div className="flex flex-1 flex-col gap-4 p-4 sm:gap-6 sm:p-10">
+    <div className="flex flex-1 flex-col">
        <div className="flex items-center gap-4">
         <Button asChild variant="outline" size="icon" className="h-7 w-7">
             <Link href="/dashboard/propostas">
@@ -142,7 +142,7 @@ export default function NovaPropostaPage() {
       </div>
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 mt-4">
           <Card>
             <CardHeader>
               <CardTitle>Nome da Proposta</CardTitle>

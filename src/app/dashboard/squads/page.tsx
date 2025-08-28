@@ -25,10 +25,37 @@ import type { Squad } from '@/lib/types'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { AnimatedTooltip } from '@/components/ui/animated-tooltip'
+import { Skeleton } from '@/components/ui/skeleton'
 
 const squadSchema = z.object({
   name: z.string().min(3, { message: "O nome do squad deve ter pelo menos 3 caracteres." }),
 })
+
+function SquadsPageSkeleton() {
+    return (
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <Card key={i}>
+            <CardHeader>
+              <Skeleton className="h-6 w-2/3" />
+              <Skeleton className="h-4 w-1/3" />
+            </CardHeader>
+            <CardContent>
+              <Skeleton className="h-5 w-1/4 mb-2" />
+              <div className="flex items-center -space-x-2">
+                <Skeleton className="h-10 w-10 rounded-full" />
+                <Skeleton className="h-10 w-10 rounded-full" />
+                <Skeleton className="h-10 w-10 rounded-full" />
+              </div>
+            </CardContent>
+            <CardFooter>
+              <Skeleton className="h-9 w-full" />
+            </CardFooter>
+          </Card>
+        ))}
+      </div>
+    )
+}
 
 export default function SquadsPage() {
     const [squads, setSquads] = useState<Squad[]>([])
@@ -74,71 +101,60 @@ export default function SquadsPage() {
         }
     }
     
-    if (isLoading) {
-        return (
-             <div className="flex flex-1 flex-col gap-4 p-4 sm:gap-6 sm:p-10">
-                <div className="flex items-center">
-                    <h1 className="text-lg font-semibold md:text-2xl">Squads</h1>
-                </div>
-                 <div className="flex flex-1 items-center justify-center">
-                    
-                 </div>
-            </div>
-        )
-    }
-
     return (
-        <>
-            <div className="flex flex-1 flex-col gap-4 p-4 sm:gap-6 sm:p-10">
-                <div className="flex items-center">
-                    <h1 className="text-lg font-semibold md:text-2xl">Squads</h1>
-                    <div className="ml-auto flex items-center gap-2">
-                        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-                            <DialogTrigger asChild>
-                                <Button size="sm" className="h-8 gap-1">
-                                    <PlusCircle className="h-3.5 w-3.5" />
-                                    <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-                                        Criar Squad
-                                    </span>
-                                </Button>
-                            </DialogTrigger>
-                            <DialogContent>
-                                <DialogHeader>
-                                    <DialogTitle>Criar Novo Squad</DialogTitle>
-                                    <DialogDescription>
-                                        Dê um nome para seu novo time de clientes.
-                                    </DialogDescription>
-                                </DialogHeader>
-                                <Form {...form}>
-                                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                                        <FormField
-                                            control={form.control}
-                                            name="name"
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel>Nome do Squad</FormLabel>
-                                                    <FormControl>
-                                                        <Input placeholder="Ex: Clientes de Mídias Sociais" {...field} />
-                                                    </FormControl>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )}
-                                        />
-                                        <DialogFooter>
-                                            <Button type="button" variant="ghost" onClick={() => setIsModalOpen(false)}>Cancelar</Button>
-                                            <Button type="submit" disabled={isSubmitting}>
-                                                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                                Salvar Squad
-                                            </Button>
-                                        </DialogFooter>
-                                    </form>
-                                </Form>
-                            </DialogContent>
-                        </Dialog>
-                    </div>
+        <div className="flex flex-1 flex-col">
+            <div className="flex items-center">
+                <h1 className="text-lg font-semibold md:text-2xl">Squads</h1>
+                <div className="ml-auto flex items-center gap-2">
+                    <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+                        <DialogTrigger asChild>
+                            <Button size="sm" className="h-8 gap-1">
+                                <PlusCircle className="h-3.5 w-3.5" />
+                                <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
+                                    Criar Squad
+                                </span>
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                            <DialogHeader>
+                                <DialogTitle>Criar Novo Squad</DialogTitle>
+                                <DialogDescription>
+                                    Dê um nome para seu novo time de clientes.
+                                </DialogDescription>
+                            </DialogHeader>
+                            <Form {...form}>
+                                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                                    <FormField
+                                        control={form.control}
+                                        name="name"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Nome do Squad</FormLabel>
+                                                <FormControl>
+                                                    <Input placeholder="Ex: Clientes de Mídias Sociais" {...field} />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                    <DialogFooter>
+                                        <Button type="button" variant="ghost" onClick={() => setIsModalOpen(false)}>Cancelar</Button>
+                                        <Button type="submit" disabled={isSubmitting}>
+                                            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                            Salvar Squad
+                                        </Button>
+                                    </DialogFooter>
+                                </form>
+                            </Form>
+                        </DialogContent>
+                    </Dialog>
                 </div>
-                
-                {squads.length === 0 ? (
+            </div>
+            
+            <div className="mt-4">
+                {isLoading ? (
+                    <SquadsPageSkeleton />
+                ) : squads.length === 0 ? (
                     <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm py-24">
                         <div className="flex flex-col items-center gap-1 text-center">
                             <Users2 className="h-10 w-10 text-muted-foreground" />
@@ -185,6 +201,6 @@ export default function SquadsPage() {
                     </div>
                 )}
             </div>
-        </>
+        </div>
     )
 }

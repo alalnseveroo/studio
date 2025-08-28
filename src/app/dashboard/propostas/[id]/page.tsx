@@ -28,9 +28,14 @@ const InfoItem = ({ icon: Icon, label, value }: { icon: React.ElementType, label
 export default function PropostaDetailPage() {
   const [proposal, setProposal] = useState<Proposta | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [isClientSide, setIsClientSide] = useState(false)
   const params = useParams()
   const router = useRouter()
   const proposalId = params.id as string
+
+  useEffect(() => {
+    setIsClientSide(true)
+  }, [])
 
   const fetchProposal = useCallback(async () => {
     setIsLoading(true)
@@ -66,7 +71,7 @@ export default function PropostaDetailPage() {
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-4 p-4 sm:gap-6 sm:p-10">
+    <div className="flex flex-1 flex-col">
       <div className="flex items-center gap-4">
          <Button asChild variant="outline" size="icon" className="h-7 w-7">
             <Link href="/dashboard/propostas">
@@ -84,7 +89,7 @@ export default function PropostaDetailPage() {
         </div>
       </div>
       
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mt-4">
           <Card className="lg:col-span-2">
             <CardHeader>
                 <CardTitle>{proposal.name}</CardTitle>
@@ -111,17 +116,21 @@ export default function PropostaDetailPage() {
                             label="Duração do Contrato" 
                             value={proposal.contract_duration_type === 'definite' ? `${proposal.contract_duration_months} meses` : 'Prazo Indeterminado'} 
                         />
-                        <InfoItem 
-                            icon={Calendar} 
-                            label="Início da Vigência" 
-                            value={proposal.start_date ? format(new Date(proposal.start_date), 'dd/MM/yyyy') : 'Não definido'} 
-                        />
-                        {proposal.contract_duration_type === 'definite' && (
+                        {isClientSide && (
+                            <>
                             <InfoItem 
                                 icon={Calendar} 
-                                label="Término da Vigência" 
-                                value={proposal.end_date ? format(new Date(proposal.end_date), 'dd/MM/yyyy') : 'Não definido'} 
+                                label="Início da Vigência" 
+                                value={proposal.start_date ? format(new Date(proposal.start_date), 'dd/MM/yyyy') : 'Não definido'} 
                             />
+                            {proposal.contract_duration_type === 'definite' && (
+                                <InfoItem 
+                                    icon={Calendar} 
+                                    label="Término da Vigência" 
+                                    value={proposal.end_date ? format(new Date(proposal.end_date), 'dd/MM/yyyy') : 'Não definido'} 
+                                />
+                            )}
+                            </>
                         )}
                          <InfoItem 
                             icon={FileText} 

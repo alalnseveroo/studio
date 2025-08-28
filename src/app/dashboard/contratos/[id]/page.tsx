@@ -33,7 +33,12 @@ export default function ContratoDetailPage() {
   const [signingStep, setSigningStep] = useState<SigningStep>('initial')
   const [otp, setOtp] = useState('')
   const [hasAgreed, setHasAgreed] = useState(false)
+  const [isClientSide, setIsClientSide] = useState(false)
   const { toast } = useToast()
+
+  useEffect(() => {
+    setIsClientSide(true)
+  }, [])
 
   const fetchContractAndProfile = useCallback(async () => {
     if (!contractId) return
@@ -127,7 +132,7 @@ export default function ContratoDetailPage() {
   const providerName = userProfile?.full_name || userProfile?.company_name || '[Seu Nome]';
 
   return (
-    <div className="flex flex-1 flex-col gap-4 p-4 sm:gap-6 sm:p-6">
+    <div className="flex flex-1 flex-col">
       <div className="flex items-center gap-4">
         <Button asChild variant="outline" size="icon" className="h-7 w-7">
             <Link href="/dashboard/contratos">
@@ -140,7 +145,7 @@ export default function ContratoDetailPage() {
         </h1>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-12 items-start">
+      <div className="grid md:grid-cols-2 gap-12 items-start mt-4">
         {/* Coluna Esquerda: Preview do Contrato */}
         <Card>
             <CardHeader>
@@ -159,7 +164,7 @@ export default function ContratoDetailPage() {
 
         {/* Coluna Direita: Ações de Assinatura */}
         <div className="sticky top-20">
-          {signingStep === 'already_signed' && (
+          {signingStep === 'already_signed' && isClientSide && (
             <Alert variant="default" className="bg-green-50 border-green-200">
                 <BadgeCheck className="h-4 w-4 text-green-600" />
                 <AlertTitle className="text-green-800">Contrato Assinado por Você!</AlertTitle>

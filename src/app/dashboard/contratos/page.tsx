@@ -206,7 +206,7 @@ function ContratosPageComponent() {
 
   return (
     <>
-      <div className="flex flex-1 flex-col gap-4 p-4 sm:gap-6 sm:p-10">
+      <div className="flex flex-1 flex-col">
         <div className="flex items-center">
           <h1 className="text-lg font-semibold md:text-2xl">Contratos</h1>
           <div className="ml-auto flex items-center gap-2">
@@ -232,7 +232,7 @@ function ContratosPageComponent() {
           </div>
         </div>
         
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 py-4">
             <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="w-[180px]">
                     <SelectValue placeholder="Filtrar por status" />
