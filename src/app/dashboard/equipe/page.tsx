@@ -1,21 +1,31 @@
+
 'use client'
 
-import { Users } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Users, PlusCircle } from "lucide-react"
 
 export default function EquipePage() {
     return (
         <div className="flex flex-1 flex-col gap-4 p-4 sm:gap-6 sm:p-10">
             <div className="flex items-center">
                 <h1 className="text-lg font-semibold md:text-2xl">Equipe</h1>
+                 <div className="ml-auto flex items-center gap-2">
+                    <Button size="sm" className="h-8 gap-1" disabled>
+                        <PlusCircle className="h-3.5 w-3.5" />
+                        <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
+                            Convidar Membro
+                        </span>
+                    </Button>
+                </div>
             </div>
             <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm py-24">
                 <div className="flex flex-col items-center gap-1 text-center">
                 <Users className="h-10 w-10 text-muted-foreground" />
                 <h3 className="text-2xl font-bold tracking-tight">
-                    Página em Construção
+                    Nenhum membro na equipe
                 </h3>
                 <p className="text-sm text-muted-foreground max-w-md">
-                    Aqui você poderá convidar e gerenciar as secretárias da sua agência.
+                    Clique em "Convidar Membro" para adicionar secretárias à sua agência e começar a delegar tarefas.
                 </p>
                 </div>
             </div>
