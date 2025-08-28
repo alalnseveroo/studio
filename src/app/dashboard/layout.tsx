@@ -1,5 +1,4 @@
 
-
 'use client'
 
 import { useState, useEffect, Suspense } from 'react'
@@ -44,7 +43,6 @@ import { BreadcrumbNav } from './_components/breadcrumb-nav'
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { Separator } from '@/components/ui/separator'
 import { cn } from '@/lib/utils'
-import { AgencyNav } from './_components/agency-nav'
 
 function DashboardHeader({ 
     userProfile, 
@@ -160,7 +158,7 @@ function DashboardHeader({
 
 const NavItem = ({ href, icon: Icon, label }: { href: string, icon: React.ElementType, label: string }) => {
   const pathname = usePathname();
-  const isActive = pathname === href;
+  const isActive = pathname === href || (href !== '/dashboard' && pathname.startsWith(href));
 
   return (
     <TooltipProvider>
@@ -191,11 +189,10 @@ const navItemsGeral = [
     { href: '/dashboard/propostas', icon: ClipboardList, label: 'Propostas' },
     { href: '/dashboard/contratos', icon: FileSignature, label: 'Contratos' },
     { href: '/dashboard/cobrancas', icon: DollarSign, label: 'Cobranças' },
-    { href: '/dashboard/squads', icon: Users2, label: 'Squads' },
 ];
 
 const navItemsAgencia = [
-    { href: '/dashboard/squads', icon: AreaChart, label: 'Visão Geral' },
+    { href: '/dashboard/squads', icon: Users2, label: 'Squads' },
     { href: '/dashboard/equipe', icon: Briefcase, label: 'Equipe' },
     { href: '/dashboard/relatorios', icon: BarChart3, label: 'Relatórios' },
 ];
@@ -229,9 +226,8 @@ export default function DashboardLayout({
     }
     fetchInitialData();
   }, [pathname, router]);
-
-  const isSquadsRoute = pathname.startsWith('/dashboard/squads') || pathname.startsWith('/dashboard/equipe') || pathname.startsWith('/dashboard/relatorios');
-  const navItems = userProfile?.is_agency && isSquadsRoute ? navItemsAgencia : navItemsGeral;
+  
+  const navItems = userProfile?.is_agency ? [...navItemsGeral, ...navItemsAgencia] : navItemsGeral;
 
   return (
     <div className="flex min-h-screen w-full flex-col bg-muted/40">
