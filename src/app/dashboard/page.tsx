@@ -10,17 +10,13 @@ import {
   FileSignature,
   DollarSign,
   BadgeCent,
-  AlertTriangle,
   ClipboardList,
-  CalendarDays,
   UserPlus,
   FilePlus,
-  Receipt,
   Settings,
   Plus,
   CreditCard,
   Pencil,
-  CheckCircle,
   User as UserIcon,
   ChevronsUpDown,
   Check,
@@ -49,12 +45,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion"
 import { Progress } from '@/components/ui/progress'
 import { Checkbox } from '@/components/ui/checkbox'
 import { getClients } from '@/lib/actions/clients'
@@ -93,16 +83,9 @@ function DashboardSkeleton() {
                 <Skeleton className="h-[180px] w-full rounded-lg" />
             </div>
 
-             <div className="grid gap-4 md:gap-8 lg:grid-cols-4">
-                <div className="lg:col-span-2 space-y-4">
-                    <Skeleton className="h-96 w-full rounded-lg" />
-                </div>
-                 <div className="lg:col-span-1 space-y-4">
-                    <Skeleton className="h-96 w-full rounded-lg" />
-                </div>
-                 <div className="lg:col-span-1 space-y-4">
-                    <Skeleton className="h-96 w-full rounded-lg" />
-                </div>
+             <div className="grid gap-4 md:gap-8 lg:grid-cols-2">
+                <Skeleton className="h-96 w-full rounded-lg" />
+                <Skeleton className="h-96 w-full rounded-lg" />
              </div>
         </div>
     )
@@ -345,8 +328,7 @@ export default function DashboardPage() {
     const recentContracts = contracts?.slice(0, 5) || [];
     
     const isProfileComplete = profile?.is_completed ?? false;
-    const displayName = profile?.full_name?.split(' ')[0] || (profile?.company_name || 'Bem-vindo(a)');
-
+    
     const goalAmount = financialGoal?.goal_amount || 0;
     const goalProgress = goalAmount > 0 ? (totalRevenue / goalAmount) * 100 : 0;
 
@@ -356,15 +338,7 @@ export default function DashboardPage() {
   
   return (
     <>
-    <div className="flex flex-1 flex-col gap-4 sm:gap-6">
-       <div className="flex items-center">
-         {isClientSide && (
-            <h1 className="text-lg font-semibold md:text-2xl">
-                Olá, {displayName}.
-            </h1>
-         )}
-       </div>
-
+    <div className="flex flex-1 flex-col gap-4">
       {isProfileComplete && !profile?.pix_key && (
         <Alert variant="destructive" className="border-red-500/50 bg-red-500/10 text-red-700">
           <Settings className="h-4 w-4 text-red-700" />
@@ -426,20 +400,9 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">R$ {pendingAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-              <Accordion type="single" collapsible className="w-full">
-                <AccordionItem value="item-1" className="border-b-0">
-                  <AccordionTrigger className="text-xs text-muted-foreground hover:no-underline p-0">
-                    Total de valores a receber
-                  </AccordionTrigger>
-                  <AccordionContent>
-                     <div className="flex flex-row items-center h-10 max-h-14 overflow-x-auto no-scrollbar">
-                        {pendingClientsForTooltip.length > 0 ? (
-                            <AnimatedTooltip items={pendingClientsForTooltip} />
-                        ) : <p className="text-xs text-muted-foreground px-2">Nenhum cliente com cobranças pendentes.</p> }
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-             </Accordion>
+             <p className="text-xs text-muted-foreground">
+                Total de valores a receber
+              </p>
           </CardContent>
         </Card>
         <Card className="border">
@@ -469,8 +432,8 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       </div>
-      <div className="grid gap-4 md:gap-8 lg:grid-cols-4">
-        <Card className="lg:col-span-2 border h-96">
+      <div className="grid gap-4 md:gap-8 lg:grid-cols-2">
+        <Card className="lg:col-span-1 border h-96">
           <CardHeader className="flex flex-row items-center">
             <div className="grid gap-2">
               <CardTitle className="text-base font-semibold">Contratos Recentes</CardTitle>
@@ -553,14 +516,6 @@ export default function DashboardPage() {
                 </div>
              )}
           </CardContent>
-        </Card>
-        <Card className="lg:col-span-1 border h-96 bg-[#ff6d24] text-white">
-            <CardHeader>
-                <CardTitle className="text-base font-semibold text-white">Folgas e Feriados</CardTitle>
-            </CardHeader>
-            <CardContent>
-                <DaysOffCalendar />
-            </CardContent>
         </Card>
         <Card className="lg:col-span-1 border h-96">
            <TaskList tasks={tasks} clients={clients} onTaskUpdate={handleTaskUpdate} onTaskCreate={handleTaskCreate} />

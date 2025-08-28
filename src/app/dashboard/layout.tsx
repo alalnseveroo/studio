@@ -4,13 +4,20 @@
 
 import { useState, useEffect, Suspense } from 'react'
 import Link from 'next/link'
-import Image from 'next/image'
 import {
+  Home,
+  Users,
+  FileSignature,
+  DollarSign,
+  ClipboardList,
   Inbox,
   LogOut,
   Settings,
   CreditCard,
   User,
+  PanelLeft,
+  Briefcase,
+  AreaChart,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -32,6 +39,9 @@ import { ChatModal } from '@/components/chat-modal'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { BreadcrumbNav } from './_components/breadcrumb-nav'
+import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { Separator } from '@/components/ui/separator'
+import { cn } from '@/lib/utils'
 
 function DashboardHeader({ 
     userProfile, 
@@ -60,10 +70,12 @@ function DashboardHeader({
 
             <div className="flex items-center gap-4">
                  {userProfile && (
-                    <Badge variant="outline" className="hidden sm:flex items-center gap-2 border-green-500 bg-green-500/10 text-green-700">
+                    <Button asChild variant="outline" size="sm" className="hidden sm:flex items-center gap-2 border-green-500 bg-green-500/10 text-green-700 hover:bg-green-500/20 hover:text-green-800">
+                      <Link href="/dashboard/settings/buy-credits">
                         <CreditCard className="h-4 w-4"/>
                         <span>Você tem {userProfile.credits ?? 0} créditos</span>
-                    </Badge>
+                      </Link>
+                    </Button>
                  )}
                  <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -143,6 +155,47 @@ function DashboardHeader({
      )
 }
 
+const NavItem = ({ href, icon: Icon, label }: { href: string, icon: React.ElementType, label: string }) => {
+  const pathname = usePathname();
+  const isActive = pathname === href;
+
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Link href={href}>
+            <Button
+              variant={isActive ? 'secondary' : 'ghost'}
+              size="icon"
+              className={cn("rounded-lg", isActive && "bg-muted text-primary")}
+              aria-label={label}
+            >
+              <Icon className="size-5" />
+            </Button>
+          </Link>
+        </TooltipTrigger>
+        <TooltipContent side="right" sideOffset={5}>
+          {label}
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  )
+}
+
+const navItemsGeral = [
+    { href: '/dashboard', icon: AreaChart, label: 'Dashboard' },
+    { href: '/dashboard/clientes', icon: Users, label: 'Clientes' },
+    { href: '/dashboard/propostas', icon: ClipboardList, label: 'Propostas' },
+    { href: '/dashboard/contratos', icon: FileSignature, label: 'Contratos' },
+    { href: '/dashboard/cobrancas', icon: DollarSign, label: 'Cobranças' },
+];
+
+const navItemsAgencia = [
+    { href: '/dashboard', icon: AreaChart, label: 'Visão Geral' },
+    { href: '/dashboard/equipe', icon: Briefcase, label: 'Equipe' },
+    { href: '/dashboard/squads', icon: Users, label: 'Squads' },
+    { href: '/dashboard/relatorios', icon: Home, label: 'Relatórios' },
+];
 
 export default function DashboardLayout({
   children,
@@ -174,23 +227,37 @@ export default function DashboardLayout({
     fetchInitialData();
   }, [pathname, router]);
 
+  const navItems = userProfile?.is_agency ? navItemsAgencia : navItemsGeral;
+
   return (
-    <div className="flex min-h-screen w-full flex-col">
-      <DashboardHeader 
-          userProfile={userProfile} 
-          onOpenChat={(client) => setSelectedChatClient(client)} 
-      />
-      <main className="flex flex-1 flex-col gap-6 p-4 sm:p-6 lg:p-10">
-        <Suspense fallback={<div className="flex-1 p-10"><Skeleton className="w-full h-full" /></div>}>
-            {children}
-        </Suspense>
-      </main>
-      {selectedChatClient && (
-          <ChatModal 
-              client={selectedChatClient} 
-              onClose={() => setSelectedChatClient(null)} 
-          />
-      )}
+    <div className="flex min-h-screen w-full flex-col bg-muted/40">
+        <aside className="fixed inset-y-0 left-0 z-10 hidden w-14 flex-col border-r bg-background sm:flex">
+            <nav className="flex flex-col items-center gap-4 px-2 py-4">
+                {navItems.map(item => <NavItem key={item.href} {...item} />)}
+            </nav>
+            <nav className="mt-auto flex flex-col items-center gap-4 px-2 py-4">
+                <Separator />
+                <NavItem href="/dashboard/settings/buy-credits" icon={CreditCard} label="Comprar Créditos" />
+                <NavItem href="/dashboard/settings/profile" icon={Settings} label="Configurações" />
+            </nav>
+        </aside>
+        <div className="flex flex-col sm:gap-4 sm:py-4 sm:pl-14">
+            <DashboardHeader 
+                userProfile={userProfile} 
+                onOpenChat={(client) => setSelectedChatClient(client)} 
+            />
+            <main className="flex-1 items-start gap-4 p-4 sm:p-6 md:gap-8">
+                <Suspense fallback={<div className="flex-1 p-10"><Skeleton className="w-full h-full" /></div>}>
+                    {children}
+                </Suspense>
+            </main>
+        </div>
+        {selectedChatClient && (
+            <ChatModal 
+                client={selectedChatClient} 
+                onClose={() => setSelectedChatClient(null)} 
+            />
+        )}
     </div>
   )
 }
