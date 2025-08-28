@@ -188,3 +188,12 @@ export type Task = {
   updated_at: string;
   clientes: Cliente; // Join com clientes
 };
+
+export type Squad = {
+    id: string;
+    agency_id: string;
+    name: string;
+    assistant_id: string | null;
+    created_at: string;
+    updated_at: string | null;
+}
