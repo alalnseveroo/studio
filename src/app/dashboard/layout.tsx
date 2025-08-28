@@ -170,7 +170,6 @@ export default function DashboardLayout({
 
   useEffect(() => {
     async function fetchInitialData() {
-      setIsAnimating(true);
       const { data: profileData } = await getProfile();
       const profile = profileData as Profile & { email: string } | null;
       setUserProfile(profile);
@@ -184,7 +183,6 @@ export default function DashboardLayout({
           router.push('/dashboard/settings/profile');
         }
       }
-      setIsAnimating(false);
     }
     fetchInitialData();
   }, [pathname, router]);
@@ -200,7 +198,6 @@ export default function DashboardLayout({
             {children}
         </Suspense>
       </main>
-      <CrivoLoader isAnimating={isAnimating} />
       {selectedChatClient && (
           <ChatModal 
               client={selectedChatClient} 

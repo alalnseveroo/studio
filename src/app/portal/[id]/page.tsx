@@ -71,7 +71,7 @@ export default function ClientPortalPage() {
     if (status === 'pago') {
       return { text: 'Pago', className: 'bg-green-100 text-green-800' };
     }
-    if (isClientSide && isPast(new Date(dueDate))) {
+    if (isPast(new Date(dueDate))) {
       return { text: 'Atrasado', className: 'bg-red-100 text-red-800' };
     }
     return { text: 'Pendente', className: 'bg-yellow-100 text-yellow-800' };
@@ -308,7 +308,7 @@ export default function ClientPortalPage() {
                   </TableHeader>
                   <TableBody>
                     {charges.length > 0 ? charges.map(charge => {
-                        const status = getStatusInfo(charge.status, charge.due_date);
+                        const status = isClientSide ? getStatusInfo(charge.status, charge.due_date) : { text: 'Carregando...', className: ''};
                         const isInvoiceAvailable = charge.status === 'pago' && !!charge.invoice_url;
                         return (
                          <TableRow key={charge.id}>

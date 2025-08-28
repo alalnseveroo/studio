@@ -101,11 +101,11 @@ const getStatusText = (status: string) => {
     }
 }
   
-const getChargeStatusInfo = (status: string, dueDate: string, isClientSide: boolean) => {
+const getChargeStatusInfo = (status: string, dueDate: string) => {
     if (status === 'pago') {
       return { text: 'Pago', className: 'border-green-500 bg-green-500/10 text-green-700' };
     }
-    if (isClientSide && isPast(new Date(dueDate))) {
+    if (isPast(new Date(dueDate))) {
       return { text: 'Atrasado', className: 'border-red-500 bg-red-500/10 text-red-700' };
     }
     return { text: 'Pendente', className: 'border-yellow-500 bg-yellow-500/10 text-yellow-700' };
@@ -136,8 +136,8 @@ function TaskList({ tasks, clients, onTaskUpdate, onTaskCreate }: { tasks: Task[
         return [{
             id: task.clientes.id,
             name: task.clientes.full_name || task.clientes.company_name || 'Cliente',
-            designation: `Tarefa: ${task.description.substring(0, 20)}...`,
-            image: task.clientes.avatar_url || `https://i.pravatar.cc/150?u=${task.clientes.id}`
+            designation: `Tarefa: ${'task.description'.substring(0, 20)}...`,
+            image: task.clientes.avatar_url || `https://i.pravatar.cc/150?u=${'task.clientes.id'}`
         }]
     };
 
@@ -303,8 +303,8 @@ export default function DashboardPage() {
         return chargeList.map(charge => ({
             id: charge.clientes.id,
             name: charge.clientes.full_name || charge.clientes.company_name || 'Cliente',
-            designation: `R$ ${charge.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
-            image: charge.clientes.avatar_url || `https://i.pravatar.cc/150?u=${charge.clientes.id}`
+            designation: `R$ ${(charge.value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+            image: charge.clientes.avatar_url || `https://i.pravatar.cc/150?u=${'charge.clientes.id'}`
         }))
     }
 
