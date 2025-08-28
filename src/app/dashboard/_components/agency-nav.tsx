@@ -1,3 +1,4 @@
+
 'use client'
 
 import Link from 'next/link'
@@ -9,16 +10,13 @@ const navItems = [
     { href: '/dashboard/equipe', label: 'Equipe' },
     { href: '/dashboard/squads', label: 'Squads' },
     { href: '/dashboard/relatorios', label: 'Relatórios' },
-    { href: '/dashboard/clientes', label: 'Clientes' },
-    { href: '/dashboard/propostas', label: 'Propostas' },
-    { href: '/dashboard/contratos', label: 'Contratos' },
 ]
 
 export function AgencyNav() {
     const pathname = usePathname()
     
     return (
-        <nav className="hidden md:flex items-center space-x-4 text-sm font-medium">
+        <nav className="hidden items-center space-x-4 text-sm font-medium md:hidden">
             {navItems.map((item) => (
                 <Link 
                     key={item.href}

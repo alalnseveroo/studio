@@ -158,7 +158,6 @@ function SquadModal({
         defaultValues: { id: '', name: '', clientIds: [] },
     });
     
-    // Lista de clientes disponíveis para seleção (não designados + os já do squad atual)
     const availableClients = squad ? [...unassignedClients, ...squad.squad_clients.map(sc => sc.clientes)] : unassignedClients;
     
     const [selectedClients, setSelectedClients] = useState<Cliente[]>([]);

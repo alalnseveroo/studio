@@ -6,13 +6,11 @@ import { useState, useEffect, Suspense } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import {
-  Bell,
   Inbox,
   LogOut,
   Settings,
-  MessageSquare,
-  User,
   CreditCard,
+  User,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -29,13 +27,11 @@ import { getProfile } from '@/lib/actions/profile'
 import { getClients } from '@/lib/actions/clients'
 import type { Profile, Cliente } from '@/lib/types'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { MainNav } from './_components/main-nav'
-import { AgencyNav } from './_components/agency-nav' // Importando o novo menu
 import { useRouter, usePathname } from 'next/navigation'
 import { ChatModal } from '@/components/chat-modal'
 import { Badge } from '@/components/ui/badge'
-import { CrivoLoader } from '@/components/crivo-loader'
 import { Skeleton } from '@/components/ui/skeleton'
+import { BreadcrumbNav } from './_components/breadcrumb-nav'
 
 function DashboardHeader({ 
     userProfile, 
@@ -59,18 +55,8 @@ function DashboardHeader({
 
      return (
         <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-4 border-b bg-background px-4 sm:px-6">
-            <div className="flex items-center gap-4">
-                 <Image 
-                    src="https://pouynmrblzvwlhrfyins.supabase.co/storage/v1/object/public/icons/imags/Untitled%20folder/Crivo.png" 
-                    alt="Crivo Logo"
-                    width={80}
-                    height={30}
-                />
-            </div>
-
-            <div className="flex-1 flex justify-center">
-                {userProfile?.is_agency ? <AgencyNav /> : <MainNav />}
-            </div>
+            
+            <BreadcrumbNav />
 
             <div className="flex items-center gap-4">
                  {userProfile && (
@@ -194,7 +180,7 @@ export default function DashboardLayout({
           userProfile={userProfile} 
           onOpenChat={(client) => setSelectedChatClient(client)} 
       />
-      <main className="flex flex-1 flex-col gap-4 p-4 sm:gap-6 sm:p-10">
+      <main className="flex flex-1 flex-col gap-6 p-4 sm:p-6 lg:p-10">
         <Suspense fallback={<div className="flex-1 p-10"><Skeleton className="w-full h-full" /></div>}>
             {children}
         </Suspense>
