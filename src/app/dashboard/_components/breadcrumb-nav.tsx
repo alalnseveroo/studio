@@ -60,31 +60,37 @@ export function BreadcrumbNav() {
     fetchData()
   }, [])
 
-  const currentSquadId = pathname.split('/squads/')[1]?.split('/')[0] || 'geral'
+  const currentPath = pathname.split('/dashboard/')[1] || ''
+  const isSquadsSection = currentPath.startsWith('squads');
   
   const formattedSquads = squads.map((squad) => ({
     label: squad.name,
     value: squad.id,
+    href: `/dashboard/squads/${squad.id}`,
   }))
 
-  const generalOption = {
-    label: 'Visão Geral',
-    value: 'geral',
+  const globalOption = {
+    label: 'Gerenciamento Global',
+    value: 'global',
+    href: '/dashboard',
+  }
+  
+  const squadOption = {
+      label: 'Squad Geral',
+      value: 'squads',
+      href: '/dashboard/squads'
   }
 
-  const allOptions = [generalOption, ...formattedSquads]
+  const allOptions = [globalOption, squadOption];
 
-  const selectedSquad = allOptions.find((squad) => squad.value === currentSquadId)
+  const selectedOption = isSquadsSection ? squadOption : globalOption;
 
-  const handleSquadSelect = (squadValue: string) => {
+  const handleSelect = (option: { value: string, href: string }) => {
     setOpen(false)
-    if (squadValue === 'geral') {
-      router.push('/dashboard')
-    } else if (squadValue === 'create') {
-        // Futuramente, abrir o modal de criação de squad
-        router.push('/dashboard/squads')
+    if (option.value === 'create') {
+        router.push('/dashboard/squads') // Futuramente, abre o modal
     } else {
-      router.push(`/dashboard/squads/${squadValue}`)
+        router.push(option.href)
     }
   }
   
@@ -93,46 +99,37 @@ export function BreadcrumbNav() {
 
   return (
     <div className="flex items-center gap-2">
-      <Link href="/dashboard" className="flex items-center gap-2">
-        <Avatar className="h-7 w-7">
-          <AvatarImage src={profile?.avatar_url || ''} alt="Avatar" />
-          <AvatarFallback>{fallback}</AvatarFallback>
-        </Avatar>
-        <span className="font-semibold text-sm hidden md:block">{displayName}</span>
-      </Link>
-      <span className="text-muted-foreground">/</span>
-
-      <Popover open={open} onOpenChange={setOpen}>
+       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button
             variant="outline"
             role="combobox"
             aria-expanded={open}
-            aria-label="Selecionar um squad"
-            className="w-[200px] justify-between"
+            aria-label="Selecionar contexto"
+            className="w-[220px] justify-between"
           >
-            {isLoading ? <Skeleton className="h-5 w-3/4" /> : selectedSquad?.label}
+            {isLoading ? <Skeleton className="h-5 w-3/4" /> : selectedOption?.label}
             <ChevronsUpDown className="ml-auto h-4 w-4 shrink-0 opacity-50" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-[200px] p-0">
+        <PopoverContent className="w-[220px] p-0">
           <Command>
             <CommandList>
-              <CommandInput placeholder="Procurar squad..." />
-              <CommandEmpty>Nenhum squad encontrado.</CommandEmpty>
+              <CommandInput placeholder="Procurar contexto..." />
+              <CommandEmpty>Nenhum contexto encontrado.</CommandEmpty>
               <CommandGroup>
-                {allOptions.map((squad) => (
+                {allOptions.map((option) => (
                   <CommandItem
-                    key={squad.value}
-                    onSelect={() => handleSquadSelect(squad.value)}
+                    key={option.value}
+                    onSelect={() => handleSelect(option)}
                     className="text-sm"
                   >
                     <Users className="mr-2 h-4 w-4" />
-                    {squad.label}
+                    {option.label}
                     <Check
                       className={cn(
                         'ml-auto h-4 w-4',
-                        selectedSquad?.value === squad.value
+                        selectedOption?.value === option.value
                           ? 'opacity-100'
                           : 'opacity-0'
                       )}
@@ -141,18 +138,20 @@ export function BreadcrumbNav() {
                 ))}
               </CommandGroup>
             </CommandList>
-            <CommandSeparator />
-            <CommandList>
-                <CommandGroup>
-                    <CommandItem onSelect={() => handleSquadSelect('create')}>
-                        <PlusCircle className="mr-2 h-4 w-4" />
-                        Criar Squad
-                    </CommandItem>
-                </CommandGroup>
-            </CommandList>
           </Command>
         </PopoverContent>
       </Popover>
+
+      {isSquadsSection && (
+          <>
+            <span className="text-muted-foreground">/</span>
+             <Link href="/dashboard/squads">
+                <Button variant="ghost" className="p-2 h-auto text-sm">
+                    {squads.find(s => pathname.includes(s.id))?.name || 'Visão Geral'}
+                </Button>
+            </Link>
+          </>
+      )}
     </div>
   )
 }

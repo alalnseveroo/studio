@@ -18,6 +18,8 @@ import {
   PanelLeft,
   Briefcase,
   AreaChart,
+  Users2,
+  BarChart3,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -42,6 +44,7 @@ import { BreadcrumbNav } from './_components/breadcrumb-nav'
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { Separator } from '@/components/ui/separator'
 import { cn } from '@/lib/utils'
+import { AgencyNav } from './_components/agency-nav'
 
 function DashboardHeader({ 
     userProfile, 
@@ -188,13 +191,13 @@ const navItemsGeral = [
     { href: '/dashboard/propostas', icon: ClipboardList, label: 'Propostas' },
     { href: '/dashboard/contratos', icon: FileSignature, label: 'Contratos' },
     { href: '/dashboard/cobrancas', icon: DollarSign, label: 'Cobranças' },
+    { href: '/dashboard/squads', icon: Users2, label: 'Squads' },
 ];
 
 const navItemsAgencia = [
-    { href: '/dashboard', icon: AreaChart, label: 'Visão Geral' },
+    { href: '/dashboard/squads', icon: AreaChart, label: 'Visão Geral' },
     { href: '/dashboard/equipe', icon: Briefcase, label: 'Equipe' },
-    { href: '/dashboard/squads', icon: Users, label: 'Squads' },
-    { href: '/dashboard/relatorios', icon: Home, label: 'Relatórios' },
+    { href: '/dashboard/relatorios', icon: BarChart3, label: 'Relatórios' },
 ];
 
 export default function DashboardLayout({
@@ -227,7 +230,8 @@ export default function DashboardLayout({
     fetchInitialData();
   }, [pathname, router]);
 
-  const navItems = userProfile?.is_agency ? navItemsAgencia : navItemsGeral;
+  const isSquadsRoute = pathname.startsWith('/dashboard/squads') || pathname.startsWith('/dashboard/equipe') || pathname.startsWith('/dashboard/relatorios');
+  const navItems = userProfile?.is_agency && isSquadsRoute ? navItemsAgencia : navItemsGeral;
 
   return (
     <div className="flex min-h-screen w-full flex-col bg-muted/40">
