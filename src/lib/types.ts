@@ -192,6 +192,12 @@ export type Task = {
   clientes: Cliente; // Join com clientes
 };
 
+export type SquadClient = {
+  squad_id: string;
+  client_id: string;
+  clientes: Cliente;
+};
+
 export type Squad = {
     id: string;
     agency_id: string;
@@ -199,5 +205,5 @@ export type Squad = {
     assistant_id: string | null;
     created_at: string;
     updated_at: string | null;
-    squad_clients: { clientes: Cliente }[];
+    squad_clients: SquadClient[];
 }
