@@ -404,7 +404,7 @@ export default function ClienteEditPage() {
                 isSaving={isSaving} 
                 proposals={proposals} 
                 charges={charges}
-                onMarkAsPaid={onMarkAsPaid}
+                onMarkAsPaid={handleMarkAsPaid}
                 isClientSide={isClientSide}
             />
           </TabsContent>
