@@ -29,6 +29,7 @@ import { getClients } from '@/lib/actions/clients'
 import type { Profile, Cliente } from '@/lib/types'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { MainNav } from './_components/main-nav'
+import { AgencyNav } from './_components/agency-nav' // Importando o novo menu
 import { useRouter, usePathname } from 'next/navigation'
 import { ChatModal } from '@/components/chat-modal'
 import { Badge } from '@/components/ui/badge'
@@ -66,7 +67,7 @@ function DashboardHeader({
             </div>
 
             <div className="flex-1 flex justify-center">
-                <MainNav />
+                {userProfile?.is_agency ? <AgencyNav /> : <MainNav />}
             </div>
 
             <div className="flex items-center gap-4">
