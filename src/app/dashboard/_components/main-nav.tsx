@@ -17,14 +17,14 @@ export function MainNav() {
     const pathname = usePathname()
     
     return (
-        <nav className="hidden items-center space-x-6 text-sm font-medium md:hidden">
+        <nav className="flex items-center space-x-6 text-sm font-medium">
             {navItems.map((item) => (
                 <Link 
                     key={item.href}
                     href={item.href}
                     className={cn(
                         "transition-colors hover:text-primary",
-                        pathname === item.href ? "text-primary" : "text-muted-foreground"
+                        pathname.startsWith(item.href) ? "text-primary" : "text-muted-foreground"
                     )}
                 >
                     {item.label}

@@ -65,10 +65,8 @@ function DashboardHeader({
   const fallback = displayName.charAt(0).toUpperCase();
 
      return (
-        <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-4 border-b bg-background px-4 sm:px-6">
-            
+        <header className="sticky top-0 z-30 flex h-14 items-center justify-between gap-4 border-b bg-background px-4 sm:px-6">
             <BreadcrumbNav />
-
             <div className="flex items-center gap-4">
                  {userProfile && (
                     <Button asChild variant="outline" size="sm" className="hidden sm:flex items-center gap-2 border-green-500 bg-green-500/10 text-green-700 hover:bg-green-500/20 hover:text-green-800">
@@ -227,29 +225,34 @@ export default function DashboardLayout({
     fetchInitialData();
   }, [pathname, router]);
   
-  const navItems = userProfile?.is_agency ? [...navItemsGeral, ...navItemsAgencia] : navItemsGeral;
+  const isSquadsSection = pathname.startsWith('/dashboard/squads');
+  const baseNavItems = userProfile?.is_agency ? [...navItemsGeral, { href: '/dashboard/squads', icon: Users2, label: 'Squads' }] : navItemsGeral;
+  const navItems = isSquadsSection ? navItemsAgencia : baseNavItems;
+
 
   return (
     <div className="flex min-h-screen w-full flex-col bg-muted/40">
-        <aside className="fixed inset-y-0 left-0 z-10 hidden w-14 flex-col border-r bg-background sm:flex">
-            <nav className="flex flex-col items-center gap-4 px-2 py-4">
-                {navItems.map(item => <NavItem key={item.href} {...item} />)}
-            </nav>
-            <nav className="mt-auto flex flex-col items-center gap-4 px-2 py-4">
-                <Separator />
-                <NavItem href="/dashboard/settings/buy-credits" icon={CreditCard} label="Comprar Créditos" />
-                <NavItem href="/dashboard/settings/profile" icon={Settings} label="Configurações" />
-            </nav>
-        </aside>
-        <div className="flex flex-col sm:gap-4 sm:py-4 sm:pl-14">
-            <DashboardHeader 
-                userProfile={userProfile} 
-                onOpenChat={(client) => setSelectedChatClient(client)} 
-            />
-            <main className="flex-1 items-start gap-4 p-4 sm:p-6 md:gap-8">
-                <Suspense fallback={<div className="flex-1 p-10"><Skeleton className="w-full h-full" /></div>}>
-                    {children}
-                </Suspense>
+        <DashboardHeader 
+            userProfile={userProfile} 
+            onOpenChat={(client) => setSelectedChatClient(client)} 
+        />
+        <div className="flex flex-1">
+             <aside className="fixed top-14 left-0 z-10 hidden w-14 flex-col border-r bg-background sm:flex h-[calc(100vh-3.5rem)]">
+                <nav className="flex flex-col items-center gap-4 px-2 py-4">
+                    {navItems.map(item => <NavItem key={item.href} {...item} />)}
+                </nav>
+                <nav className="mt-auto flex flex-col items-center gap-4 px-2 py-4">
+                    <Separator />
+                    <NavItem href="/dashboard/settings/buy-credits" icon={CreditCard} label="Comprar Créditos" />
+                    <NavItem href="/dashboard/settings/profile" icon={Settings} label="Configurações" />
+                </nav>
+            </aside>
+            <main className="flex flex-1 flex-col sm:ml-14">
+                <div className="flex-1 p-4 sm:p-6">
+                    <Suspense fallback={<div className="flex-1 p-10"><Skeleton className="w-full h-full" /></div>}>
+                        {children}
+                    </Suspense>
+                </div>
             </main>
         </div>
         {selectedChatClient && (

@@ -60,12 +60,12 @@ export function BreadcrumbNav() {
   const breadcrumbSquadText = selectedSquad?.name || 'Visão Geral dos Squads';
 
   if (isLoading) {
-    return <Skeleton className="h-7 w-48" />;
+    return <Skeleton className="h-6 w-48" />;
   }
 
   return (
-    <div className="flex items-center gap-2 text-lg font-semibold">
-      <Link href="/dashboard" className="hover:text-primary transition-colors">
+    <div className="flex items-center gap-2 text-sm font-medium">
+      <Link href="/dashboard" className="text-muted-foreground hover:text-primary transition-colors">
         Gerenciamento Global
       </Link>
       
@@ -78,7 +78,7 @@ export function BreadcrumbNav() {
                   variant="ghost"
                   role="combobox"
                   aria-expanded={open}
-                  className="p-1 h-auto text-lg hover:bg-muted"
+                  className="p-1 h-auto text-sm hover:bg-muted"
                 >
                   {breadcrumbSquadText}
                   <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
