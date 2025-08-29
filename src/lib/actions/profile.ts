@@ -62,8 +62,8 @@ export async function saveProfile(formData: ProfileFormData & { is_completed: bo
     email: user.email, 
     asaas_customer_id: asaasCustomer.id,
     pix_key: formData.pix_key,
-    credits: 0, // Crédito inicial removido, agora é 0
-    plan_type: formData.is_agency ? 'squad' : 'free', // Define plano com base na escolha
+    credits: 0,
+    plan_type: formData.is_agency ? 'squad' : 'free',
     is_agency: formData.is_agency,
   };
 
@@ -74,18 +74,23 @@ export async function saveProfile(formData: ProfileFormData & { is_completed: bo
     return { error: { message: `Não foi possível salvar o perfil: ${error.message}` } }
   }
   
-    if(savedProfile && formData.is_completed) {
+    if(savedProfile) {
       try {
-          await sendTransactionalEmail({
-            toEmail: user.email!,
-            templateId: 65, 
-            params: {
-              CONTRATADA_NOME: savedProfile.full_name || savedProfile.company_name
-            },
-            userId: user.id
-          });
-      } catch (emailError: any) {
-          console.error('Falha ao enviar e-mail de perfil completo:', emailError.message);
+          // Envia o webhook de atualização de perfil para o n8n
+          await sendProfileWebhook('update', savedProfile);
+
+          if(formData.is_completed) {
+            await sendTransactionalEmail({
+              toEmail: user.email!,
+              templateId: 65, 
+              params: {
+                CONTRATADA_NOME: savedProfile.full_name || savedProfile.company_name
+              },
+              userId: user.id
+            });
+          }
+      } catch (webhookOrEmailError: any) {
+          console.error(`Falha ao enviar webhook ou e-mail de perfil completo:`, webhookOrEmailError.message);
       }
   }
 

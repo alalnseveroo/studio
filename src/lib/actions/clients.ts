@@ -87,6 +87,35 @@ export async function createFullClient(formData: any) {
     return { data: null, error: { message: `Não foi possível adicionar o cliente: ${error.message}` } }
   }
 
+    if (newClient) {
+        try {
+            const portalUrl = new URL(`/portal/${newClient.id}`, process.env.NEXT_PUBLIC_SITE_URL).toString();
+            const providerName = providerProfile.full_name || providerProfile.company_name;
+
+            // Enriquecer os dados do cliente com informações extras antes de enviar para o webhook
+            const enrichedClientData = {
+                ...newClient,
+                portal_url: portalUrl,
+                provider_name: providerName,
+            };
+
+            await sendClientWebhook('create', enrichedClientData);
+
+            await sendTransactionalEmail({
+                toEmail: newClient.email,
+                templateId: 62,
+                params: { 
+                    CLIENTE_NOME: newClient.full_name || newClient.company_name,
+                    CONTRATADA_NOME: providerName,
+                    LINK_PORTAL: portalUrl,
+                },
+                userId: user.id
+            });
+        } catch (webhookError: any) {
+            console.warn(`Falha ao enviar webhook ou e-mail de boas-vindas: ${webhookError.message}`);
+        }
+    }
+
   // Handle financials if billing is active
   if (newClient && formData.billing_status === 'active') {
     const financialResult = await updateClientFinancials(newClient.id, {
@@ -102,27 +131,6 @@ export async function createFullClient(formData: any) {
         return { data: newClient, error: { message: `Cliente criado, mas falha na configuração financeira: ${financialResult.error.message}`}};
     }
   }
-  
-    if (newClient && newClient.email) {
-        try {
-            const portalUrl = new URL(`/portal/${newClient.id}`, process.env.NEXT_PUBLIC_SITE_URL).toString();
-            const providerName = providerProfile.full_name || providerProfile.company_name;
-
-            await sendTransactionalEmail({
-                toEmail: newClient.email,
-                templateId: 62,
-                params: { 
-                    CLIENTE_NOME: newClient.full_name || newClient.company_name,
-                    CONTRATADA_NOME: providerName,
-                    LINK_PORTAL: portalUrl,
-                },
-                userId: user.id
-            });
-
-        } catch (emailError: any) {
-            console.warn(`Falha ao enviar e-mail de boas-vindas: ${emailError.message}`);
-        }
-    }
 
   revalidatePath('/dashboard/clientes')
   return { data: newClient, error: null }
