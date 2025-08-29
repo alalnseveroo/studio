@@ -1,4 +1,5 @@
 
+
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
@@ -48,6 +49,8 @@ export async function createFullClient(formData: any) {
   }
   
   const address = `${formData.street}, ${formData.number}${formData.complement ? `, ${formData.complement}` : ''} - ${formData.neighborhood}, ${formData.city} - ${formData.state}, CEP: ${formData.cep}`;
+  const fullName = formData.first_name && formData.last_name ? `${formData.first_name} ${formData.last_name}` : null;
+
 
   const clientDataForDb = {
     user_id: user.id,
@@ -58,7 +61,9 @@ export async function createFullClient(formData: any) {
     address: address,
     person_type: formData.personType,
     sex: formData.sex,
-    full_name: formData.personType === 'cpf' ? formData.fullName : null,
+    first_name: formData.personType === 'cpf' ? formData.first_name : null,
+    last_name: formData.personType === 'cpf' ? formData.last_name : null,
+    full_name: formData.personType === 'cpf' ? fullName : null,
     cpf: formData.personType === 'cpf' ? formData.cpf : null,
     nationality: formData.personType === 'cpf' ? formData.nationality : null,
     civil_status: formData.personType === 'cpf' ? formData.civilStatus : null,
@@ -356,5 +361,3 @@ export async function deleteMultipleClients(ids: string[]) {
   revalidatePath('/dashboard/clientes');
   return { error: null };
 }
-
-    

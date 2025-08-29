@@ -26,6 +26,8 @@ export type Cliente = {
   representative_name: string | null;
   representative_rg: string | null;
   representative_cpf: string | null;
+  first_name: string | null;
+  last_name: string | null;
   full_name: string | null;
   nationality: string | null;
   civil_status: string | null;
