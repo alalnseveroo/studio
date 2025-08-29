@@ -1,4 +1,5 @@
 
+
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -76,8 +77,8 @@ export function ConfigureBillingModal({
     defaultValues: {
         clienteId: clientId || undefined,
         proposal_id: null,
-        value: undefined, 
-        payment_day: undefined,
+        value: 0, 
+        payment_day: 0,
         first_charge_date: '',
         billing_status: 'active',
     }
@@ -88,8 +89,8 @@ export function ConfigureBillingModal({
         form.reset({
             clienteId: clientId || undefined,
             proposal_id: null,
-            value: undefined,
-            payment_day: undefined,
+            value: 0,
+            payment_day: 0,
             first_charge_date: '',
             billing_status: 'active',
         });

@@ -190,9 +190,24 @@ export function AddClientModal({ isOpen, onClose, onSuccess }: AddClientModalPro
 
   const form = useForm<ClientFormData>({
     resolver: zodResolver(clientSchema),
-    defaultValues: { 
+    defaultValues: {
       personType: undefined,
-      nationality: 'Brasileira'
+      sex: undefined,
+      email: '',
+      fullName: '',
+      companyName: '',
+      nationality: 'Brasileira',
+      cpf: '',
+      cnpj: '',
+      representativeName: '',
+      representativeCpf: '',
+      cep: '',
+      street: '',
+      number: '',
+      complement: '',
+      neighborhood: '',
+      city: '',
+      state: '',
     },
     mode: 'onBlur'
   });
@@ -201,7 +216,25 @@ export function AddClientModal({ isOpen, onClose, onSuccess }: AddClientModalPro
 
   React.useEffect(() => {
     if (isOpen) {
-        form.reset({ personType: undefined, nationality: 'Brasileira' });
+        form.reset({ 
+            personType: undefined,
+            sex: undefined,
+            email: '',
+            fullName: '',
+            companyName: '',
+            nationality: 'Brasileira',
+            cpf: '',
+            cnpj: '',
+            representativeName: '',
+            representativeCpf: '',
+            cep: '',
+            street: '',
+            number: '',
+            complement: '',
+            neighborhood: '',
+            city: '',
+            state: '',
+        });
     }
   }, [isOpen, form]);
 
