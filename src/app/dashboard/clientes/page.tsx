@@ -256,7 +256,7 @@ function ClientsDataTable() {
         const name = client.full_name || client.company_name;
         return (
             <div className="flex items-center gap-3">
-                <Avatar className="h-8 w-8">
+                <Avatar className="h-6 w-6">
                     <AvatarImage src={client.avatar_url || ''} alt="Avatar do Cliente" />
                     <AvatarFallback>{(name || 'C').charAt(0)}</AvatarFallback>
                 </Avatar>
@@ -565,7 +565,7 @@ export default function ClientesPage() {
     return (
         <div className="flex flex-1 flex-col">
             <div className="flex items-center">
-                <h1 className="text-2xl font-bold">Clientes</h1>
+                <h1 className="text-2xl font-normal">Clientes</h1>
             </div>
             <ClientsDataTable />
         </div>

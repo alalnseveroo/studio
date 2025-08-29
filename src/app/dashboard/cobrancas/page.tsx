@@ -165,7 +165,7 @@ export default function CobrancasPage() {
     <>
     <div className="flex flex-1 flex-col">
         <div className="flex items-center">
-            <h1 className="text-2xl font-bold">Gestão de Cobranças</h1>
+            <h1 className="text-2xl font-normal">Gestão de Cobranças</h1>
             <div className="ml-auto">
                 <Button size="sm" onClick={() => setIsBillingModalOpen(true)}>
                     <PlusCircle className="mr-2 h-4 w-4" />
@@ -259,10 +259,10 @@ export default function CobrancasPage() {
                                 <span className="text-sm">{clientName}</span>
                                 </div>
                             </TableCell>
-                            <TableCell className="text-muted-foreground">
+                            <TableCell className="text-muted-foreground text-xs">
                                 {isClientSide ? format(new Date(charge.due_date), 'dd/MM/yyyy') : ''}
                             </TableCell>
-                            <TableCell className="text-muted-foreground">
+                            <TableCell className="text-muted-foreground text-sm">
                                 {charge.value ? `${Number(charge.value).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : 'N/A'}
                             </TableCell>
                             <TableCell>

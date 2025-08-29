@@ -207,7 +207,7 @@ function ContratosPageComponent() {
     <>
       <div className="flex flex-1 flex-col">
         <div className="flex items-center">
-          <h1 className="text-2xl font-bold">Contratos</h1>
+          <h1 className="text-2xl font-normal">Contratos</h1>
           <div className="ml-auto flex items-center gap-2">
             {selectedContracts.length > 0 && (
                  <Button
@@ -300,8 +300,8 @@ function ContratosPageComponent() {
                           aria-label={`Selecionar contrato ${contract.contract_code}`}
                         />
                       </TableCell>
-                      <TableCell className="font-medium">{contract.contract_code}</TableCell>
-                      <TableCell className="font-medium">
+                      <TableCell className="font-medium text-xs text-muted-foreground">{contract.contract_code}</TableCell>
+                      <TableCell className="font-medium text-sm">
                          <div className="flex items-center gap-3">
                            <Avatar className="h-6 w-6">
                               <AvatarImage src={contract.clientes?.avatar_url || ''} alt="Avatar do Cliente" />
@@ -310,11 +310,11 @@ function ContratosPageComponent() {
                            <span>{contract.clientes?.full_name || contract.clientes?.company_name}</span>
                          </div>
                       </TableCell>
-                      <TableCell className="hidden md:table-cell text-muted-foreground">{contract.propostas?.name}</TableCell>
-                      <TableCell className="hidden lg:table-cell text-muted-foreground">
+                      <TableCell className="hidden md:table-cell text-sm text-muted-foreground">{contract.propostas?.name}</TableCell>
+                      <TableCell className="hidden lg:table-cell text-sm text-muted-foreground">
                         {contract.propostas?.value ? `R$ ${Number(contract.propostas.value).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : 'N/A'}
                       </TableCell>
-                      <TableCell className="hidden lg:table-cell text-muted-foreground">
+                      <TableCell className="hidden lg:table-cell text-xs text-muted-foreground">
                         {isClientSide ? format(new Date(contract.created_at), 'dd/MM/yyyy') : ''}
                       </TableCell>
                       <TableCell className="hidden md:table-cell">
