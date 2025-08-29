@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/dialog"
 import { createFullClient } from "@/lib/actions/clients"
 import { useToast } from "@/hooks/use-toast"
-import { Loader2, User, Building, Search, Check, ChevronsUpDown, CheckCircle, XCircle } from 'lucide-react'
+import { Loader2, Search, Check, ChevronsUpDown, CheckCircle, XCircle } from 'lucide-react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
@@ -41,18 +41,20 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from '
 import { cn } from '@/lib/utils'
 
 const clientSchema = z.object({
-  personType: z.enum(['cpf', 'cnpj']),
+  personType: z.enum(['cpf', 'cnpj'], { required_error: "Selecione o tipo de pessoa."}),
   sex: z.enum(['male', 'female'], { required_error: 'Selecione o sexo.'}),
   email: z.string().email({ message: "E-mail inválido."}),
-  first_name: z.string().min(2, "O nome é obrigatório."),
-  last_name: z.string().min(2, "O sobrenome é obrigatório."),
+  
+  // Universal name field
+  fullName: z.string().optional(), // For PF
+  companyName: z.string().optional(), // For PJ
+
   nationality: z.string().min(2, "A nacionalidade é obrigatória."),
 
   // PF
   cpf: z.string().optional(),
   
   // PJ
-  companyName: z.string().optional(),
   cnpj: z.string().optional(),
   representativeName: z.string().optional(),
   representativeCpf: z.string().optional(),
@@ -66,13 +68,23 @@ const clientSchema = z.object({
   city: z.string().optional(),
   state: z.string().optional(),
 })
-.refine(data => data.personType !== 'cpf' || (!!data.cpf && !!data.cep), {
-    message: "Para Pessoa Física, CPF e CEP são obrigatórios.",
-    path: ["cpf"],
+.refine(data => {
+    if (data.personType === 'cpf') {
+        return !!data.fullName && data.fullName.trim().length > 2 && !!data.cpf && !!data.cep;
+    }
+    return true;
+}, {
+    message: "Para Pessoa Física, Nome Completo, CPF e CEP são obrigatórios.",
+    path: ["fullName"],
 })
-.refine(data => data.personType !== 'cnpj' || (!!data.cnpj && !!data.representativeName && !!data.representativeCpf && !!data.cep), {
-    message: "Para Pessoa Jurídica, CNPJ, dados do representante e CEP são obrigatórios.",
-    path: ["cnpj"],
+.refine(data => {
+    if (data.personType === 'cnpj') {
+        return !!data.companyName && !!data.cnpj && !!data.representativeName && !!data.representativeCpf && !!data.cep;
+    }
+    return true;
+}, {
+    message: "Para Pessoa Jurídica, todos os campos são obrigatórios.",
+    path: ["companyName"],
 });
 
 
@@ -179,7 +191,7 @@ export function AddClientModal({ isOpen, onClose, onSuccess }: AddClientModalPro
   const form = useForm<ClientFormData>({
     resolver: zodResolver(clientSchema),
     defaultValues: { 
-      personType: 'cpf',
+      personType: undefined,
       nationality: 'Brasileira'
     },
     mode: 'onBlur'
@@ -189,7 +201,7 @@ export function AddClientModal({ isOpen, onClose, onSuccess }: AddClientModalPro
 
   React.useEffect(() => {
     if (isOpen) {
-        form.reset({ personType: 'cpf', nationality: 'Brasileira' });
+        form.reset({ personType: undefined, nationality: 'Brasileira' });
     }
   }, [isOpen, form]);
 
@@ -266,14 +278,7 @@ export function AddClientModal({ isOpen, onClose, onSuccess }: AddClientModalPro
         <FormProvider {...form}>
             <form onSubmit={form.handleSubmit(handleFormSubmit)}>
                 <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                       <FormField control={form.control} name="first_name" render={({ field }) => (
-                            <FormItem><FormLabel>Nome</FormLabel><FormControl><Input placeholder="João" {...field} className="h-9"/></FormControl><FormMessage /></FormItem>
-                        )}/>
-                        <FormField control={form.control} name="last_name" render={({ field }) => (
-                            <FormItem><FormLabel>Sobrenome</FormLabel><FormControl><Input placeholder="Silva" {...field} className="h-9"/></FormControl><FormMessage /></FormItem>
-                        )}/>
-                    </div>
+                    
                      <FormField control={form.control} name="email" render={({ field }) => (
                         <FormItem><FormLabel>E-mail</FormLabel><FormControl><Input type="email" placeholder="contato@cliente.com" {...field} className="h-9" /></FormControl><FormMessage /></FormItem>
                     )}/>
@@ -307,16 +312,19 @@ export function AddClientModal({ isOpen, onClose, onSuccess }: AddClientModalPro
                                 </FormControl>
                                 <FormLabel htmlFor="cpf" className={cn(
                                     "flex flex-col gap-2 rounded-lg border-2 p-4 cursor-pointer transition-all",
-                                    "peer-data-[state=checked]:border-primary peer-data-[state=checked]:shadow-sm"
+                                    field.value === 'cpf' ? "border-green-500 shadow-sm" : "border-border"
                                 )}>
                                     <div className="flex items-center justify-between">
                                         <span className="font-semibold text-base">Pessoa Física</span>
-                                        <div className={cn( "w-5 h-5 rounded-full border-2 flex items-center justify-center", field.value === 'cpf' ? "bg-primary border-primary" : "border-muted-foreground" )}>
+                                        <div className={cn( "w-5 h-5 rounded-full border-2 flex items-center justify-center", field.value === 'cpf' ? "bg-green-500 border-green-500" : "border-muted-foreground" )}>
                                             {field.value === 'cpf' && <Check className="w-4 h-4 text-white" />}
                                         </div>
                                     </div>
                                     {personType === 'cpf' && (
                                         <div className="space-y-4 pt-4 border-t">
+                                             <FormField control={form.control} name="fullName" render={({ field, fieldState }) => (
+                                                <FormItem><FormLabel>Nome Completo</FormLabel><ValidatedInput field={field} fieldState={fieldState} placeholder="Ex: Maria da Silva" /><FormMessage /></FormItem>
+                                             )}/>
                                              <FormField control={form.control} name="cpf" render={({ field, fieldState }) => (
                                                 <FormItem><FormLabel>CPF</FormLabel><ValidatedInput field={field} fieldState={fieldState} placeholder="000.000.000-00" /><FormMessage /></FormItem>
                                             )} />
@@ -340,6 +348,9 @@ export function AddClientModal({ isOpen, onClose, onSuccess }: AddClientModalPro
                                                 <FormItem><FormLabel>Complemento</FormLabel><FormControl><Input placeholder="Apto 101" {...field} className="h-9"/></FormControl><FormMessage /></FormItem>
                                             )}/>
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                 <FormField control={form.control} name="neighborhood" render={({ field }) => (
+                                                    <FormItem><FormLabel>Bairro</FormLabel><FormControl><Input {...field} className="h-9"/></FormControl><FormMessage /></FormItem>
+                                                )}/>
                                                 <FormField control={form.control} name="city" render={({ field }) => (
                                                     <FormItem><FormLabel>Cidade</FormLabel><FormControl><Input {...field} className="h-9"/></FormControl><FormMessage /></FormItem>
                                                 )}/>
@@ -356,11 +367,14 @@ export function AddClientModal({ isOpen, onClose, onSuccess }: AddClientModalPro
                                     <FormControl>
                                         <RadioGroupItem value="cnpj" id="cnpj" className="sr-only peer" />
                                     </FormControl>
-                                    <FormLabel htmlFor="cnpj" className={cn("flex flex-col gap-2 rounded-lg border-2 p-4 cursor-pointer transition-all", "peer-data-[state=checked]:border-primary peer-data-[state=checked]:shadow-sm")}>
+                                    <FormLabel htmlFor="cnpj" className={cn(
+                                      "flex flex-col gap-2 rounded-lg border-2 p-4 cursor-pointer transition-all", 
+                                      field.value === 'cnpj' ? "border-green-500 shadow-sm" : "border-border"
+                                    )}>
                                          <div className="flex items-center justify-between">
                                             <span className="font-semibold text-base">Pessoa Jurídica</span>
-                                            <div className={cn("w-5 h-5 rounded-full border-2 flex items-center justify-center", field.value === 'cnpj' ? "bg-primary border-primary" : "border-muted-foreground")}>
-                                            {field.value === 'cnpj' && <Check className="w-4 h-4 text-white" />}
+                                            <div className={cn("w-5 h-5 rounded-full border-2 flex items-center justify-center", field.value === 'cnpj' ? "bg-green-500 border-green-500" : "border-muted-foreground")}>
+                                              {field.value === 'cnpj' && <Check className="w-4 h-4 text-white" />}
                                             </div>
                                         </div>
                                          {personType === 'cnpj' && (
@@ -399,6 +413,9 @@ export function AddClientModal({ isOpen, onClose, onSuccess }: AddClientModalPro
                                                         <FormItem><FormLabel>Número</FormLabel><FormControl><Input placeholder="123" {...field} className="h-9"/></FormControl><FormMessage /></FormItem>
                                                     )}/>
                                                 </div>
+                                                <FormField control={form.control} name="neighborhood" render={({ field }) => (
+                                                    <FormItem><FormLabel>Bairro</FormLabel><FormControl><Input {...field} className="h-9"/></FormControl><FormMessage /></FormItem>
+                                                )}/>
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                     <FormField control={form.control} name="city" render={({ field }) => (
                                                         <FormItem><FormLabel>Cidade</FormLabel><FormControl><Input {...field} className="h-9"/></FormControl><FormMessage /></FormItem>
