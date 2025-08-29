@@ -1,4 +1,5 @@
 
+
 'use client'
 
 import * as React from 'react'
@@ -22,10 +23,24 @@ import {
 import { Skeleton } from '@/components/ui/skeleton'
 import { getProfile } from '@/lib/actions/profile'
 import type { Profile } from '@/lib/types'
+import { Badge } from '@/components/ui/badge'
 
 type PopoverTriggerProps = React.ComponentPropsWithoutRef<typeof PopoverTrigger>
 
 interface SquadSwitcherProps extends PopoverTriggerProps {}
+
+const getPlanName = (planType: Profile['plan_type'] | undefined) => {
+    if (!planType) return 'Free';
+    const planMap = {
+        free: 'Free',
+        assistente: 'Assistente',
+        squad: 'Squad',
+        agencia: 'Agência',
+        trial: 'Trial',
+    };
+    return planMap[planType] || 'Desconhecido';
+};
+
 
 export function BreadcrumbNav() {
   const [open, setOpen] = React.useState(false)
@@ -62,12 +77,17 @@ export function BreadcrumbNav() {
   if (isLoading) {
     return <Skeleton className="h-6 w-48" />;
   }
+  
+  const planName = getPlanName(profile?.plan_type);
 
   return (
     <div className="flex items-center gap-2 text-sm font-medium">
-      <Link href="/dashboard" className="text-muted-foreground hover:text-primary transition-colors">
-        Gerenciamento Global
-      </Link>
+      <div className="flex items-center gap-2">
+         <Link href="/dashboard" className="text-muted-foreground hover:text-primary transition-colors">
+            Gerenciamento Global
+         </Link>
+         {profile && <Badge variant="outline">{planName}</Badge>}
+      </div>
       
       {isSquadsSection && (
           <>

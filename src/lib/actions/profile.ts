@@ -62,8 +62,8 @@ export async function saveProfile(formData: ProfileFormData & { is_completed: bo
     email: user.email, 
     asaas_customer_id: asaasCustomer.id,
     pix_key: formData.pix_key,
-    credits: 1, 
-    plan_type: 'per_client',
+    credits: 0, // Crédito inicial removido, agora é 0
+    plan_type: formData.is_agency ? 'squad' : 'free', // Define plano com base na escolha
     is_agency: formData.is_agency,
   };
 

@@ -91,7 +91,7 @@ export function CreateContractModal({
 
   const handleFormSubmit = async (values: z.infer<typeof contractSchema>) => {
     // Verificação de créditos antes de criar o contrato
-    if (profile && profile.credits <= 0) {
+    if (profile && (profile.plan_type === 'free' || profile.plan_type === 'assistente') && profile.credits <= 0) {
         toast({
           title: 'Créditos Insuficientes',
           description: 'Você precisa de créditos para gerar um novo contrato.',

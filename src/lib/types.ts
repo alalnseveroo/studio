@@ -85,7 +85,7 @@ export type Profile = {
   signature?: string;
   is_completed?: boolean;
   email?: string;
-  plan_type: 'free_tier' | 'per_client' | 'total_plan';
+  plan_type: 'free' | 'assistente' | 'squad' | 'agencia' | 'trial';
   credits: number;
   sex: 'male' | 'female';
   avatar_url: string | null;

@@ -1,4 +1,5 @@
 
+
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
@@ -194,6 +195,16 @@ export async function signContractAsProvider(contractId: string, otp: string) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user || !user.email) return { data: null, error: { message: 'Usuário não autenticado.' } };
 
+    const { data: contratada, error: providerError } = await getProviderProfile(supabase, user.id);
+    if (providerError || !contratada || !contratada.signature) {
+        return { data: null, error: { message: 'Perfil da contratada ou assinatura não encontrados.' } };
+    }
+    
+    // Verificação de créditos para usuários free/assistente
+    if ((contratada.plan_type === 'free' || contratada.plan_type === 'assistente') && contratada.credits <= 0) {
+        return { data: null, error: { message: 'Créditos insuficientes. Por favor, compre créditos para assinar este contrato.' } };
+    }
+
     const { error: otpError } = await supabase.auth.verifyOtp({
         email: user.email,
         token: otp,
@@ -212,12 +223,6 @@ export async function signContractAsProvider(contractId: string, otp: string) {
 
     if (contractError || !contract) {
         return { data: null, error: { message: 'Contrato não encontrado.' } };
-    }
-
-    const { data: contratada, error: providerError } = await getProviderProfile(supabase, user.id);
-
-    if (providerError || !contratada || !contratada.signature) {
-        return { data: null, error: { message: 'Perfil da contratada ou assinatura não encontrados.' } };
     }
 
     const headersList = headers();
