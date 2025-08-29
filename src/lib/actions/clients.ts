@@ -47,22 +47,33 @@ export async function createFullClient(formData: any) {
     avatarUrl = AVATARS_CLIENT_FEMALE[Math.floor(Math.random() * AVATARS_CLIENT_FEMALE.length)];
   }
   
+  const address = `${formData.street}, ${formData.number}${formData.complement ? `, ${formData.complement}` : ''} - ${formData.neighborhood}, ${formData.city} - ${formData.state}, CEP: ${formData.cep}`;
+
   const clientDataForDb = {
     user_id: user.id,
     client_id: clientId,
     avatar_url: avatarUrl,
     email: formData.email,
     phone: formData.phone,
-    address: formData.address,
+    address: address,
     person_type: formData.personType,
     sex: formData.sex,
     full_name: formData.personType === 'cpf' ? formData.fullName : null,
     cpf: formData.personType === 'cpf' ? formData.cpf : null,
+    nationality: formData.personType === 'cpf' ? formData.nationality : null,
+    civil_status: formData.personType === 'cpf' ? formData.civilStatus : null,
+    profession: formData.personType === 'cpf' ? formData.profession : null,
     company_name: formData.personType === 'cnpj' ? formData.companyName : null,
     cnpj: formData.personType === 'cnpj' ? formData.cnpj : null,
     representative_name: formData.personType === 'cnpj' ? formData.representativeName : null,
     representative_cpf: formData.personType === 'cnpj' ? formData.representativeCpf : null,
-    billing_status: 'inactive' as const,
+    
+    // Financials
+    billing_status: formData.billing_status,
+    proposal_id: formData.proposal_id,
+    value: formData.value,
+    payment_day: formData.payment_day,
+    first_charge_date: formData.first_charge_date,
   };
 
 
@@ -73,11 +84,20 @@ export async function createFullClient(formData: any) {
     return { data: null, error: { message: `Não foi possível adicionar o cliente: ${error.message}` } }
   }
 
-  if (newClient) {
-     const asaasCustomer = await getOrCreateAsaasCustomer(newClient);
-     if (!asaasCustomer || !asaasCustomer.id) {
-         console.error(`Falha ao criar cliente no Asaas para o cliente Supabase ID ${newClient.id}`);
-     }
+  // Handle financials if billing is active
+  if (newClient && formData.billing_status === 'active') {
+    const financialResult = await updateClientFinancials(newClient.id, {
+        proposal_id: formData.proposal_id,
+        value: formData.value,
+        payment_day: formData.payment_day,
+        first_charge_date: formData.first_charge_date,
+        billing_status: 'active'
+    });
+
+    if (financialResult.error) {
+        // Optional: decide if you want to delete the client if financial setup fails
+        return { data: newClient, error: { message: `Cliente criado, mas falha na configuração financeira: ${financialResult.error.message}`}};
+    }
   }
   
     if (newClient && newClient.email) {
@@ -261,7 +281,7 @@ export async function updateClientFinancials(id: string, financials: {
   }
 
   // 2. Cria a primeira cobrança imediatamente se um valor foi fornecido
-  if (financials.value && financials.value > 0) {
+  if (financials.billing_status === 'active' && financials.value && financials.value > 0) {
       const { error: chargeInsertError } = await supabase
         .from('cobrancas')
         .insert({
@@ -336,3 +356,5 @@ export async function deleteMultipleClients(ids: string[]) {
   revalidatePath('/dashboard/clientes');
   return { error: null };
 }
+
+    

@@ -48,9 +48,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { AddClientSheet } from '@/components/add-client-sheet'
+import { AddClientModal } from '@/components/add-client-modal'
 import { getClients, deleteClient, deleteMultipleClients } from '@/lib/actions/clients'
-import type { Cliente, Contrato, Profile } from '@/lib/types'
+import type { Cliente, Contrato, Profile, Proposta } from '@/lib/types'
 import { getContracts } from '@/lib/actions/contratos'
 import { getProfile } from '@/lib/actions/profile'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -122,9 +122,10 @@ function ClientsDataTable() {
   
   const [clients, setClients] = React.useState<Cliente[]>([])
   const [contracts, setContracts] = React.useState<Contrato[]>([])
+  const [proposals, setProposals] = React.useState<Proposta[]>([])
   const [profile, setProfile] = React.useState<Profile | null>(null)
   
-  const [isAddSheetOpen, setIsAddSheetOpen] = React.useState(false)
+  const [isAddModalOpen, setIsAddModalOpen] = React.useState(false)
   const [isContractModalOpen, setIsContractModalOpen] = React.useState(false)
   
   const [clientToDelete, setClientToDelete] = React.useState<Cliente | null>(null)
@@ -138,14 +139,16 @@ function ClientsDataTable() {
 
   const fetchData = React.useCallback(async () => {
     setIsLoading(true);
-    const [{ data: clientData }, { data: profileData }, { data: contractsData }] = await Promise.all([
+    const [{ data: clientData }, { data: profileData }, { data: contractsData }, { data: proposalsData }] = await Promise.all([
       getClients(),
       getProfile(),
-      getContracts()
+      getContracts(),
+      getProposals()
     ]);
     setClients(clientData || [])
     setContracts(contractsData || []);
     setProfile(profileData as Profile | null);
+    setProposals(proposalsData || []);
     setIsLoading(false);
   }, [])
 
@@ -201,7 +204,7 @@ function ClientsDataTable() {
   
   const handleClientAdded = () => {
       fetchData();
-      setIsAddSheetOpen(false);
+      setIsAddModalOpen(false);
   };
 
 
@@ -411,7 +414,7 @@ function ClientsDataTable() {
                 })}
             </DropdownMenuContent>
             </DropdownMenu>
-            <Button size="sm" onClick={() => setIsAddSheetOpen(true)}>
+            <Button size="sm" onClick={() => setIsAddModalOpen(true)}>
               <PlusCircle className="mr-2 h-4 w-4" />
               Adicionar Cliente
             </Button>
@@ -445,7 +448,7 @@ function ClientsDataTable() {
                   data-state={row.getIsSelected() && "selected"}
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
+                    <TableCell key={cell.id} className="py-2">
                       {flexRender(
                         cell.column.columnDef.cell,
                         cell.getContext()
@@ -497,10 +500,11 @@ function ClientsDataTable() {
       </div>
     </div>
     
-      <AddClientSheet
-        isOpen={isAddSheetOpen}
-        onClose={() => setIsAddSheetOpen(false)}
+      <AddClientModal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
         onSuccess={handleClientAdded}
+        proposals={proposals}
       />
       
       {clientForContract && <CreateContractModal
@@ -510,7 +514,7 @@ function ClientsDataTable() {
               setClientForContract(null);
           }}
           clients={clients}
-          proposals={[]}
+          proposals={proposals}
           profile={profile}
           onClientListChange={setClients}
           selectedClientId={clientForContract?.id}
@@ -571,3 +575,5 @@ export default function ClientesPage() {
         </div>
     )
 }
+
+    
