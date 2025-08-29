@@ -138,7 +138,7 @@ export default function PublicProfilePage() {
         return;
     }
     
-    const filePath = `avatars/${user.id}/${Date.now()}_${file.name}`;
+    const filePath = `public/avatars/${user.id}/${Date.now()}_${file.name}`;
 
     const { error } = await supabase.storage.from('public').upload(filePath, file);
 
@@ -295,7 +295,7 @@ export default function PublicProfilePage() {
                                 <FormItem>
                                   <FormLabel>Especialidades</FormLabel>
                                   <FormControl>
-                                      <TagsInput placeholder="Adicione especialidades..." tags={field.value} setTags={(newTags) => field.onChange(newTags)} />
+                                      <TagsInput placeholder="Adicione especialidades..." {...field} />
                                   </FormControl>
                                    <FormMessage />
                                 </FormItem>
@@ -308,7 +308,7 @@ export default function PublicProfilePage() {
                                 <FormItem>
                                   <FormLabel>Serviços Prestados</FormLabel>
                                   <FormControl>
-                                      <TagsInput placeholder="Adicione serviços..." tags={field.value} setTags={(newTags) => field.onChange(newTags)} />
+                                      <TagsInput placeholder="Adicione serviços..." {...field} />
                                   </FormControl>
                                    <FormMessage />
                                 </FormItem>
@@ -321,7 +321,7 @@ export default function PublicProfilePage() {
                                 <FormItem>
                                   <FormLabel>Ferramentas que Domina</FormLabel>
                                   <FormControl>
-                                      <TagsInput placeholder="Adicione ferramentas..." tags={field.value} setTags={(newTags) => field.onChange(newTags)} />
+                                      <TagsInput placeholder="Adicione ferramentas..." {...field} />
                                   </FormControl>
                                    <FormMessage />
                                 </FormItem>

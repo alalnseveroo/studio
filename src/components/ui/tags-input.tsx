@@ -16,10 +16,11 @@ type TagType = {
 
 const DELIMITER = ","
 
-export interface TagsInputProps extends React.ComponentPropsWithoutRef<typeof CommandPrimitive> {
+export interface TagsInputProps extends Omit<React.ComponentPropsWithoutRef<typeof CommandPrimitive.Input>, 'value' | 'onChange'> {
   placeholder?: string
   tags: TagType[]
-  setTags: React.Dispatch<React.SetStateAction<TagType[]>>
+  value?: TagType[]
+  onChange: React.Dispatch<React.SetStateAction<TagType[]>>
   enableAutocomplete?: boolean
   autocompleteOptions?: TagType[]
   maxTags?: number
@@ -47,12 +48,13 @@ const CommandState = ({ children }: { children: (count: number) => React.ReactNo
   return <>{children(count)}</>
 }
 
-const TagsInput = forwardRef<HTMLDivElement, TagsInputProps>(
+const TagsInput = forwardRef<HTMLInputElement, TagsInputProps>(
   (
     {
       placeholder,
-      tags,
-      setTags,
+      tags: initialTags,
+      value: controlledTags,
+      onChange: setTags,
       enableAutocomplete,
       autocompleteOptions,
       maxTags,
@@ -73,6 +75,8 @@ const TagsInput = forwardRef<HTMLDivElement, TagsInputProps>(
   ) => {
     const [inputValue, setInputValue] = useState("")
     const [isFocused, setIsFocused] = useState(false)
+    
+    const tags = controlledTags || initialTags;
 
     const addTag = useCallback(
       (tag: TagType) => {
@@ -138,7 +142,7 @@ const TagsInput = forwardRef<HTMLDivElement, TagsInputProps>(
     )
 
     return (
-      <div ref={ref} className={cn(groupVariants["default"], className)} style={style}>
+      <div className={cn(groupVariants["default"], className)} style={style}>
         {tags.map((tag) => (
           <Badge
             key={tag.value}
@@ -153,8 +157,9 @@ const TagsInput = forwardRef<HTMLDivElement, TagsInputProps>(
             )}
           </Badge>
         ))}
-        <Command {...props}>
+        <Command>
           <CommandPrimitive.Input
+            ref={ref}
             placeholder={placeholder}
             value={inputValue}
             onChange={handleInputChange}
@@ -165,6 +170,7 @@ const TagsInput = forwardRef<HTMLDivElement, TagsInputProps>(
             className="w-full flex-1 bg-transparent text-sm placeholder:text-muted-foreground focus:outline-none"
             disabled={disabled}
             readOnly={readOnly}
+            {...props}
           />
           <CommandState>
             {(count) => (
