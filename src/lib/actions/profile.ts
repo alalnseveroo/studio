@@ -44,6 +44,15 @@ export async function saveProfile(formData: ProfileFormData & { is_completed: bo
      return { error: { message: 'Não foi possível obter um ID de cliente do sistema de pagamentos.' } };
   }
 
+  // Lógica corrigida para atribuição do plan_type
+  let planType: 'assistente' | 'squad' | 'free' | 'agencia' | 'trial';
+  if (formData.personType === 'cpf') {
+      planType = 'assistente';
+  } else { // cnpj
+      planType = formData.is_agency ? 'squad' : 'assistente';
+  }
+
+
   const profileData = {
     id: user.id,
     person_type: formData.personType,
@@ -63,7 +72,7 @@ export async function saveProfile(formData: ProfileFormData & { is_completed: bo
     asaas_customer_id: asaasCustomer.id,
     pix_key: formData.pix_key,
     credits: 0,
-    plan_type: formData.is_agency ? 'squad' : 'free',
+    plan_type: planType,
     is_agency: formData.is_agency,
   };
 
