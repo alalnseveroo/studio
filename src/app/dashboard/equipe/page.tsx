@@ -8,7 +8,7 @@ export default function EquipePage() {
     return (
         <div className="flex flex-1 flex-col">
             <div className="flex items-center">
-                <h1 className="text-2xl font-normal">Equipe</h1>
+                <h1 className="text-2xl font-bold">Equipe</h1>
                  <div className="ml-auto flex items-center gap-2">
                     <Button size="sm" className="h-9 gap-1" disabled>
                         <PlusCircle className="h-4 w-4" />

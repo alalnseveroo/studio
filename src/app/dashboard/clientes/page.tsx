@@ -448,7 +448,7 @@ function ClientsDataTable() {
                   data-state={row.getIsSelected() && "selected"}
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id} className="py-2">
+                    <TableCell key={cell.id}>
                       {flexRender(
                         cell.column.columnDef.cell,
                         cell.getContext()
@@ -569,7 +569,7 @@ export default function ClientesPage() {
     return (
         <div className="flex flex-1 flex-col">
             <div className="flex items-center">
-                <h1 className="text-2xl font-normal">Clientes</h1>
+                <h1 className="text-2xl font-bold">Clientes</h1>
             </div>
             <ClientsDataTable />
         </div>

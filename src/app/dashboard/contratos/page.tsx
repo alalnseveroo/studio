@@ -207,7 +207,7 @@ function ContratosPageComponent() {
     <>
       <div className="flex flex-1 flex-col">
         <div className="flex items-center">
-          <h1 className="text-2xl font-normal">Contratos</h1>
+          <h1 className="text-2xl font-bold">Contratos</h1>
           <div className="ml-auto flex items-center gap-2">
             {selectedContracts.length > 0 && (
                  <Button

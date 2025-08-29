@@ -108,7 +108,7 @@ function MultiSelectClients({
                     onValueChange={setInputValue}
                     onBlur={() => setOpen(false)}
                     onFocus={() => setOpen(true)}
-                    className="ml-2 flex-1 bg-transparent p-0 outline-none placeholder:text-muted-foreground"
+                    className="ml-2 flex-1 bg-transparent p-0 outline-none placeholder:text-muted-foreground h-auto"
                 />
             </div>
         </div>
@@ -287,7 +287,7 @@ export default function SquadsPage() {
     return (
         <div className="flex flex-1 flex-col">
             <div className="flex items-center">
-                <h1 className="text-2xl font-normal">Squads</h1>
+                <h1 className="text-2xl font-bold">Squads</h1>
                 <div className="ml-auto flex items-center gap-2">
                     <Button size="sm" className="h-9 gap-1" onClick={() => handleOpenModal()}>
                         <PlusCircle className="h-4 w-4" />
@@ -326,7 +326,7 @@ export default function SquadsPage() {
                             return (
                                 <Card key={squad.id} className="flex flex-col">
                                     <CardHeader>
-                                        <CardTitle className="text-lg">{squad.name}</CardTitle>
+                                        <CardTitle>{squad.name}</CardTitle>
                                         <CardDescription className="text-xs">Gerenciado por: N/A</CardDescription>
                                     </CardHeader>
                                     <CardContent className="flex-1">
