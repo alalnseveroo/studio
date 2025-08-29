@@ -45,13 +45,13 @@ export async function saveProfile(formData: ProfileFormData & { is_completed: bo
   }
 
   // Lógica corrigida para atribuição do plan_type
-  let planType: 'assistente' | 'squad' | 'free' | 'agencia' | 'trial';
+  let planType: 'Free' | 'Crédito' | 'Squad' | 'Agência' | 'Full Trial';
   if (formData.is_agency) {
-      planType = 'trial';
+      planType = 'Full Trial';
   } else if (formData.personType === 'cpf') {
-      planType = 'free';
+      planType = 'Free';
   } else { // PJ não agência
-      planType = 'assistente'; 
+      planType = 'Crédito'; 
   }
 
 
@@ -73,7 +73,7 @@ export async function saveProfile(formData: ProfileFormData & { is_completed: bo
     email: user.email, 
     asaas_customer_id: asaasCustomer.id,
     pix_key: formData.pix_key,
-    credits: planType === 'trial' || planType === 'free' ? 3 : 0, // Adiciona créditos iniciais para trial e free
+    credits: planType === 'Full Trial' || planType === 'Free' ? 3 : 0, // Adiciona créditos iniciais para trial e free
     plan_type: planType,
     is_agency: formData.is_agency,
   };

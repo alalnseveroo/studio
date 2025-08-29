@@ -30,15 +30,19 @@ type PopoverTriggerProps = React.ComponentPropsWithoutRef<typeof PopoverTrigger>
 interface SquadSwitcherProps extends PopoverTriggerProps {}
 
 const getPlanName = (planType: Profile['plan_type'] | null | undefined) => {
-    if (!planType) return 'Free';
-    const planMap: { [key in NonNullable<Profile['plan_type']>]: string } = {
-        free: 'Free',
-        assistente: 'Crédito',
-        squad: 'Squad',
-        agencia: 'Agência',
-        trial: 'Full Trial',
+    if (!planType) return 'Desconhecido';
+    
+    // O mapeamento agora usa os valores exatos do ENUM.
+    const planMap = {
+        'Free': 'Free',
+        'Crédito': 'Crédito',
+        'Squad': 'Squad',
+        'Agência': 'Agência',
+        'Full Trial': 'Full Trial',
     };
-    return planMap[planType] || 'Desconhecido';
+    
+    // Retorna o valor mapeado ou 'Desconhecido' se não encontrar.
+    return planMap[planType as keyof typeof planMap] || 'Desconhecido';
 };
 
 
