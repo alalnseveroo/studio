@@ -84,6 +84,9 @@ export default function CobrancasPage() {
   }, [])
 
   const getStatusInfo = (status: string, dueDate: string) => {
+    if (!isClientSide) {
+      return { text: 'Carregando...', className: 'border-gray-500 bg-gray-500/10 text-gray-700' };
+    }
     if (status === 'pago') {
       return { text: 'Pago', className: 'border-green-500 bg-green-500/10 text-green-700' };
     }
@@ -245,7 +248,7 @@ export default function CobrancasPage() {
                         <TableBody>
                         {charges.map((charge) => {
                           if (!charge.clientes) return null; // Safety check
-                          const status = isClientSide ? getStatusInfo(charge.status, charge.due_date) : { text: '', className: '' };
+                          const status = getStatusInfo(charge.status, charge.due_date);
                           const clientName = charge.clientes.full_name || charge.clientes.company_name;
 
                           return (

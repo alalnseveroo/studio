@@ -113,10 +113,13 @@ const getStatusText = (status: string) => {
 }
   
 const getChargeStatusInfo = (status: string, dueDate: string, isClientSide: boolean) => {
+    if (!isClientSide) {
+      return { text: 'Carregando...', className: 'border-gray-500 bg-gray-500/10 text-gray-700' };
+    }
     if (status === 'pago') {
       return { text: 'Pago', className: 'border-green-500 bg-green-500/10 text-green-700' };
     }
-    if (isClientSide && isPast(new Date(dueDate))) {
+    if (isPast(new Date(dueDate))) {
       return { text: 'Atrasado', className: 'border-red-500 bg-red-500/10 text-red-700' };
     }
     return { text: 'Pendente', className: 'border-yellow-500 bg-yellow-500/10 text-yellow-700' };
@@ -156,7 +159,7 @@ function TaskList({ tasks, clients, onTaskUpdate, onTaskCreate }: { tasks: Task[
         <div className="flex flex-col h-full">
             <CardHeader>
                 <CardTitle className="text-lg font-semibold">Lista de Tarefas</CardTitle>
-                <CardDescription>
+                <div className="text-sm text-muted-foreground">
                      <div className="relative">
                         <Input 
                             {...register("description")} 
@@ -206,7 +209,7 @@ function TaskList({ tasks, clients, onTaskUpdate, onTaskCreate }: { tasks: Task[
                             </PopoverContent>
                         </Popover>
                     </div>
-                </CardDescription>
+                </div>
             </CardHeader>
              <CardContent className="p-0 flex-1 overflow-y-auto px-4">
                 {tasks.length > 0 ? tasks.map(task => (

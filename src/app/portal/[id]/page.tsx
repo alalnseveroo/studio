@@ -97,10 +97,13 @@ export default function ClientPortalPage() {
   const { toast } = useToast()
   
   const getStatusInfo = (status: string, dueDate: string) => {
+    if (!isClientSide) {
+      return { text: 'Carregando...', className: 'bg-gray-100 text-gray-800' };
+    }
     if (status === 'pago') {
       return { text: 'Pago', className: 'bg-green-100 text-green-800' };
     }
-    if (isClientSide && isPast(new Date(dueDate))) {
+    if (isPast(new Date(dueDate))) {
       return { text: 'Atrasado', className: 'bg-red-100 text-red-800' };
     }
     return { text: 'Pendente', className: 'bg-yellow-100 text-yellow-800' };
@@ -424,7 +427,7 @@ export default function ClientPortalPage() {
         <AlertDialogContent>
             <AlertDialogHeader className="space-y-4">
                 <AlertDialogTitle className="text-center">Realizar Pagamento</AlertDialogTitle>
-                <AlertDialogDescription>
+                <AlertDialogDescription asChild>
                     {provider && selectedCharge ? (
                         <StaticPixQRCode provider={provider} charge={selectedCharge} />
                     ) : (
