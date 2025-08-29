@@ -88,7 +88,7 @@ export function BreadcrumbNav() {
          <Link href="/dashboard" className="text-muted-foreground hover:text-primary transition-colors">
             Gerenciamento Global
          </Link>
-         {profile && <span className="font-light text-gray-400">{planName}</span>}
+         {profile && <Badge variant="outline" className="text-xs font-light">{planName}</Badge>}
       </div>
       
       {isSquadsSection && (
