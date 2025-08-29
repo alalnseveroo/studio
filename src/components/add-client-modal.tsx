@@ -162,7 +162,7 @@ export function AddClientModal({ isOpen, onClose, onSuccess, proposals }: AddCli
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-2xl p-0">
         <DialogHeader className="p-6 pb-0">
-          <DialogTitle className="text-xl font-semibold">Adicionar Novo Cliente</DialogTitle>
+          <DialogTitle className="text-xl font-normal">Adicionar Novo Cliente</DialogTitle>
           <DialogDescription>Siga as etapas para cadastrar todas as informações do cliente.</DialogDescription>
         </DialogHeader>
         <div className="px-6 py-4">
@@ -181,7 +181,7 @@ export function AddClientModal({ isOpen, onClose, onSuccess, proposals }: AddCli
                     {activeStep === 1 && <DetailsStep form={form} proposals={proposals} />}
                 </div>
 
-                 <DialogFooter className="p-6 border-t">
+                 <DialogFooter className="p-6 pt-0 border-t">
                     {activeStep > 0 && <Button type="button" variant="ghost" onClick={handleBack}>Voltar</Button>}
                     <div className="flex-1" />
                     {activeStep < STEPS.length - 1 ? (
