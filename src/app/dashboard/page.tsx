@@ -156,7 +156,7 @@ function TaskList({ tasks, clients, onTaskUpdate, onTaskCreate }: { tasks: Task[
         <div className="flex flex-col h-full">
             <CardHeader>
                 <CardTitle className="text-lg font-semibold">Lista de Tarefas</CardTitle>
-                <CardDescription>
+                <CardDescription as="div">
                      <div className="relative">
                         <Input 
                             {...register("description")} 
