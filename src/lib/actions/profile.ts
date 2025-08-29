@@ -9,6 +9,8 @@ import { sendProfileWebhook } from './webhook';
 import { sendTransactionalEmail } from '../brevo';
 import { getOrCreateAsaasCustomer } from '../asaas';
 import { revalidatePath } from 'next/cache';
+import { addDays } from 'date-fns';
+
 
 const AVATAR_USER_MALE = 'https://pouynmrblzvwlhrfyins.supabase.co/storage/v1/object/public/icons/AvatarUser/avatar-assist-homem.png';
 const AVATAR_USER_FEMALE = 'https://pouynmrblzvwlhrfyins.supabase.co/storage/v1/object/public/icons/AvatarUser/avatar-assist-muler.png';
@@ -25,7 +27,6 @@ export async function saveProfile(formData: ProfileFormData & { is_completed: bo
 
   const avatarUrl = formData.sex === 'male' ? AVATAR_USER_MALE : AVATAR_USER_FEMALE;
   
-  // O perfil do usuário logado é o "cliente" na Asaas.
   const profileForAsaas = {
     id: user.id,
     email: user.email,
@@ -35,7 +36,7 @@ export async function saveProfile(formData: ProfileFormData & { is_completed: bo
     company_name: formData.companyName,
     phone: formData.phone,
     address: formData.address,
-    is_completed: formData.is_completed, // para diferenciar de um cliente normal
+    is_completed: formData.is_completed, 
   };
 
   const asaasCustomer = await getOrCreateAsaasCustomer(profileForAsaas);
@@ -44,14 +45,18 @@ export async function saveProfile(formData: ProfileFormData & { is_completed: bo
      return { error: { message: 'Não foi possível obter um ID de cliente do sistema de pagamentos.' } };
   }
 
-  // Lógica corrigida para atribuição do plan_type
+  // Nova lógica de atribuição de plano
   let planType: 'Free' | 'Crédito' | 'Squad' | 'Agência' | 'Full Trial';
+  let trialExpiresAt: string | null = null;
+  let credits = 0;
+
   if (formData.is_agency) {
       planType = 'Full Trial';
+      trialExpiresAt = addDays(new Date(), 3).toISOString();
   } else if (formData.personType === 'cpf') {
       planType = 'Free';
   } else { // PJ não agência
-      planType = 'Crédito'; 
+      planType = 'Free';
   }
 
 
@@ -73,9 +78,10 @@ export async function saveProfile(formData: ProfileFormData & { is_completed: bo
     email: user.email, 
     asaas_customer_id: asaasCustomer.id,
     pix_key: formData.pix_key,
-    credits: planType === 'Full Trial' || planType === 'Free' ? 3 : 0, // Adiciona créditos iniciais para trial e free
+    credits: credits, 
     plan_type: planType,
     is_agency: formData.is_agency,
+    trial_expires_at: trialExpiresAt,
   };
 
   const { data: savedProfile, error } = await supabase.from('profiles').upsert(profileData).select().single();
@@ -87,7 +93,6 @@ export async function saveProfile(formData: ProfileFormData & { is_completed: bo
   
     if(savedProfile) {
       try {
-          // Envia o webhook de atualização de perfil para o n8n
           await sendProfileWebhook('update', savedProfile);
 
           if(formData.is_completed) {

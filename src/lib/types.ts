@@ -87,14 +87,15 @@ export type Profile = {
   signature?: string;
   is_completed?: boolean;
   email?: string;
-  plan_type: 'free' | 'assistente' | 'squad' | 'agencia' | 'trial';
+  plan_type: 'Free' | 'Crédito' | 'Squad' | 'Agência' | 'Full Trial';
   credits: number;
   sex: 'male' | 'female';
   avatar_url: string | null;
   phone?: string | null;
   asaas_customer_id?: string | null;
   pix_key?: string | null;
-  is_agency?: boolean; 
+  is_agency?: boolean;
+  trial_expires_at?: string | null;
 
   // Public Profile Fields
   slug?: string;

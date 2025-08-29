@@ -201,7 +201,7 @@ export async function signContractAsProvider(contractId: string, otp: string) {
     }
     
     // Verificação de créditos para usuários free/assistente
-    if ((contratada.plan_type === 'free' || contratada.plan_type === 'assistente') && contratada.credits <= 0) {
+    if ((contratada.plan_type === 'Free' || contratada.plan_type === 'Crédito') && contratada.credits <= 0) {
         return { data: null, error: { message: 'Créditos insuficientes. Por favor, compre créditos para assinar este contrato.' } };
     }
 

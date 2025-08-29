@@ -68,14 +68,6 @@ function DashboardHeader({
         <header className="sticky top-0 z-30 flex h-14 items-center justify-between gap-4 border-b bg-background px-4 sm:px-6">
             <BreadcrumbNav />
             <div className="flex items-center gap-4">
-                 {userProfile && (
-                    <Button asChild variant="outline" size="sm" className="hidden sm:flex items-center gap-2 border-green-500 bg-green-500/10 text-green-700 hover:bg-green-500/20 hover:text-green-800">
-                      <Link href="/dashboard/settings/buy-credits">
-                        <CreditCard className="h-4 w-4"/>
-                        <span>Você tem {userProfile.credits ?? 0} créditos</span>
-                      </Link>
-                    </Button>
-                 )}
                  <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="icon">
