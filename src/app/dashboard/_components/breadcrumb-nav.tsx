@@ -29,9 +29,9 @@ type PopoverTriggerProps = React.ComponentPropsWithoutRef<typeof PopoverTrigger>
 
 interface SquadSwitcherProps extends PopoverTriggerProps {}
 
-const getPlanName = (planType: Profile['plan_type'] | undefined) => {
+const getPlanName = (planType: Profile['plan_type'] | null | undefined) => {
     if (!planType) return 'Free';
-    const planMap = {
+    const planMap: { [key in NonNullable<Profile['plan_type']>]: string } = {
         free: 'Free',
         assistente: 'Crédito',
         squad: 'Squad',
