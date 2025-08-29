@@ -236,7 +236,7 @@ export default function DashboardLayout({
             userProfile={userProfile} 
             onOpenChat={(client) => setSelectedChatClient(client)} 
         />
-        <div className="flex flex-1">
+        <div className="flex flex-1 max-w-screen-2xl mx-auto w-full">
              <aside className="fixed top-14 left-0 z-10 hidden w-14 flex-col border-r bg-background sm:flex h-[calc(100vh-3.5rem)]">
                 <nav className="flex flex-col items-center gap-4 px-2 py-4">
                     {navItems.map(item => <NavItem key={item.href} {...item} />)}
