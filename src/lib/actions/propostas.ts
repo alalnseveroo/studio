@@ -1,3 +1,4 @@
+
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
@@ -56,4 +57,56 @@ export async function getProposals() {
     }
 
     return { data, error: null };
+}
+
+export async function updateProposal(proposalId: string, formData: any) {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return { error: { message: 'Usuário não autenticado.' } };
+  }
+
+  const { error } = await supabase
+    .from('propostas')
+    .update({
+      ...formData,
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', proposalId)
+    .eq('user_id', user.id);
+
+  if (error) {
+    console.error('Supabase error updating proposal:', error);
+    return { error: { message: `Não foi possível atualizar a proposta: ${error.message}` } };
+  }
+
+  revalidatePath('/dashboard/propostas');
+  revalidatePath(`/dashboard/propostas/${proposalId}`);
+  return { error: null };
+}
+
+
+export async function deleteProposal(proposalId: string) {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return { error: { message: 'Usuário não autenticado.' } };
+  }
+
+  const { error } = await supabase
+    .from('propostas')
+    .delete()
+    .eq('id', proposalId)
+    .eq('user_id', user.id);
+
+  if (error) {
+    console.error('Supabase error deleting proposal:', error);
+    if (error.code === '23503') { // Foreign key violation
+        return { error: { message: 'Não é possível excluir esta proposta, pois ela está sendo usada em um ou mais contratos.' } };
+    }
+    return { error: { message: 'Não foi possível excluir a proposta.' } };
+  }
+
+  revalidatePath('/dashboard/propostas');
+  return { error: null };
 }

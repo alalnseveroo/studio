@@ -10,10 +10,28 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Button } from '@/components/ui/button'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Button, buttonVariants } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Send, FileWarning, UserPlus, FilePlus, Link2, BadgeCheck, PlusCircle } from 'lucide-react'
-import { getCharges, markChargeAsPaid } from '@/lib/actions/cobrancas'
+import { Send, FileWarning, UserPlus, FilePlus, Link2, BadgeCheck, PlusCircle, MoreVertical, Trash2 } from 'lucide-react'
+import { getCharges, markChargeAsPaid, deleteCharge } from '@/lib/actions/cobrancas'
 import type { Cobranca, Profile, Cliente, Proposta } from '@/lib/types'
 import { format, isPast } from 'date-fns'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -78,6 +96,7 @@ export default function CobrancasPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isBillingModalOpen, setIsBillingModalOpen] = useState(false)
   const [isClientSide, setIsClientSide] = useState(false);
+  const [chargeToDelete, setChargeToDelete] = useState<Cobranca | null>(null);
 
   useEffect(() => {
     setIsClientSide(true);
@@ -133,6 +152,18 @@ export default function CobrancasPage() {
       toast({ title: 'Sucesso!', description: 'Cobrança marcada como paga.' });
       await fetchData(); // Refetch charges
     }
+  }
+
+  const handleDeleteCharge = async () => {
+    if (!chargeToDelete) return;
+    const { error } = await deleteCharge(chargeToDelete.id);
+    if (error) {
+      toast({ variant: 'destructive', title: 'Erro ao Excluir', description: error.message });
+    } else {
+      toast({ title: 'Cobrança Excluída!', description: 'A cobrança foi removida com sucesso.' });
+      await fetchData();
+    }
+    setChargeToDelete(null);
   }
 
   const handleSendReminder = async (charge: Cobranca) => {
@@ -286,16 +317,29 @@ export default function CobrancasPage() {
                             <TableCell className="text-center">
                                  <div className="flex items-center justify-center">
                                      {charge.status === 'pendente' && (
-                                        <Button variant="ghost" size="icon" onClick={() => handleSendReminder(charge)} disabled={isSending === charge.id}>
-                                            <Send className="h-4 w-4" />
-                                            <span className="sr-only">Enviar Lembrete</span>
-                                        </Button>
-                                     )}
-                                     {charge.status === 'pendente' && (
-                                         <Button variant="ghost" size="icon" onClick={() => handleMarkAsPaid(charge.id)}>
-                                            <BadgeCheck className="h-4 w-4" />
-                                            <span className="sr-only">Marcar como pago</span>
-                                        </Button>
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button variant="ghost" size="icon" className="h-8 w-8">
+                                                    <MoreVertical className="h-4 w-4" />
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end">
+                                                <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                                                <DropdownMenuSeparator />
+                                                <DropdownMenuItem onClick={() => handleSendReminder(charge)} disabled={isSending === charge.id}>
+                                                    <Send className="mr-2 h-4 w-4" />
+                                                    Enviar Lembrete
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem onClick={() => handleMarkAsPaid(charge.id)}>
+                                                    <BadgeCheck className="mr-2 h-4 w-4" />
+                                                    Marcar como Pago
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem className="text-destructive" onClick={() => setChargeToDelete(charge)}>
+                                                    <Trash2 className="mr-2 h-4 w-4" />
+                                                    Excluir Cobrança
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
                                      )}
                                  </div>
                             </TableCell>
@@ -331,6 +375,26 @@ export default function CobrancasPage() {
       clients={clients}
       proposals={proposals}
     />
+    
+    <AlertDialog open={!!chargeToDelete} onOpenChange={() => setChargeToDelete(null)}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+            <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+            <AlertDialogDescription>
+                Esta ação não pode ser desfeita. Isso excluirá permanentemente a cobrança para o cliente <strong>{chargeToDelete?.clientes?.full_name || chargeToDelete?.clientes?.company_name}</strong>.
+            </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+                onClick={handleDeleteCharge}
+                className={cn(buttonVariants({ variant: "destructive" }))}
+            >
+                Sim, excluir cobrança
+            </AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
     </>
   )
 }

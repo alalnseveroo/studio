@@ -3,12 +3,33 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { Button } from '@/components/ui/button'
+import { useRouter } from 'next/navigation'
+import { Button, buttonVariants } from '@/components/ui/button'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
-import { PlusCircle, FileText, CheckCircle } from 'lucide-react'
-import { getProposals } from '@/lib/actions/propostas'
+import { PlusCircle, FileText, CheckCircle, MoreVertical, Edit, Trash2 } from 'lucide-react'
+import { getProposals, deleteProposal } from '@/lib/actions/propostas'
 import type { Proposta } from '@/lib/types'
 import { Skeleton } from '@/components/ui/skeleton'
+import { useToast } from '@/hooks/use-toast'
+import { cn } from '@/lib/utils'
 
 function ProposalsGridSkeleton() {
     return (
@@ -36,19 +57,43 @@ function ProposalsGridSkeleton() {
 export default function PropostasPage() {
   const [proposals, setProposals] = useState<Proposta[]>([])
   const [isLoading, setIsLoading] = useState(true);
+  const [proposalToDelete, setProposalToDelete] = useState<Proposta | null>(null);
+  const { toast } = useToast();
+  const router = useRouter();
 
-  useEffect(() => {
-    async function fetchProposals() {
+  const fetchProposals = async () => {
       setIsLoading(true);
       const { data } = await getProposals()
       setProposals(data || [])
       setIsLoading(false);
-    }
+  }
+
+  useEffect(() => {
     fetchProposals()
   }, [])
+  
+  const handleDeleteProposal = async () => {
+    if (!proposalToDelete) return;
+    const { error } = await deleteProposal(proposalToDelete.id);
+    if (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao Excluir',
+        description: error.message,
+      });
+    } else {
+      toast({
+        title: 'Proposta Excluída!',
+        description: 'A proposta foi removida com sucesso.',
+      });
+      fetchProposals();
+    }
+    setProposalToDelete(null);
+  }
 
 
   return (
+    <>
     <div className="flex flex-1 flex-col">
       <div className="flex items-center">
         <h1 className="text-2xl font-bold">Minhas Propostas</h1>
@@ -83,14 +128,34 @@ export default function PropostasPage() {
         ) : (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {proposals.map((proposal) => (
-              <Card key={proposal.id}>
+              <Card key={proposal.id} className="flex flex-col">
                 <CardHeader>
-                  <CardTitle className="truncate">{proposal.name}</CardTitle>
+                  <div className="flex items-start justify-between">
+                    <CardTitle className="truncate pr-2">{proposal.name}</CardTitle>
+                     <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-8 w-8 p-0">
+                            <span className="sr-only">Abrir menu</span>
+                            <MoreVertical className="h-4 w-4" />
+                        </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                        <DropdownMenuItem onClick={() => router.push(`/dashboard/propostas/${proposal.id}`)}>
+                            <Edit className="mr-2 h-4 w-4" /> Ver / Editar
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem className="text-destructive" onClick={() => setProposalToDelete(proposal)}>
+                            <Trash2 className="mr-2 h-4 w-4" /> Excluir
+                        </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
                   <CardDescription className="text-xs">
                     {proposal.services.length} serviço(s) incluído(s)
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="flex-1">
                   <div className="space-y-2">
                     {proposal.services.slice(0, 3).map((service, index) => (
                       <div key={index} className="flex items-center gap-2 text-sm truncate">
@@ -116,5 +181,26 @@ export default function PropostasPage() {
         )}
       </div>
     </div>
+    
+      <AlertDialog open={!!proposalToDelete} onOpenChange={() => setProposalToDelete(null)}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+            <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+            <AlertDialogDescription>
+                Esta ação não pode ser desfeita. Isso excluirá permanentemente a proposta "<strong>{proposalToDelete?.name}</strong>". Ela não poderá ser usada para gerar novos contratos.
+            </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+                onClick={handleDeleteProposal}
+                className={cn(buttonVariants({ variant: "destructive" }))}
+            >
+                Sim, excluir proposta
+            </AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   )
 }

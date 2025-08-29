@@ -1,5 +1,4 @@
 
-
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
@@ -97,6 +96,46 @@ export async function markChargeAsPaid(chargeId: string) {
   revalidatePath('/portal/*');
   return { error: null };
 }
+
+export async function deleteCharge(chargeId: string) {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return { error: { message: 'Usuário não autenticado.' } };
+  }
+
+  // Primeiro, verifique se a cobrança está pendente
+  const { data: charge, error: fetchError } = await supabase
+    .from('cobrancas')
+    .select('status')
+    .eq('id', chargeId)
+    .eq('user_id', user.id)
+    .single();
+
+  if (fetchError || !charge) {
+    return { error: { message: 'Cobrança não encontrada ou você não tem permissão para excluí-la.' } };
+  }
+
+  if (charge.status !== 'pendente') {
+    return { error: { message: 'Apenas cobranças pendentes podem ser excluídas.' } };
+  }
+
+  const { error: deleteError } = await supabase
+    .from('cobrancas')
+    .delete()
+    .eq('id', chargeId);
+
+  if (deleteError) {
+    console.error('Supabase error deleting charge:', deleteError);
+    return { error: { message: 'Não foi possível excluir a cobrança.' } };
+  }
+
+  revalidatePath('/dashboard/cobrancas');
+  revalidatePath('/dashboard/clientes/*');
+  revalidatePath('/portal/*');
+  return { error: null };
+}
+
 
 export async function saveInvoiceUrl(chargeId: string, invoiceUrl: string) {
     const supabase = createClient();
