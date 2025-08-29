@@ -33,10 +33,10 @@ const getPlanName = (planType: Profile['plan_type'] | undefined) => {
     if (!planType) return 'Free';
     const planMap = {
         free: 'Free',
-        assistente: 'Assistente',
+        assistente: 'Crédito',
         squad: 'Squad',
         agencia: 'Agência',
-        trial: 'Trial',
+        trial: 'Full Trial',
     };
     return planMap[planType] || 'Desconhecido';
 };
