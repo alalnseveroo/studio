@@ -8,10 +8,10 @@ export default function EquipePage() {
     return (
         <div className="flex flex-1 flex-col">
             <div className="flex items-center">
-                <h1 className="text-lg font-semibold md:text-2xl">Equipe</h1>
+                <h1 className="text-2xl font-bold">Equipe</h1>
                  <div className="ml-auto flex items-center gap-2">
-                    <Button size="sm" className="h-8 gap-1" disabled>
-                        <PlusCircle className="h-3.5 w-3.5" />
+                    <Button size="sm" className="h-9 gap-1" disabled>
+                        <PlusCircle className="h-4 w-4" />
                         <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
                             Convidar Membro
                         </span>

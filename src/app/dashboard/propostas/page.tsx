@@ -1,5 +1,4 @@
 
-
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -52,11 +51,11 @@ export default function PropostasPage() {
   return (
     <div className="flex flex-1 flex-col">
       <div className="flex items-center">
-        <h1 className="text-lg font-semibold md:text-2xl">Minhas Propostas</h1>
+        <h1 className="text-2xl font-bold">Minhas Propostas</h1>
         <div className="ml-auto flex items-center gap-2">
-          <Button asChild size="sm" className="h-8 gap-1">
+          <Button asChild size="sm" className="h-9 gap-1">
             <Link href="/dashboard/propostas/nova">
-                <PlusCircle className="h-3.5 w-3.5" />
+                <PlusCircle className="h-4 w-4" />
                 <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
                     Criar Nova Proposta
                 </span>
@@ -86,8 +85,8 @@ export default function PropostasPage() {
             {proposals.map((proposal) => (
               <Card key={proposal.id}>
                 <CardHeader>
-                  <CardTitle className="truncate">{proposal.name}</CardTitle>
-                  <CardDescription>
+                  <CardTitle className="truncate text-lg">{proposal.name}</CardTitle>
+                  <CardDescription className="text-xs">
                     {proposal.services.length} serviço(s) incluído(s)
                   </CardDescription>
                 </CardHeader>
@@ -100,7 +99,7 @@ export default function PropostasPage() {
                       </div>
                     ))}
                     {proposal.services.length > 3 && (
-                      <p className="text-sm text-muted-foreground">e mais {proposal.services.length - 3}...</p>
+                      <p className="text-xs text-muted-foreground">e mais {proposal.services.length - 3}...</p>
                     )}
                   </div>
                 </CardContent>

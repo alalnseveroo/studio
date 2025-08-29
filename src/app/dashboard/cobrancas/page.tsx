@@ -1,5 +1,4 @@
 
-
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -166,9 +165,9 @@ export default function CobrancasPage() {
     <>
     <div className="flex flex-1 flex-col">
         <div className="flex items-center">
-            <h1 className="text-lg font-semibold md:text-2xl">Gestão de Cobranças</h1>
+            <h1 className="text-2xl font-bold">Gestão de Cobranças</h1>
             <div className="ml-auto">
-                <Button onClick={() => setIsBillingModalOpen(true)}>
+                <Button size="sm" onClick={() => setIsBillingModalOpen(true)}>
                     <PlusCircle className="mr-2 h-4 w-4" />
                     Enviar Cobrança
                 </Button>
@@ -177,29 +176,29 @@ export default function CobrancasPage() {
 
         <Card className="mt-4">
             <CardHeader>
-                <CardTitle>Como Funciona a Cobrança?</CardTitle>
-                <CardDescription>Siga os passos no botão "Adicionar Cliente" para criar uma nova cobrança.</CardDescription>
+                <CardTitle className="text-lg">Como Funciona a Cobrança?</CardTitle>
+                <CardDescription className="text-sm">Siga os passos no botão "Adicionar Cliente" para criar uma nova cobrança.</CardDescription>
             </CardHeader>
             <CardContent className="grid gap-6 sm:grid-cols-3">
                 <div className="flex items-start gap-4">
                     <UserPlus className="h-8 w-8 text-primary flex-shrink-0" />
                     <div>
-                        <h4 className="font-semibold">1. Cadastre o Cliente</h4>
-                        <p className="text-sm text-muted-foreground">Adicione um novo cliente e preencha seus dados básicos.</p>
+                        <h4 className="font-semibold text-sm">1. Cadastre o Cliente</h4>
+                        <p className="text-xs text-muted-foreground">Adicione um novo cliente e preencha seus dados básicos.</p>
                     </div>
                 </div>
                  <div className="flex items-start gap-4">
                     <FilePlus className="h-8 w-8 text-primary flex-shrink-0" />
                     <div>
-                        <h4 className="font-semibold">2. Defina a Cobrança</h4>
-                        <p className="text-sm text-muted-foreground">Use uma proposta ou defina um valor e data de início.</p>
+                        <h4 className="font-semibold text-sm">2. Defina a Cobrança</h4>
+                        <p className="text-xs text-muted-foreground">Use uma proposta ou defina um valor e data de início.</p>
                     </div>
                 </div>
                  <div className="flex items-start gap-4">
                     <Link2 className="h-8 w-8 text-primary flex-shrink-0" />
                     <div>
-                        <h4 className="font-semibold">3. Revise e Ative</h4>
-                        <p className="text-sm text-muted-foreground">Confirme os dados e ative a automação, que aparecerá aqui.</p>
+                        <h4 className="font-semibold text-sm">3. Revise e Ative</h4>
+                        <p className="text-xs text-muted-foreground">Confirme os dados e ative a automação, que aparecerá aqui.</p>
                     </div>
                 </div>
             </CardContent>
@@ -226,8 +225,8 @@ export default function CobrancasPage() {
                 ) : (
                 <Card>
                     <CardHeader>
-                        <CardTitle>Próximas Cobranças</CardTitle>
-                        <CardDescription>
+                        <CardTitle className="text-lg">Próximas Cobranças</CardTitle>
+                        <CardDescription className="text-sm">
                             Listagem de cobranças pendentes. As cobranças são geradas automaticamente para clientes ativos.
                         </CardDescription>
                     </CardHeader>
@@ -257,13 +256,13 @@ export default function CobrancasPage() {
                                     <AvatarImage src={charge.clientes.avatar_url || ''} alt={`Avatar de ${clientName}`} />
                                     <AvatarFallback>{(clientName || 'C').charAt(0)}</AvatarFallback>
                                 </Avatar>
-                                <span>{clientName}</span>
+                                <span className="text-sm">{clientName}</span>
                                 </div>
                             </TableCell>
-                            <TableCell>
+                            <TableCell className="text-muted-foreground">
                                 {isClientSide ? format(new Date(charge.due_date), 'dd/MM/yyyy') : ''}
                             </TableCell>
-                            <TableCell>
+                            <TableCell className="text-muted-foreground">
                                 {charge.value ? `${Number(charge.value).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : 'N/A'}
                             </TableCell>
                             <TableCell>

@@ -1,5 +1,4 @@
 
-
 'use client'
 
 import { useState, useEffect, useMemo, Suspense } from 'react'
@@ -65,7 +64,7 @@ function ContractsTableSkeleton() {
                     </TableHeader>
                     <TableBody>
                          {Array.from({ length: 5 }).map((_, i) => (
-                            <TableRow key={i} className="h-12">
+                            <TableRow key={i}>
                                 <TableCell><Skeleton className="h-5 w-5" /></TableCell>
                                 <TableCell><Skeleton className="h-5 w-20" /></TableCell>
                                 <TableCell><Skeleton className="h-5 w-32" /></TableCell>
@@ -208,13 +207,13 @@ function ContratosPageComponent() {
     <>
       <div className="flex flex-1 flex-col">
         <div className="flex items-center">
-          <h1 className="text-lg font-semibold md:text-2xl">Contratos</h1>
+          <h1 className="text-2xl font-bold">Contratos</h1>
           <div className="ml-auto flex items-center gap-2">
             {selectedContracts.length > 0 && (
                  <Button
                     variant="destructive"
                     size="sm"
-                    className="h-8 gap-1"
+                    className="h-9 gap-1"
                     onClick={() => setIsBulkDeleteConfirmOpen(true)}
                 >
                     <Trash2 className="h-3.5 w-3.5" />
@@ -223,8 +222,8 @@ function ContratosPageComponent() {
                     </span>
                 </Button>
             )}
-            <Button size="sm" className="h-8 gap-1" onClick={() => setIsModalOpen(true)}>
-              <PlusCircle className="h-3.5 w-3.5" />
+            <Button size="sm" className="h-9 gap-1" onClick={() => setIsModalOpen(true)}>
+              <PlusCircle className="h-4 w-4" />
               <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
                 Gerar Contrato
               </span>
@@ -234,7 +233,7 @@ function ContratosPageComponent() {
         
         <div className="flex items-center gap-2 py-4">
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-[180px]">
+                <SelectTrigger className="w-[180px] h-9">
                     <SelectValue placeholder="Filtrar por status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -245,7 +244,7 @@ function ContratosPageComponent() {
                 </SelectContent>
             </Select>
             <Select value={sortOrder} onValueChange={setSortOrder}>
-                <SelectTrigger className="w-[180px]">
+                <SelectTrigger className="w-[180px] h-9">
                     <SelectValue placeholder="Ordenar por data" />
                 </SelectTrigger>
                 <SelectContent>
@@ -293,16 +292,16 @@ function ContratosPageComponent() {
                 </TableHeader>
                 <TableBody>
                   {filteredAndSortedContracts.map((contract) => (
-                    <TableRow key={contract.id} className="h-12" data-state={selectedContracts.includes(contract.id) ? 'selected' : ''}>
-                       <TableCell className="py-1">
+                    <TableRow key={contract.id} data-state={selectedContracts.includes(contract.id) ? 'selected' : ''}>
+                       <TableCell>
                          <Checkbox
                           checked={selectedContracts.includes(contract.id)}
                           onCheckedChange={(checked) => handleSelectContract(contract.id, !!checked)}
                           aria-label={`Selecionar contrato ${contract.contract_code}`}
                         />
                       </TableCell>
-                      <TableCell className="py-1 font-medium">{contract.contract_code}</TableCell>
-                      <TableCell className="font-medium py-1">
+                      <TableCell className="font-medium">{contract.contract_code}</TableCell>
+                      <TableCell className="font-medium">
                          <div className="flex items-center gap-3">
                            <Avatar className="h-6 w-6">
                               <AvatarImage src={contract.clientes?.avatar_url || ''} alt="Avatar do Cliente" />
@@ -311,19 +310,19 @@ function ContratosPageComponent() {
                            <span>{contract.clientes?.full_name || contract.clientes?.company_name}</span>
                          </div>
                       </TableCell>
-                      <TableCell className="py-1 hidden md:table-cell">{contract.propostas?.name}</TableCell>
-                      <TableCell className="py-1 hidden lg:table-cell">
+                      <TableCell className="hidden md:table-cell text-muted-foreground">{contract.propostas?.name}</TableCell>
+                      <TableCell className="hidden lg:table-cell text-muted-foreground">
                         {contract.propostas?.value ? `R$ ${Number(contract.propostas.value).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : 'N/A'}
                       </TableCell>
-                      <TableCell className="hidden py-1 lg:table-cell">
+                      <TableCell className="hidden lg:table-cell text-muted-foreground">
                         {isClientSide ? format(new Date(contract.created_at), 'dd/MM/yyyy') : ''}
                       </TableCell>
-                      <TableCell className="hidden py-1 md:table-cell">
+                      <TableCell className="hidden md:table-cell">
                         <Badge variant="outline" className={cn("font-normal", getStatusClass(contract.status))}>
                           {getStatusText(contract.status)}
                         </Badge>
                       </TableCell>
-                      <TableCell className="py-1 text-center">
+                      <TableCell className="text-center">
                         <div className="flex items-center justify-center gap-1">
                             <Button asChild variant="outline" size="icon" className="h-8 w-8">
                                 <Link href={`/dashboard/contratos/${contract.id}`}>

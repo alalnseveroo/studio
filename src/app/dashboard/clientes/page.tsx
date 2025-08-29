@@ -1,5 +1,4 @@
 
-
 'use client'
 
 import * as React from 'react'
@@ -67,10 +66,10 @@ function ClientsTableSkeleton() {
     return (
         <div className="space-y-4">
             <div className="flex items-center justify-between">
-                <Skeleton className="h-10 w-64" />
+                <Skeleton className="h-9 w-64" />
                 <div className="flex items-center gap-2">
-                    <Skeleton className="h-10 w-24" />
-                    <Skeleton className="h-10 w-32" />
+                    <Skeleton className="h-9 w-24" />
+                    <Skeleton className="h-9 w-32" />
                 </div>
             </div>
             <div className="rounded-md border">
@@ -262,7 +261,7 @@ function ClientsDataTable() {
                     <AvatarFallback>{(name || 'C').charAt(0)}</AvatarFallback>
                 </Avatar>
                 <div className="flex flex-col">
-                    <span className="font-medium">{name}</span>
+                    <span className="font-medium text-sm">{name}</span>
                     <span className="text-xs text-muted-foreground">{client.email}</span>
                 </div>
             </div>
@@ -373,7 +372,7 @@ function ClientsDataTable() {
           onChange={(event) =>
             table.getColumn("email")?.setFilterValue(event.target.value)
           }
-          className="max-w-sm"
+          className="max-w-sm h-9"
         />
         <div className="ml-auto flex items-center gap-2">
             {table.getFilteredSelectedRowModel().rows.length > 0 && (
@@ -463,7 +462,7 @@ function ClientsDataTable() {
                 >
                   <div className="flex flex-col items-center gap-2">
                     <FileWarning className="h-8 w-8 text-muted-foreground" />
-                    <p className="font-medium">Nenhum cliente encontrado.</p>
+                    <p className="font-medium text-base">Nenhum cliente encontrado.</p>
                     <p className="text-sm text-muted-foreground">Tente adicionar seu primeiro cliente para começar.</p>
                   </div>
                 </TableCell>
@@ -566,7 +565,7 @@ export default function ClientesPage() {
     return (
         <div className="flex flex-1 flex-col">
             <div className="flex items-center">
-                <h1 className="text-lg font-semibold md:text-2xl">Clientes</h1>
+                <h1 className="text-2xl font-bold">Clientes</h1>
             </div>
             <ClientsDataTable />
         </div>

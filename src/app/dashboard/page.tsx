@@ -1,5 +1,4 @@
 
-
 'use client'
 
 import Link from 'next/link'
@@ -156,13 +155,13 @@ function TaskList({ tasks, clients, onTaskUpdate, onTaskCreate }: { tasks: Task[
     return (
         <div className="flex flex-col h-full">
             <CardHeader>
-                <CardTitle className="text-base font-semibold">Lista de Tarefas</CardTitle>
+                <CardTitle className="text-lg font-semibold">Lista de Tarefas</CardTitle>
                 <CardDescription>
                      <div className="relative">
                         <Input 
                             {...register("description")} 
                             placeholder="Aperte ENTER para adicionar" 
-                            className="h-10 pr-12 rounded-full"
+                            className="h-9 pr-12 rounded-full"
                             onKeyDown={handleCreateOnEnter}
                         />
                          <Popover open={open} onOpenChange={setOpen}>
@@ -343,7 +342,7 @@ export default function DashboardPage() {
         <Alert variant="destructive" className="border-red-500/50 bg-red-500/10 text-red-700">
           <Settings className="h-4 w-4 text-red-700" />
           <AlertTitle className="font-bold">Ação Necessária!</AlertTitle>
-          <AlertDescription className="text-red-700">
+          <AlertDescription className="text-sm">
             Para garantir que você receba pagamentos via PIX, por favor, <Link href="/dashboard/settings/profile" className="underline font-semibold hover:text-red-800">configure sua Chave PIX principal</Link> em seu perfil.
           </AlertDescription>
         </Alert>
@@ -418,10 +417,10 @@ export default function DashboardPage() {
                  ) : (
                     <div className="flex items-center justify-start h-full">
                         <div className="relative flex items-center -space-x-4">
-                           <div className="size-10 rounded-full bg-gray-100 border-2 border-dashed border-gray-200"></div>
-                           <Button asChild variant="outline" className="relative rounded-full h-10 w-10 p-0 bg-white shadow-sm -ml-6">
+                           <div className="size-8 rounded-full bg-gray-100 border-2 border-dashed border-gray-200"></div>
+                           <Button asChild variant="outline" className="relative rounded-full h-8 w-8 p-0 bg-white shadow-sm -ml-5">
                                 <Link href="/dashboard/clientes">
-                                    <Plus className="h-5 w-5 text-muted-foreground" />
+                                    <Plus className="h-4 w-4 text-muted-foreground" />
                                     <span className="sr-only">Adicionar Cliente</span>
                                 </Link>
                            </Button>
@@ -436,8 +435,8 @@ export default function DashboardPage() {
         <Card className="lg:col-span-1 border h-96">
           <CardHeader className="flex flex-row items-center">
             <div className="grid gap-2">
-              <CardTitle className="text-base font-semibold">Contratos Recentes</CardTitle>
-              <CardDescription>
+              <CardTitle className="text-lg font-semibold">Contratos Recentes</CardTitle>
+              <CardDescription className="text-sm">
                 Os últimos contratos gerados no sistema.
               </CardDescription>
             </div>
@@ -477,23 +476,23 @@ export default function DashboardPage() {
                         {recentContracts.map(contract => (
                             <TableRow key={contract.id}>
                                 <TableCell>
-                                    <div className="font-medium">{contract.clientes?.full_name || contract.clientes?.company_name}</div>
-                                    <div className="hidden text-sm text-muted-foreground md:inline">
+                                    <div className="font-medium text-sm">{contract.clientes?.full_name || contract.clientes?.company_name}</div>
+                                    <div className="hidden text-xs text-muted-foreground md:inline">
                                     {contract.clientes?.email}
                                     </div>
                                 </TableCell>
-                                <TableCell className="hidden xl:table-cell">
+                                <TableCell className="hidden xl:table-cell text-muted-foreground">
                                     {contract.contract_code}
                                 </TableCell>
                                 <TableCell className="hidden xl:table-cell">
-                                    <Badge className={cn("text-xs font-normal", getStatusClass(contract.status))} variant="outline">
+                                    <Badge className={cn("font-normal", getStatusClass(contract.status))} variant="outline">
                                         {getStatusText(contract.status)}
                                     </Badge>
                                 </TableCell>
-                                <TableCell className="hidden md:table-cell lg:hidden xl:table-cell">
+                                <TableCell className="hidden md:table-cell lg:hidden xl:table-cell text-muted-foreground">
                                     {isClientSide && format(new Date(contract.created_at), 'dd/MM/yyyy')}
                                 </TableCell>
-                                <TableCell className="text-right">R$ {(contract.propostas?.value ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
+                                <TableCell className="text-right text-muted-foreground">R$ {(contract.propostas?.value ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
                             </TableRow>
                         ))}
                     </TableBody>

@@ -1,5 +1,4 @@
 
-
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -48,9 +47,9 @@ function SquadsPageSkeleton() {
             <CardContent>
               <Skeleton className="h-5 w-1/4 mb-2" />
               <div className="flex items-center -space-x-2">
-                <Skeleton className="h-10 w-10 rounded-full" />
-                <Skeleton className="h-10 w-10 rounded-full" />
-                <Skeleton className="h-10 w-10 rounded-full" />
+                <Skeleton className="h-8 w-8 rounded-full" />
+                <Skeleton className="h-8 w-8 rounded-full" />
+                <Skeleton className="h-8 w-8 rounded-full" />
               </div>
             </CardContent>
             <CardFooter>
@@ -210,7 +209,7 @@ function SquadModal({
                 <DialogHeader>
                     <DialogTitle>{squad ? 'Editar Squad' : 'Criar Novo Squad'}</DialogTitle>
                     <DialogDescription>
-                        {squad ? 'Altere o nome e os membros do seu time.' : 'Dê um nome e adicione clientes ao seu novo time.'}
+                        {squad ? 'Altere o nome e os clientes do seu time.' : 'Dê um nome e adicione clientes ao seu novo time.'}
                     </DialogDescription>
                 </DialogHeader>
                  <Form {...form}>
@@ -288,10 +287,10 @@ export default function SquadsPage() {
     return (
         <div className="flex flex-1 flex-col">
             <div className="flex items-center">
-                <h1 className="text-lg font-semibold md:text-2xl">Squads</h1>
+                <h1 className="text-2xl font-bold">Squads</h1>
                 <div className="ml-auto flex items-center gap-2">
-                    <Button size="sm" className="h-8 gap-1" onClick={() => handleOpenModal()}>
-                        <PlusCircle className="h-3.5 w-3.5" />
+                    <Button size="sm" className="h-9 gap-1" onClick={() => handleOpenModal()}>
+                        <PlusCircle className="h-4 w-4" />
                         <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
                             Criar Squad
                         </span>
@@ -327,8 +326,8 @@ export default function SquadsPage() {
                             return (
                                 <Card key={squad.id} className="flex flex-col">
                                     <CardHeader>
-                                        <CardTitle>{squad.name}</CardTitle>
-                                        <CardDescription>Gerenciado por: N/A</CardDescription>
+                                        <CardTitle className="text-lg">{squad.name}</CardTitle>
+                                        <CardDescription className="text-xs">Gerenciado por: N/A</CardDescription>
                                     </CardHeader>
                                     <CardContent className="flex-1">
                                         <p className="text-sm font-medium mb-2">Clientes ({clientsInSquad.length})</p>
