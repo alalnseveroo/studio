@@ -36,7 +36,7 @@ import { createContract } from '@/lib/actions/contratos'
 import { getClients } from '@/lib/actions/clients'
 import { Loader2, PlusCircle } from 'lucide-react'
 import type { Contrato, Cliente, Proposta, Profile } from '@/lib/types'
-import { AddClientSheet } from './add-client-sheet'
+import { AddClientModal } from './add-client-modal'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 
 const contractSchema = z.object({
@@ -68,7 +68,7 @@ export function CreateContractModal({
     selectedProposalId,
 }: CreateContractModalProps) {
   const [isLoading, setIsLoading] = useState(false)
-  const [isAddClientSheetOpen, setIsAddClientSheetOpen] = useState(false)
+  const [isAddClientModalOpen, setIsAddClientModalOpen] = useState(false)
   const { toast } = useToast()
   const router = useRouter()
 
@@ -130,7 +130,7 @@ export function CreateContractModal({
         onClientListChange(data);
     }
     form.setValue('clienteId', newClient.id, { shouldValidate: true });
-    setIsAddClientSheetOpen(false);
+    setIsAddClientModalOpen(false);
   }
 
   return (
@@ -179,7 +179,7 @@ export function CreateContractModal({
                       className="p-0 h-auto text-sm"
                       onClick={() => {
                         onClose(); // Close current modal before opening new one
-                        setTimeout(() => setIsAddClientSheetOpen(true), 150);
+                        setTimeout(() => setIsAddClientModalOpen(true), 150);
                       }}
                     >
                       <PlusCircle className="mr-2 h-4 w-4" />
@@ -225,11 +225,12 @@ export function CreateContractModal({
         </DialogContent>
       </Dialog>
       
-      {isAddClientSheetOpen && (
-        <AddClientSheet
-          isOpen={isAddClientSheetOpen}
-          onClose={() => setIsAddClientSheetOpen(false)}
+      {isAddClientModalOpen && (
+        <AddClientModal
+          isOpen={isAddClientModalOpen}
+          onClose={() => setIsAddClientModalOpen(false)}
           onSuccess={handleClientAdded}
+          proposals={proposals}
         />
       )}
     </>
