@@ -11,8 +11,8 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        body: ['"Syne"', 'sans-serif'],
-        headline: ['"Syne"', 'sans-serif'],
+        body: ['"Literata"', 'serif'],
+        headline: ['"Literata"', 'serif'],
         code: ['monospace'],
       },
       colors: {
