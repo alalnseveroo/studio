@@ -287,7 +287,7 @@ export default function SquadsPage() {
     return (
         <div className="flex flex-1 flex-col">
             <div className="flex items-center">
-                <h1 className="text-2xl font-bold">Squads</h1>
+                <h1 className="text-2xl font-normal">Squads</h1>
                 <div className="ml-auto flex items-center gap-2">
                     <Button size="sm" className="h-9 gap-1" onClick={() => handleOpenModal()}>
                         <PlusCircle className="h-4 w-4" />

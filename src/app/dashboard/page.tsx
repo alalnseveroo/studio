@@ -158,8 +158,8 @@ function TaskList({ tasks, clients, onTaskUpdate, onTaskCreate }: { tasks: Task[
     return (
         <div className="flex flex-col h-full">
             <CardHeader>
-                <CardTitle className="text-lg font-semibold">Lista de Tarefas</CardTitle>
-                <div className="text-sm text-muted-foreground">
+                <CardTitle className="text-lg font-normal">Lista de Tarefas</CardTitle>
+                <CardDescription as="div" className="text-sm text-muted-foreground">
                      <div className="relative">
                         <Input 
                             {...register("description")} 
@@ -209,7 +209,7 @@ function TaskList({ tasks, clients, onTaskUpdate, onTaskCreate }: { tasks: Task[
                             </PopoverContent>
                         </Popover>
                     </div>
-                </div>
+                </CardDescription>
             </CardHeader>
              <CardContent className="p-0 flex-1 overflow-y-auto px-4">
                 {tasks.length > 0 ? tasks.map(task => (
@@ -438,7 +438,7 @@ export default function DashboardPage() {
         <Card className="lg:col-span-1 border h-96">
           <CardHeader className="flex flex-row items-center">
             <div className="grid gap-2">
-              <CardTitle className="text-lg font-semibold">Contratos Recentes</CardTitle>
+              <CardTitle className="text-lg font-normal">Contratos Recentes</CardTitle>
               <CardDescription className="text-sm">
                 Os últimos contratos gerados no sistema.
               </CardDescription>

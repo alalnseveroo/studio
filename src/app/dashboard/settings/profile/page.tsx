@@ -301,7 +301,7 @@ export default function ProfilePage() {
                         className="size-[120px] md:size-[150px]"
                     />
                     <div className="text-center md:text-left">
-                        <AlertDialogTitle className="text-2xl font-bold text-foreground">Parabéns! Seu perfil está completo.</AlertDialogTitle>
+                        <AlertDialogTitle className="text-2xl font-normal text-foreground">Parabéns! Seu perfil está completo.</AlertDialogTitle>
                     </div>
                 </div>
                 <div className="text-base text-foreground text-center md:text-left !mt-6">
@@ -336,7 +336,7 @@ export default function ProfilePage() {
                         height={350}
                         className="size-[350px] mb-6"
                     />
-                    <h1 className="text-3xl font-bold">Seja bem-vindo(a) à Crivo!</h1>
+                    <h1 className="text-3xl font-normal">Seja bem-vindo(a) à Crivo!</h1>
                     <p className="mt-4 text-lg text-muted-foreground">
                         Para começar, vamos configurar seu perfil. Esta é a etapa mais importante para garantir que seus contratos e cobranças sejam emitidos corretamente.
                     </p>
@@ -346,7 +346,7 @@ export default function ProfilePage() {
                 <div className="flex flex-col">
                     {currentStep === STEPS.TYPE && (
                         <div>
-                             <h2 className="text-xl font-semibold mb-2">Como você irá prestar os serviços?</h2>
+                             <h2 className="text-xl font-normal mb-2">Como você irá prestar os serviços?</h2>
                              <p className="text-muted-foreground mb-6">Escolha o tipo de perfil que melhor representa você ou seu negócio.</p>
                              <FormField
                                 control={form.control}
@@ -368,7 +368,7 @@ export default function ProfilePage() {
                                                     "peer-data-[state=checked]:border-green-500 peer-data-[state=checked]:shadow-md"
                                                 )}>
                                                     <div className="flex items-center justify-between">
-                                                        <span className="font-bold text-base">Pessoa Física</span>
+                                                        <span className="font-semibold text-base">Pessoa Física</span>
                                                         <div className={cn(
                                                             "w-5 h-5 rounded-full border-2 flex items-center justify-center",
                                                             field.value === 'cpf' ? "bg-green-500 border-green-500" : "border-muted-foreground"
@@ -390,7 +390,7 @@ export default function ProfilePage() {
                                                     "peer-data-[state=checked]:border-green-500 peer-data-[state=checked]:shadow-md"
                                                 )}>
                                                     <div className="flex items-center justify-between">
-                                                        <span className="font-bold text-base">Pessoa Jurídica</span>
+                                                        <span className="font-semibold text-base">Pessoa Jurídica</span>
                                                         <div className={cn(
                                                             "w-5 h-5 rounded-full border-2 flex items-center justify-center",
                                                             field.value === 'cnpj' ? "bg-green-500 border-green-500" : "border-muted-foreground"
@@ -478,7 +478,7 @@ const StepHeader = ({ icon: Icon, title, description }: { icon: React.ElementTyp
             <Icon className="h-6 w-6 text-primary" />
         </div>
         <div className="flex-1">
-            <h2 className="text-lg font-semibold">{title}</h2>
+            <h2 className="text-lg font-normal">{title}</h2>
             <p className="text-sm text-muted-foreground">{description}</p>
         </div>
     </div>

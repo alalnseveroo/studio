@@ -569,7 +569,7 @@ export default function ClientesPage() {
     return (
         <div className="flex flex-1 flex-col">
             <div className="flex items-center">
-                <h1 className="text-2xl font-bold">Clientes</h1>
+                <h1 className="text-2xl font-normal">Clientes</h1>
             </div>
             <ClientsDataTable />
         </div>

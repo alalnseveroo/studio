@@ -199,7 +199,7 @@ export default function CobrancasPage() {
     <>
     <div className="flex flex-1 flex-col">
         <div className="flex items-center">
-            <h1 className="text-2xl font-bold">Gestão de Cobranças</h1>
+            <h1 className="text-2xl font-normal">Gestão de Cobranças</h1>
             <div className="ml-auto">
                 <Button size="sm" onClick={() => setIsBillingModalOpen(true)}>
                     <PlusCircle className="mr-2 h-4 w-4" />
@@ -210,7 +210,7 @@ export default function CobrancasPage() {
 
         <Card className="mt-4">
             <CardHeader>
-                <CardTitle>Como Funciona a Cobrança?</CardTitle>
+                <CardTitle className="font-normal">Como Funciona a Cobrança?</CardTitle>
                 <CardDescription>Siga os passos no botão "Adicionar Cliente" para criar uma nova cobrança.</CardDescription>
             </CardHeader>
             <CardContent className="grid gap-6 sm:grid-cols-3">
@@ -259,7 +259,7 @@ export default function CobrancasPage() {
                 ) : (
                 <Card>
                     <CardHeader>
-                        <CardTitle>Próximas Cobranças</CardTitle>
+                        <CardTitle className="font-normal">Próximas Cobranças</CardTitle>
                         <CardDescription>
                             Listagem de cobranças pendentes. As cobranças são geradas automaticamente para clientes ativos.
                         </CardDescription>

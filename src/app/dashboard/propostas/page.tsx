@@ -96,7 +96,7 @@ export default function PropostasPage() {
     <>
     <div className="flex flex-1 flex-col">
       <div className="flex items-center">
-        <h1 className="text-2xl font-bold">Minhas Propostas</h1>
+        <h1 className="text-2xl font-normal">Minhas Propostas</h1>
         <div className="ml-auto flex items-center gap-2">
           <Button asChild size="sm" className="h-9 gap-1">
             <Link href="/dashboard/propostas/nova">

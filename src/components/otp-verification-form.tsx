@@ -74,7 +74,7 @@ export function OtpVerificationForm({ email }: OtpVerificationFormProps) {
     return (
         <div className="flex flex-col gap-6">
             <div className="flex flex-col items-center gap-2">
-                <h1 className="text-xl font-bold">Erro</h1>
+                <h1 className="text-xl font-normal">Erro</h1>
                 <p className="text-sm text-muted-foreground">E-mail não fornecido. Por favor, retorne à página de login.</p>
                 <Button onClick={() => router.push('/')} className="mt-4 w-full">Ir para o Login</Button>
             </div>
@@ -88,7 +88,7 @@ export function OtpVerificationForm({ email }: OtpVerificationFormProps) {
             <form onSubmit={form.handleSubmit(handleOtpSubmit)}>
                 <div className="flex flex-col gap-6">
                     <div className="flex flex-col items-start gap-2">
-                        <h1 className="text-2xl font-bold font-headline md:text-3xl">Verifique seu Código</h1>
+                        <h1 className="text-2xl font-normal font-headline md:text-3xl">Verifique seu Código</h1>
                         <p className="text-sm text-muted-foreground">
                             Digite o código de 6 dígitos enviado para <strong>{email}</strong>
                         </p>

@@ -65,9 +65,9 @@ export function AuthForm() {
                 <div className="flex items-center space-x-2">
                     <WordRotate
                         words={["Acesse", "Crie"]}
-                        className="text-2xl font-bold font-headline md:text-3xl"
+                        className="text-2xl font-normal font-headline md:text-3xl"
                     />
-                    <h1 className="text-2xl font-bold font-headline md:text-3xl">sua conta</h1>
+                    <h1 className="text-2xl font-normal font-headline md:text-3xl">sua conta</h1>
                 </div>
                 <p className="text-muted-foreground">
                     Organizando o trabalho de profissionais incríveis.
