@@ -10,8 +10,8 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        body: ['"IBM Plex Sans"', 'sans-serif'],
-        headline: ['"IBM Plex Sans"', 'sans-serif'],
+        body: ['"Roboto Flex"', 'sans-serif'],
+        headline: ['"Roboto Flex"', 'sans-serif'],
         code: ['monospace'],
       },
       colors: {
