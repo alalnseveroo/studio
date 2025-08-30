@@ -1,4 +1,3 @@
-
 import type {Config} from 'tailwindcss';
 
 export default {
@@ -11,8 +10,8 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        body: ['"Literata"', 'serif'],
-        headline: ['"Literata"', 'serif'],
+        body: ['"IBM Plex Sans"', 'sans-serif'],
+        headline: ['"IBM Plex Sans"', 'sans-serif'],
         code: ['monospace'],
       },
       colors: {
@@ -100,5 +99,3 @@ export default {
   },
   plugins: [require('tailwindcss-animate'), require('@tailwindcss/typography')],
 } satisfies Config;
-
-    
