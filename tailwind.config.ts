@@ -11,8 +11,8 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        body: ['"IBM Plex Mono"', 'monospace'],
-        headline: ['"IBM Plex Mono"', 'monospace'],
+        body: ['"Syne"', 'sans-serif'],
+        headline: ['"Syne"', 'sans-serif'],
         code: ['monospace'],
       },
       colors: {
