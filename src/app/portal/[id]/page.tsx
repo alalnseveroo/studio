@@ -22,7 +22,6 @@ import {
   AlertDialogFooter,
   AlertDialogCancel,
 } from "@/components/ui/alert-dialog"
-import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp"
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import type { Cliente, Contrato, Profile, Cobranca, Proposta } from '@/lib/types'
@@ -79,13 +78,6 @@ export default function ClientPortalPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   
-  const [isEmailVerifiedForDownload, setIsEmailVerifiedForDownload] = useState(false);
-  const [verificationModalOpen, setVerificationModalOpen] = useState(false);
-  const [chargeForDownload, setChargeForDownload] = useState<Cobranca | null>(null);
-  const [otp, setOtp] = useState('');
-  const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
-  const [otpSent, setOtpSent] = useState(false);
-
   const [activeContractTab, setActiveContractTab] = useState<'pending' | 'contracted'>('pending');
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isClientSide, setIsClientSide] = useState(false);
@@ -153,13 +145,14 @@ export default function ClientPortalPage() {
   }, [fetchData]) 
 
   const handleDownloadClick = (charge: Cobranca) => {
-    if (isEmailVerifiedForDownload && charge.invoice_url) {
+    if (charge.invoice_url) {
         window.open(charge.invoice_url, '_blank');
     } else {
-        setChargeForDownload(charge);
-        setVerificationModalOpen(true);
-        setOtpSent(false);
-        setOtp('');
+        toast({
+            variant: 'destructive',
+            title: 'Download Indisponível',
+            description: 'A nota fiscal para esta cobrança ainda não está disponível.',
+        });
     }
   };
 
