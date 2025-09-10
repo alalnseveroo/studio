@@ -60,7 +60,7 @@ export function UploadInvoiceModal({ isOpen, onClose, charge, onUploadSuccess }:
 
     setIsLoading(true)
     const supabase = createClient()
-    const filePath = `public/${charge.user_id}/${charge.id}/${file.name}`
+    const filePath = `invoices/${charge.user_id}/${charge.id}/${file.name}`
 
     const { error: uploadError } = await supabase.storage
       .from('invoices')

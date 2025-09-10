@@ -70,7 +70,7 @@ export function InvoiceTooltip({ charge, onUploadSuccess }: InvoiceTooltipProps)
     const filePath = `invoices/${charge.user_id}/${charge.id}/${file.name}`
 
     const { error: uploadError } = await supabase.storage
-      .from('public') // Bucket público
+      .from('invoices') // Correct bucket
       .upload(filePath, file, { cacheControl: '3600', upsert: true })
 
     if (uploadError) {
@@ -84,7 +84,7 @@ export function InvoiceTooltip({ charge, onUploadSuccess }: InvoiceTooltipProps)
     }
 
     const { data: { publicUrl } } = supabase.storage
-      .from('public') // Mesmo bucket público
+      .from('invoices') // Correct bucket
       .getPublicUrl(filePath)
 
     if (!publicUrl) {
