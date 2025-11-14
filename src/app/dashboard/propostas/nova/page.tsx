@@ -42,6 +42,7 @@ const proposalSchema = z.object({
   }),
   payment_type: z.enum(['fixed', 'hourly', 'project'], { required_error: 'Selecione o tipo de remuneração.' }),
   value: z.string().min(1, { message: 'O valor é obrigatório.' }),
+  work_hours: z.string().optional(),
   value_in_words: z.string().min(3, { message: 'O valor por extenso é obrigatório.' }),
   payment_day: z.string().min(1, { message: 'O dia do pagamento é obrigatório.' }),
   payment_method: z.string().min(3, { message: 'O método de pagamento é obrigatório.' }),
@@ -78,6 +79,7 @@ export default function NovaPropostaPage() {
       services: [],
       payment_type: 'fixed',
       value: '',
+      work_hours: '',
       value_in_words: '',
       payment_day: '',
       payment_method: '',
@@ -277,12 +279,20 @@ export default function NovaPropostaPage() {
                         </FormItem>
                     )} />
                 </div>
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <FormField control={form.control} name="payment_day" render={({ field }) => (
                         <FormItem>
                             <FormLabel>Dia do Vencimento</FormLabel>
                             <FormControl><Input type="number" placeholder="5" {...field} /></FormControl>
                              <FormDescription>Dia útil de cada mês para o pagamento.</FormDescription>
+                            <FormMessage />
+                        </FormItem>
+                    )} />
+                     <FormField control={form.control} name="work_hours" render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Horas de Trabalho</FormLabel>
+                            <FormControl><Input type="number" placeholder="8" {...field} /></FormControl>
+                             <FormDescription>Carga horária diária.</FormDescription>
                             <FormMessage />
                         </FormItem>
                     )} />

@@ -1,7 +1,7 @@
 
 'use client'
 
-import { useState, useEffect, Suspense } from 'react'
+import React, { Suspense } from 'react'
 import Link from 'next/link'
 import {
   Home,
@@ -43,23 +43,18 @@ import { BreadcrumbNav } from './_components/breadcrumb-nav'
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { Separator } from '@/components/ui/separator'
 import { cn } from '@/lib/utils'
+import { DashboardProvider, DashboardContext } from './layout-context'
+
 
 function DashboardHeader({ 
     userProfile, 
+    clients,
     onOpenChat 
 } : { 
     userProfile: (Profile & { email: string }) | null,
+    clients: Cliente[],
     onOpenChat: (client: Cliente) => void 
 }) {
-  const [clients, setClients] = useState<Cliente[]>([]);
-
-  useEffect(() => {
-    async function fetchClients() {
-      const { data } = await getClients();
-      setClients(data || []);
-    }
-    fetchClients();
-  }, []);
 
   const displayName = userProfile?.full_name || userProfile?.company_name || 'Usuário';
   const fallback = displayName.charAt(0).toUpperCase();
@@ -177,76 +172,87 @@ const navItemsGeral = [
 
 const navItemsAgencia = [
     { href: '/dashboard/squads', icon: Users2, label: 'Squads' },
-    { href: '/dashboard/equipe', icon: Briefcase, label: 'Equipe' },
     { href: '/dashboard/relatorios', icon: BarChart3, label: 'Relatórios' },
 ];
+
+function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
+    const context = React.useContext(DashboardContext);
+    if (!context) {
+        // Idealmente, você renderizaria um skeleton ou loader aqui
+        return <div>Carregando...</div>; 
+    }
+    const { profile: userProfile, clients, isLoading } = context;
+    const [selectedChatClient, setSelectedChatClient] = React.useState<Cliente | null>(null);
+    const router = useRouter();
+    const pathname = usePathname();
+
+    React.useEffect(() => {
+        if (!isLoading && userProfile && !userProfile.is_completed) {
+            if (pathname !== '/dashboard/settings/profile') {
+                router.push('/dashboard/settings/profile');
+            }
+        }
+        if (!isLoading && !userProfile) {
+            if (pathname !== '/dashboard/settings/profile') {
+                 router.push('/dashboard/settings/profile');
+            }
+        }
+    }, [userProfile, isLoading, pathname, router]);
+
+    const isSquadsSection = pathname.startsWith('/dashboard/squads');
+
+    const agencyNavItems = userProfile?.is_agency ? [
+        { href: '/dashboard/squads', icon: Users2, label: 'Squads' },
+        { href: '/dashboard/equipe', icon: Briefcase, label: 'Equipe' },
+        { href: '/dashboard/relatorios', icon: BarChart3, label: 'Relatórios' },
+    ] : [];
+
+    const navItems = isSquadsSection ? agencyNavItems : [...navItemsGeral, ...agencyNavItems];
+
+    return (
+        <div className="flex min-h-screen w-full flex-col bg-muted/40">
+            <DashboardHeader
+                userProfile={userProfile}
+                clients={clients}
+                onOpenChat={(client) => setSelectedChatClient(client)}
+            />
+            <div className="flex flex-1 w-full">
+                <aside className="fixed top-14 left-0 z-10 hidden w-14 flex-col border-r bg-background sm:flex h-[calc(100vh-3.5rem)]">
+                    <nav className="flex flex-col items-center gap-4 px-2 py-4">
+                        {navItems.map(item => <NavItem key={item.href} {...item} />)}
+                    </nav>
+                    <nav className="mt-auto flex flex-col items-center gap-4 px-2 py-4">
+                        <Separator />
+                        <NavItem href="/dashboard/settings/buy-credits" icon={CreditCard} label="Comprar Créditos" />
+                        <NavItem href="/dashboard/settings/profile" icon={Settings} label="Configurações" />
+                    </nav>
+                </aside>
+                <main className="flex flex-1 flex-col sm:ml-14">
+                    <div className="flex-1 p-4 sm:p-6">
+                        {children}
+                    </div>
+                </main>
+            </div>
+            {selectedChatClient && (
+                <ChatModal
+                    client={selectedChatClient}
+                    onClose={() => setSelectedChatClient(null)}
+                />
+            )}
+        </div>
+    );
+}
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const [userProfile, setUserProfile] = useState<(Profile & { email: string }) | null>(null)
-  const [selectedChatClient, setSelectedChatClient] = useState<Cliente | null>(null);
-  
-  const router = useRouter();
-  const pathname = usePathname();
-
-  useEffect(() => {
-    async function fetchInitialData() {
-      const { data: profileData } = await getProfile();
-      const profile = profileData as Profile & { email: string } | null;
-      setUserProfile(profile);
-
-      if (profile && !profile.is_completed) {
-        if (pathname !== '/dashboard/settings/profile') {
-          router.push('/dashboard/settings/profile');
-        }
-      } else if (!profile) {
-        if (pathname !== '/dashboard/settings/profile') {
-          router.push('/dashboard/settings/profile');
-        }
-      }
-    }
-    fetchInitialData();
-  }, [pathname, router]);
-  
-  const isSquadsSection = pathname.startsWith('/dashboard/squads');
-  const baseNavItems = userProfile?.is_agency ? [...navItemsGeral, { href: '/dashboard/squads', icon: Users2, label: 'Squads' }] : navItemsGeral;
-  const navItems = isSquadsSection ? navItemsAgencia : baseNavItems;
-
-
-  return (
-    <div className="flex min-h-screen w-full flex-col bg-muted/40">
-        <DashboardHeader 
-            userProfile={userProfile} 
-            onOpenChat={(client) => setSelectedChatClient(client)} 
-        />
-        <div className="flex flex-1 max-w-screen-2xl mx-auto w-full">
-             <aside className="fixed top-14 left-0 z-10 hidden w-14 flex-col border-r bg-background sm:flex h-[calc(100vh-3.5rem)]">
-                <nav className="flex flex-col items-center gap-4 px-2 py-4">
-                    {navItems.map(item => <NavItem key={item.href} {...item} />)}
-                </nav>
-                <nav className="mt-auto flex flex-col items-center gap-4 px-2 py-4">
-                    <Separator />
-                    <NavItem href="/dashboard/settings/buy-credits" icon={CreditCard} label="Comprar Créditos" />
-                    <NavItem href="/dashboard/settings/profile" icon={Settings} label="Configurações" />
-                </nav>
-            </aside>
-            <main className="flex flex-1 flex-col sm:ml-14">
-                <div className="flex-1 p-4 sm:p-6">
-                    <Suspense fallback={<div className="flex-1 p-10"><Skeleton className="w-full h-full" /></div>}>
-                        {children}
-                    </Suspense>
-                </div>
-            </main>
-        </div>
-        {selectedChatClient && (
-            <ChatModal 
-                client={selectedChatClient} 
-                onClose={() => setSelectedChatClient(null)} 
-            />
-        )}
-    </div>
-  )
+    return (
+        <DashboardProvider>
+            <DashboardLayoutContent>
+                {children}
+            </DashboardLayoutContent>
+        </DashboardProvider>
+    )
 }

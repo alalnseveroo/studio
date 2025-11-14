@@ -22,12 +22,11 @@ export type Cliente = {
   email: string | null;
   person_type: 'cpf' | 'cnpj' | null;
   company_name: string | null;
+  company_nar?: string | null; // Adicionado para compatibilidade com o erro de digitação
   cnpj: string | null;
   representative_name: string | null;
   representative_rg: string | null;
   representative_cpf: string | null;
-  first_name: string | null;
-  last_name: string | null;
   full_name: string | null;
   nationality: string | null;
   civil_status: string | null;
@@ -38,7 +37,7 @@ export type Cliente = {
   address: string | null;
   created_at: string;
   updated_at: string;
-  sex: 'male' | 'female';
+  sex: 'male' | 'female' | null;
   
   billing_status: 'active' | 'inactive';
   proposal_id: string | null;
@@ -50,6 +49,8 @@ export type Cliente = {
 
   propostas?: Proposta; 
   Cobranca?: Cobranca[];
+  contratos?: Contrato[];
+  external_contracts?: ExternalContract[];
 };
 
 export type Proposta = {
@@ -70,6 +71,7 @@ export type Proposta = {
   end_date?: string;
   jurisdiction_city?: string;
   jurisdiction_state?: string;
+  work_hours?: number;
 };
 
 export type Profile = {
@@ -133,6 +135,15 @@ export type Contrato = {
   client_signature_otp_expires_at: string | null;
   clientes: Cliente; 
   propostas: Proposta;
+};
+
+export type ExternalContract = {
+  id: string;
+  user_id: string;
+  client_id: string;
+  file_url: string;
+  file_name: string;
+  uploaded_at: string;
 };
 
 export type SignatureData = {
@@ -210,3 +221,15 @@ export type Squad = {
     updated_at: string | null;
     squad_clients: SquadClient[];
 }
+
+export type DashboardContextType = {
+  profile: (Profile & { email: string }) | null;
+  clients: Cliente[];
+  contracts: Contrato[];
+  proposals: Proposta[];
+  charges: Cobranca[];
+  tasks: Task[];
+  financialGoal: FinancialGoal | null;
+  isLoading: boolean;
+  fetchDashboardData: () => Promise<void>;
+};

@@ -1,4 +1,5 @@
 
+
 'use client'
 
 import Link from 'next/link'
@@ -20,7 +21,9 @@ import {
   ChevronsUpDown,
   Check,
 } from 'lucide-react'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useContext } from 'react'
+import { useDashboard } from './layout-context'
+
 
 import {
   Avatar,
@@ -46,14 +49,7 @@ import {
 } from '@/components/ui/table'
 import { Progress } from '@/components/ui/progress'
 import { Checkbox } from '@/components/ui/checkbox'
-import { getClients } from '@/lib/actions/clients'
-import { getContracts } from '@/lib/actions/contratos'
-import { getCharges } from '@/lib/actions/cobrancas'
-import { getProposals } from '@/lib/actions/propostas'
-import { getProfile } from '@/lib/actions/profile'
-import { getFinancialGoal } from '@/lib/actions/goals'
-import { getTasks, createTask, updateTask } from '@/lib/actions/tasks'
-import { format, isPast } from 'date-fns'
+import { format, isPast, getMonth, getYear } from 'date-fns'
 import { cn } from '@/lib/utils'
 import type { Profile, Cliente, Contrato, Cobranca, Proposta, FinancialGoal, Task } from '@/lib/types'
 import { DaysOffCalendar } from '@/components/days-off-calendar'
@@ -125,183 +121,35 @@ const getChargeStatusInfo = (status: string, dueDate: string, isClientSide: bool
     return { text: 'Pendente', className: 'border-yellow-500 bg-yellow-500/10 text-yellow-700' };
 }
 
-function TaskList({ tasks, clients, onTaskUpdate, onTaskCreate }: { tasks: Task[], clients: Cliente[], onTaskUpdate: (id: string, is_completed: boolean) => void, onTaskCreate: (description: string, clientId: string | null) => void }) {
-    const { register, handleSubmit, reset, setValue, watch, getValues } = useForm<{ description: string; clientId: string | null }>({
-        defaultValues: { description: '', clientId: null }
-    });
-    const [open, setOpen] = useState(false);
-
-    const selectedClientId = watch('clientId');
-    const selectedClient = clients.find(c => c.id === selectedClientId);
-
-    const handleCreateOnEnter = (e: React.KeyboardEvent<HTMLInputElement>) => {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            const values = getValues();
-            if (values.description.trim()) {
-                onTaskCreate(values.description, values.clientId);
-                reset({ description: '', clientId: values.clientId }); 
-            }
-        }
-    }
-    
-    const clientForAvatar = (task: Task) => {
-        if (!task.clientes) return [];
-        return [{
-            id: task.clientes.id,
-            name: task.clientes.full_name || task.clientes.company_name || 'Cliente',
-            designation: `Tarefa: ${'task.description'.substring(0, 20)}...`,
-            image: task.clientes.avatar_url || `https://i.pravatar.cc/150?u=${'task.clientes.id'}`
-        }]
-    };
-
-    return (
-        <div className="flex flex-col h-full">
-            <CardHeader>
-                <CardTitle className="text-lg font-normal">Lista de Tarefas</CardTitle>
-                <CardDescription as="div" className="text-sm text-muted-foreground">
-                     <div className="relative">
-                        <Input 
-                            {...register("description")} 
-                            placeholder="Aperte ENTER para adicionar" 
-                            className="h-9 pr-12 rounded-full"
-                            onKeyDown={handleCreateOnEnter}
-                        />
-                         <Popover open={open} onOpenChange={setOpen}>
-                            <PopoverTrigger asChild>
-                               <Button variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full">
-                                    <Avatar className="h-7 w-7">
-                                        <AvatarImage src={selectedClient?.avatar_url || ''} />
-                                        <AvatarFallback className="bg-muted text-muted-foreground">
-                                            <UserIcon className="h-4 w-4" />
-                                        </AvatarFallback>
-                                    </Avatar>
-                               </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-[250px] p-0">
-                                 <Command>
-                                    <CommandInput placeholder="Vincular cliente..." />
-                                    <CommandEmpty>Nenhum cliente encontrado.</CommandEmpty>
-                                    <CommandGroup>
-                                    <CommandItem
-                                        onSelect={() => {
-                                            setValue('clientId', null);
-                                            setOpen(false);
-                                        }}
-                                    >
-                                        Geral (sem vínculo)
-                                    </CommandItem>
-                                    {clients.map(client => (
-                                        <CommandItem
-                                            key={client.id}
-                                            value={client.id}
-                                            onSelect={() => {
-                                                setValue('clientId', client.id)
-                                                setOpen(false)
-                                            }}
-                                        >
-                                         <Check className={cn("mr-2 h-4 w-4", selectedClientId === client.id ? "opacity-100" : "opacity-0")} />
-                                          {client.full_name || client.company_name}
-                                        </CommandItem>
-                                    ))}
-                                    </CommandGroup>
-                                </Command>
-                            </PopoverContent>
-                        </Popover>
-                    </div>
-                </CardDescription>
-            </CardHeader>
-             <CardContent className="p-0 flex-1 overflow-y-auto px-4">
-                {tasks.length > 0 ? tasks.map(task => (
-                    <div key={task.id} className="flex items-center space-x-3 py-2.5 border-b last:border-b-0">
-                        <Checkbox 
-                            id={`task-${task.id}`} 
-                            checked={task.is_completed}
-                            onCheckedChange={(checked) => onTaskUpdate(task.id, !!checked)}
-                        />
-                        <label
-                            htmlFor={`task-${task.id}`}
-                            className={cn("text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex-1", task.is_completed && "line-through text-muted-foreground")}
-                        >
-                            {task.description}
-                        </label>
-                        {task.clientes && (
-                            <div className="flex items-center ml-auto pr-2">
-                                <AnimatedTooltip items={clientForAvatar(task)} direction="left" />
-                            </div>
-                        )}
-                    </div>
-                )) : (
-                    <p className="text-sm text-muted-foreground text-center py-8">Nenhuma tarefa encontrada.</p>
-                )}
-            </CardContent>
-        </div>
-    )
-}
-
 export default function DashboardPage() {
-    const [clients, setClients] = useState<Cliente[]>([]);
-    const [contracts, setContracts] = useState<Contrato[]>([]);
-    const [charges, setCharges] = useState<Cobranca[]>([]);
-    const [proposals, setProposals] = useState<Proposta[]>([]);
-    const [profile, setProfile] = useState<Profile | null>(null);
-    const [financialGoal, setFinancialGoal] = useState<FinancialGoal | null>(null);
-    const [tasks, setTasks] = useState<Task[]>([]);
+    const { 
+        profile, 
+        clients, 
+        contracts, 
+        charges, 
+        proposals, 
+        financialGoal,
+        isLoading, 
+        fetchDashboardData 
+    } = useDashboard();
     const [isBillingModalOpen, setIsBillingModalOpen] = useState(false);
     const [isGoalModalOpen, setIsGoalModalOpen] = useState(false);
     const [isClientSide, setIsClientSide] = useState(false);
-    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
       setIsClientSide(true);
     }, []);
 
-    const fetchData = async () => {
-        setIsLoading(true);
-        const [
-            { data: clientsData }, 
-            { data: contractsData }, 
-            { data: chargesData }, 
-            { data: proposalsData }, 
-            { data: profileData },
-            { data: goalData },
-            { data: tasksData }
-        ] = await Promise.all([
-            getClients(),
-            getContracts(),
-            getCharges(),
-            getProposals(),
-            getProfile() as Promise<{ data: Profile | null }>,
-            getFinancialGoal(),
-            getTasks()
-        ]);
-        setClients(clientsData || []);
-        setContracts(contractsData || []);
-        setCharges(chargesData || []);
-        setProposals(proposalsData || []);
-        setProfile(profileData);
-        setFinancialGoal(goalData);
-        setTasks(tasksData || []);
-        setIsLoading(false);
-    };
+    const currentMonth = isClientSide ? new Date().getMonth() : -1;
+    const currentYear = isClientSide ? new Date().getFullYear() : -1;
 
-    useEffect(() => {
-        fetchData();
-    }, []);
-
-    const handleTaskUpdate = async (id: string, is_completed: boolean) => {
-        setTasks(tasks.map(t => t.id === id ? { ...t, is_completed } : t)); // Optimistic update
-        await updateTask(id, is_completed);
-        await fetchData(); // Resync with DB
-    };
-
-    const handleTaskCreate = async (description: string, clientId: string | null) => {
-        if (!description.trim()) return;
-        await createTask(description, clientId);
-        await fetchData();
-    };
-
-    const totalRevenue = charges?.filter(c => c.status === 'pago').reduce((sum, c) => sum + (c.value || 0), 0) || 0;
+    const monthlyRevenue = charges
+        ?.filter(c => {
+            if (c.status !== 'pago' || !c.paid_at || !isClientSide) return false;
+            const paidDate = new Date(c.paid_at);
+            return getMonth(paidDate) === currentMonth && getYear(paidDate) === currentYear;
+        })
+        .reduce((sum, c) => sum + (c.value || 0), 0) || 0;
     
     const pendingCharges = charges?.filter(c => c.status === 'pendente' && (!isClientSide || !isPast(new Date(c.due_date)))) || [];
     
@@ -332,7 +180,7 @@ export default function DashboardPage() {
     const isProfileComplete = profile?.is_completed ?? false;
     
     const goalAmount = financialGoal?.goal_amount || 0;
-    const goalProgress = goalAmount > 0 ? (totalRevenue / goalAmount) * 100 : 0;
+    const goalProgress = goalAmount > 0 ? (monthlyRevenue / goalAmount) * 100 : 0;
 
   if (isLoading) {
       return <DashboardSkeleton />;
@@ -366,12 +214,12 @@ export default function DashboardPage() {
         <Card className="border">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">
-                Faturamento atual
+                Faturamento do Mês
                 </CardTitle>
                 <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-                <div className="text-2xl font-bold">R$ {totalRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                <div className="text-2xl font-bold">R$ {monthlyRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                 <Progress value={goalProgress} className="h-2 mt-4" indicatorClassName="bg-primary" />
                 <div className="flex justify-between items-center mt-1">
                     {goalAmount > 0 ? (
@@ -434,8 +282,8 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       </div>
-      <div className="grid gap-4 md:gap-8 lg:grid-cols-2">
-        <Card className="lg:col-span-1 border h-96">
+      <div className="grid gap-4 md:gap-8 lg:grid-cols-3">
+        <Card className="border lg:col-span-2">
           <CardHeader className="flex flex-row items-center">
             <div className="grid gap-2">
               <CardTitle className="text-lg font-normal">Contratos Recentes</CardTitle>
@@ -519,8 +367,16 @@ export default function DashboardPage() {
              )}
           </CardContent>
         </Card>
-        <Card className="lg:col-span-1 border h-96">
-           <TaskList tasks={tasks} clients={clients} onTaskUpdate={handleTaskUpdate} onTaskCreate={handleTaskCreate} />
+        <Card className="bg-primary text-primary-foreground border-primary lg:col-span-1">
+          <CardHeader>
+            <CardTitle className="text-lg font-normal text-white">Calendário de Folgas</CardTitle>
+            <CardDescription className="text-white/80">
+              Clique em um dia para marcar como folga. Seus clientes verão isso no portal deles.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <DaysOffCalendar />
+          </CardContent>
         </Card>
       </div>
     </div>
@@ -530,12 +386,12 @@ export default function DashboardPage() {
         clientId={null} // Permite selecionar qualquer cliente
         clients={clients}
         proposals={proposals}
-        onBillingConfigured={fetchData}
+        onBillingConfigured={fetchDashboardData}
       />
       <SetGoalModal
         isOpen={isGoalModalOpen}
         onClose={() => setIsGoalModalOpen(false)}
-        onGoalSet={fetchData}
+        onGoalSet={fetchDashboardData}
         currentGoal={financialGoal}
       />
     </>

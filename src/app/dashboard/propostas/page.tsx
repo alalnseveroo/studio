@@ -1,7 +1,8 @@
 
+
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useContext } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Button, buttonVariants } from '@/components/ui/button'
@@ -25,11 +26,12 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
 import { PlusCircle, FileText, CheckCircle, MoreVertical, Edit, Trash2 } from 'lucide-react'
-import { getProposals, deleteProposal } from '@/lib/actions/propostas'
+import { deleteProposal } from '@/lib/actions/propostas'
 import type { Proposta } from '@/lib/types'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useToast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
+import { useDashboard } from '../layout-context'
 
 function ProposalsGridSkeleton() {
     return (
@@ -55,22 +57,10 @@ function ProposalsGridSkeleton() {
 }
 
 export default function PropostasPage() {
-  const [proposals, setProposals] = useState<Proposta[]>([])
-  const [isLoading, setIsLoading] = useState(true);
   const [proposalToDelete, setProposalToDelete] = useState<Proposta | null>(null);
   const { toast } = useToast();
   const router = useRouter();
-
-  const fetchProposals = async () => {
-      setIsLoading(true);
-      const { data } = await getProposals()
-      setProposals(data || [])
-      setIsLoading(false);
-  }
-
-  useEffect(() => {
-    fetchProposals()
-  }, [])
+  const { proposals, isLoading, fetchDashboardData } = useDashboard();
   
   const handleDeleteProposal = async () => {
     if (!proposalToDelete) return;
@@ -86,7 +76,7 @@ export default function PropostasPage() {
         title: 'Proposta Excluída!',
         description: 'A proposta foi removida com sucesso.',
       });
-      fetchProposals();
+      fetchDashboardData();
     }
     setProposalToDelete(null);
   }

@@ -169,7 +169,7 @@ export default function ContratoDetailPage() {
                 <BadgeCheck className="h-4 w-4 text-green-600" />
                 <AlertTitle className="text-green-800">Contrato Assinado por Você!</AlertTitle>
                 <AlertDescription className="text-green-700">
-                    Este contrato foi assinado por você em {format(new Date(contract.provider_signature_data!.signed_at), 'dd/MM/yyyy HH:mm')}. Aguardando assinatura do cliente.
+                    Este contrato foi assinado por você em {isClientSide ? format(new Date(contract.provider_signature_data!.signed_at), 'dd/MM/yyyy HH:mm') : ''}. Aguardando assinatura do cliente.
                 </AlertDescription>
             </Alert>
           )}

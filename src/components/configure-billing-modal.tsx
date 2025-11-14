@@ -31,7 +31,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Switch } from '@/components/ui/switch'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useToast } from '@/hooks/use-toast'
@@ -39,6 +38,8 @@ import { updateClientFinancials } from '@/lib/actions/clients'
 import { Loader2, PlusCircle } from 'lucide-react'
 import type { Proposta, Cliente } from '@/lib/types'
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar'
+import { Alert, AlertDescription, AlertTitle } from './ui/alert'
+import { Info } from 'lucide-react'
 
 const billingSchema = z.object({
   clienteId: z.string({ required_error: 'É necessário selecionar um cliente.' }),
@@ -46,7 +47,6 @@ const billingSchema = z.object({
   value: z.coerce.number().min(1, { message: 'O valor deve ser maior que zero.'}),
   payment_day: z.coerce.number().min(1, 'O dia do vencimento é obrigatório.').max(31, 'Dia inválido.'),
   first_charge_date: z.string().optional(),
-  billing_status: z.enum(['active', 'inactive']),
 })
 
 type BillingFormData = z.infer<typeof billingSchema>;
@@ -80,7 +80,6 @@ export function ConfigureBillingModal({
         value: 0, 
         payment_day: 0,
         first_charge_date: '',
-        billing_status: 'active',
     }
   })
 
@@ -92,7 +91,6 @@ export function ConfigureBillingModal({
             value: 0,
             payment_day: 0,
             first_charge_date: '',
-            billing_status: 'active',
         });
     }
   }, [isOpen, clientId, form]);
@@ -113,7 +111,9 @@ export function ConfigureBillingModal({
   const handleFormSubmit = async (values: BillingFormData) => {
     setIsLoading(true);
     
-    const result = await updateClientFinancials(values.clienteId, values);
+    const result = await updateClientFinancials(values.clienteId, {
+        ...values,
+    });
     
     setIsLoading(false);
 
@@ -131,24 +131,37 @@ export function ConfigureBillingModal({
     } else {
       toast({
         title: 'Cobrança Configurada!',
-        description: 'A cobrança foi salva e a primeira fatura foi gerada com sucesso.',
+        description: 'A cobrança foi salva e a primeira fatura será gerada na data definida.',
       })
       onBillingConfigured();
       onClose();
     }
   }
+  
+  const selectedClient = clients.find(c => c.id === form.watch('clienteId'));
 
   return (
       <Dialog open={isOpen} onOpenChange={(open) => { if (!open) { onClose(); } }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Configurar Cobrança</DialogTitle>
+            <DialogTitle>Configurar Cobrança Recorrente</DialogTitle>
             <DialogDescription>
-              Defina os detalhes da cobrança para um cliente. A primeira fatura será gerada imediatamente.
+              Defina os detalhes da cobrança. A primeira fatura será gerada na data especificada.
             </DialogDescription>
           </DialogHeader>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 py-4">
+              
+              {selectedClient?.billing_status !== 'active' && (
+                  <Alert variant="destructive">
+                      <Info className="h-4 w-4" />
+                      <AlertTitle>Cliente Inativo</AlertTitle>
+                      <AlertDescription>
+                          Para gerar cobranças, primeiro ative este cliente anexando um contrato na aba 'Contratos' do perfil dele.
+                      </AlertDescription>
+                  </Alert>
+              )}
+
               <FormField
                 control={form.control}
                 name="clienteId"
@@ -245,30 +258,10 @@ export function ConfigureBillingModal({
                         )}
                     />
                  </div>
-              <FormField
-                control={form.control}
-                name="billing_status"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
-                    <div className="space-y-0.5">
-                        <FormLabel>Ativar Recorrência</FormLabel>
-                        <FormDescription className="text-xs">
-                           Se ativo, novas cobranças serão geradas automaticamente.
-                        </FormDescription>
-                    </div>
-                    <FormControl>
-                      <Switch
-                        checked={field.value === 'active'}
-                        onCheckedChange={(checked) => field.onChange(checked ? 'active' : 'inactive')}
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
               
               <DialogFooter>
                 <Button type="button" variant="ghost" onClick={onClose}>Cancelar</Button>
-                <Button type="submit" disabled={isLoading}>
+                <Button type="submit" disabled={isLoading || selectedClient?.billing_status !== 'active'}>
                   {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Salvar e Criar Cobrança
                 </Button>

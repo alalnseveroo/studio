@@ -15,19 +15,18 @@ import { Input } from '@/components/ui/input'
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { useToast } from '@/hooks/use-toast'
 import { createClient } from '@/lib/supabase/client'
-import { saveInvoiceUrl } from '@/lib/actions/cobrancas'
+import { uploadExternalContract } from '@/lib/actions/clients'
 import { Loader2, File, CheckCircle, Upload, Trash2 } from 'lucide-react'
-import type { Cobranca } from '@/lib/types'
 import Link from 'next/link'
 
 interface UploadInvoiceModalProps {
   isOpen: boolean
   onClose: () => void
-  charge: Cobranca
+  clientId: string
   onUploadSuccess: () => void
 }
 
-export function UploadInvoiceModal({ isOpen, onClose, charge, onUploadSuccess }: UploadInvoiceModalProps) {
+export function UploadInvoiceModal({ isOpen, onClose, clientId, onUploadSuccess }: UploadInvoiceModalProps) {
   const [file, setFile] = useState<File | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -53,20 +52,22 @@ export function UploadInvoiceModal({ isOpen, onClose, charge, onUploadSuccess }:
       toast({
         variant: 'destructive',
         title: 'Nenhum arquivo selecionado',
-        description: 'Por favor, escolha um arquivo para enviar.',
+        description: 'Por favor, escolha um arquivo PDF para enviar.',
       })
       return
     }
 
     setIsLoading(true)
     const supabase = createClient()
-    const filePath = `invoices/${charge.user_id}/${charge.id}/${file.name}`
+    // Garante um nome de arquivo único para evitar conflitos
+    const fileName = `${Date.now()}-${file.name.replace(/\s/g, '_')}`
+    const filePath = `external_contracts/${clientId}/${fileName}`
 
     const { error: uploadError } = await supabase.storage
-      .from('invoices')
+      .from('invoices') // Usando o bucket 'invoices' como definido na política de storage
       .upload(filePath, file, {
         cacheControl: '3600',
-        upsert: true, // Substitui o arquivo se já existir um com o mesmo nome
+        upsert: false,
       })
 
     if (uploadError) {
@@ -93,61 +94,45 @@ export function UploadInvoiceModal({ isOpen, onClose, charge, onUploadSuccess }:
         return;
     }
 
-    const { error: dbError } = await saveInvoiceUrl(charge.id, publicUrl)
+    const { error: dbError } = await uploadExternalContract(clientId, publicUrl, file.name)
 
     setIsLoading(false)
 
     if (dbError) {
       toast({
         variant: 'destructive',
-        title: 'Erro ao Salvar',
+        title: 'Erro ao Ativar Cliente',
         description: dbError.message,
       })
     } else {
       toast({
         title: 'Sucesso!',
-        description: 'A nota fiscal foi anexada com sucesso.',
+        description: 'O contrato foi anexado e o cliente foi ativado para cobranças.',
+        className: 'bg-green-100 border-green-200 text-green-800'
       })
       onUploadSuccess()
       onClose()
     }
   }
-  
-  const clientName = charge.clientes?.full_name || charge.clientes?.company_name || 'Cliente';
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Anexar Nota Fiscal (NF-e)</DialogTitle>
+          <DialogTitle>Anexar Contrato Externo</DialogTitle>
           <DialogDescription>
-            Envie o arquivo PDF da nota fiscal para a cobrança de{' '}
-            {clientName}.
+            Envie um contrato em PDF para ativar as cobranças para este cliente.
           </DialogDescription>
         </DialogHeader>
 
         <div className="py-4 space-y-4">
-          {charge.invoice_url ? (
-             <Alert variant="default" className="bg-green-50 border-green-200">
-                <CheckCircle className="h-4 w-4 text-green-600" />
-                <AlertTitle className="text-green-800">Nota Fiscal Anexada</AlertTitle>
-                <AlertDescription className="text-green-700">
-                    Já existe uma nota fiscal para esta cobrança. Você pode visualizá-la ou substituí-la abaixo.
-                    <Button asChild variant="link" size="sm" className="p-0 h-auto ml-2">
-                        <Link href={charge.invoice_url} target="_blank" rel="noopener noreferrer">Ver NF-e atual</Link>
-                    </Button>
-                </AlertDescription>
-             </Alert>
-          ) : (
             <Alert>
                 <File className="h-4 w-4" />
-                <AlertTitle>Nenhuma NF-e Anexada</AlertTitle>
+                <AlertTitle>Ativação de Cliente</AlertTitle>
                 <AlertDescription>
-                    Selecione o arquivo PDF da nota fiscal para enviá-lo.
+                   Ao anexar um contrato, um crédito será consumido e este cliente será ativado para receber cobranças recorrentes.
                 </AlertDescription>
             </Alert>
-          )}
-
           <div 
             className="flex items-center justify-center w-full p-6 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted/50"
             onClick={() => fileInputRef.current?.click()}
@@ -183,7 +168,7 @@ export function UploadInvoiceModal({ isOpen, onClose, charge, onUploadSuccess }:
           </Button>
           <Button onClick={handleUpload} disabled={isLoading || !file}>
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {charge.invoice_url ? 'Substituir NF-e' : 'Enviar NF-e'}
+            Anexar e Ativar Cliente
           </Button>
         </DialogFooter>
       </DialogContent>

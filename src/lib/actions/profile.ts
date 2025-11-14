@@ -26,6 +26,8 @@ export async function saveProfile(formData: ProfileFormData & { is_completed: bo
   }
 
   const avatarUrl = formData.sex === 'male' ? AVATAR_USER_MALE : AVATAR_USER_FEMALE;
+
+  const address = `${formData.street}, ${formData.number}${formData.complement ? `, ${formData.complement}` : ''} - ${formData.neighborhood}, ${formData.city} - ${formData.state}, CEP: ${formData.cep}`;
   
   const profileForAsaas = {
     id: user.id,
@@ -35,7 +37,7 @@ export async function saveProfile(formData: ProfileFormData & { is_completed: bo
     full_name: formData.fullName,
     company_name: formData.companyName,
     phone: formData.phone,
-    address: formData.address,
+    address: address, // Usando o endereço já formatado
     is_completed: formData.is_completed, 
   };
 
@@ -59,17 +61,18 @@ export async function saveProfile(formData: ProfileFormData & { is_completed: bo
       planType = 'Free';
   }
 
+  const isPj = formData.personType === 'cnpj';
 
   const profileData = {
     id: user.id,
     person_type: formData.personType,
-    company_name: formData.companyName,
-    cnpj: formData.cnpj,
-    full_name: formData.fullName,
-    nationality: formData.nationality,
-    cpf: formData.cpf,
+    company_name: isPj ? formData.companyName : null,
+    cnpj: isPj ? formData.cnpj : null,
+    full_name: !isPj ? formData.fullName : null,
+    nationality: !isPj ? formData.nationality : null,
+    cpf: !isPj ? formData.cpf : null,
     phone: formData.phone,
-    address: formData.address,
+    address: address,
     signature: formData.signature,
     sex: formData.sex,
     avatar_url: avatarUrl,

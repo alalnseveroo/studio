@@ -32,12 +32,17 @@ export default function ContratoPortalPage() {
   const [contract, setContract] = useState<Contrato | null>(null)
   const [provider, setProvider] = useState<(Profile & {email: string}) | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [isClientSide, setIsClientSide] = useState(false);
   
   const [otpStep, setOtpStep] = useState<OtpStep>('initial');
   const [otp, setOtp] = useState('');
   const [signature, setSignature] = useState<string | null>(null);
   const sigCanvas = useRef<SignatureCanvas>(null);
   const { toast } = useToast()
+
+  useEffect(() => {
+    setIsClientSide(true);
+  }, []);
 
   const fetchContract = useCallback(async () => {
     if (!contractId || !clientId) {

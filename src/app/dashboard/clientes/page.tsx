@@ -1,4 +1,3 @@
-
 'use client'
 
 import * as React from 'react'
@@ -49,17 +48,16 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { AddClientModal } from '@/components/add-client-modal'
-import { getClients, deleteClient, deleteMultipleClients } from '@/lib/actions/clients'
-import type { Cliente, Contrato, Profile, Proposta } from '@/lib/types'
-import { getContracts } from '@/lib/actions/contratos'
-import { getProfile } from '@/lib/actions/profile'
+import { deleteClient, deleteMultipleClients } from '@/lib/actions/clients'
+import type { Cliente } from '@/lib/types'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { ArrowUpDown, ChevronDown, Copy, PlusCircle, Trash2, MoreHorizontal, Check, Link2, FilePen, FileWarning } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useToast } from '@/hooks/use-toast'
 import { CreateContractModal } from '@/components/create-contract-modal'
-import { getProposals } from '@/lib/actions/propostas'
 import { Skeleton } from '@/components/ui/skeleton'
+import { useDashboard } from '../layout-context'
+import { ClientDetailSheet } from '@/components/client-detail-sheet'
 
 
 function ClientsTableSkeleton() {
@@ -120,41 +118,20 @@ function ClientsDataTable() {
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
   const [rowSelection, setRowSelection] = React.useState({})
   
-  const [clients, setClients] = React.useState<Cliente[]>([])
-  const [contracts, setContracts] = React.useState<Contrato[]>([])
-  const [proposals, setProposals] = React.useState<Proposta[]>([])
-  const [profile, setProfile] = React.useState<Profile | null>(null)
+  const { clients, profile, proposals, isLoading, fetchDashboardData } = useDashboard();
   
   const [isAddModalOpen, setIsAddModalOpen] = React.useState(false)
   const [isContractModalOpen, setIsContractModalOpen] = React.useState(false)
+  const [isSheetOpen, setIsSheetOpen] = React.useState(false)
   
   const [clientToDelete, setClientToDelete] = React.useState<Cliente | null>(null)
   const [isBulkDeleteConfirmOpen, setIsBulkDeleteConfirmOpen] = React.useState(false)
   const [clientForContract, setClientForContract] = React.useState<Cliente | null>(null)
+  const [selectedClient, setSelectedClient] = React.useState<Cliente | null>(null)
   const [copiedClientId, setCopiedClientId] = React.useState<string | null>(null);
-  const [isLoading, setIsLoading] = React.useState(true);
 
   const router = useRouter()
   const { toast } = useToast()
-
-  const fetchData = React.useCallback(async () => {
-    setIsLoading(true);
-    const [{ data: clientData }, { data: profileData }, { data: contractsData }, { data: proposalsData }] = await Promise.all([
-      getClients(),
-      getProfile(),
-      getContracts(),
-      getProposals()
-    ]);
-    setClients(clientData || [])
-    setContracts(contractsData || []);
-    setProfile(profileData as Profile | null);
-    setProposals(proposalsData || []);
-    setIsLoading(false);
-  }, [])
-
-  React.useEffect(() => {
-    fetchData()
-  }, [fetchData])
   
   const openContractModalForClient = (client: Cliente) => {
     if (profile && profile.credits <= 0) {
@@ -163,6 +140,11 @@ function ClientsDataTable() {
     }
     setClientForContract(client);
     setIsContractModalOpen(true);
+  }
+
+  const openDetailSheet = (client: Cliente) => {
+    setSelectedClient(client);
+    setIsSheetOpen(true);
   }
   
   const handleCopyLink = (clientId: string) => {
@@ -183,7 +165,7 @@ function ClientsDataTable() {
       toast({ variant: 'destructive', title: 'Erro ao Excluir', description: error.message });
     } else {
       toast({ title: 'Cliente Excluído!', description: 'O cliente foi removido com sucesso.' });
-      fetchData();
+      fetchDashboardData();
       table.setRowSelection({});
     }
     setClientToDelete(null);
@@ -196,33 +178,16 @@ function ClientsDataTable() {
       toast({ variant: 'destructive', title: 'Erro ao Excluir', description: error.message });
     } else {
       toast({ title: 'Clientes Excluídos!', description: `${selectedRows.length} clientes foram removidos com sucesso.` });
-      fetchData();
+      fetchDashboardData();
       table.setRowSelection({});
     }
     setIsBulkDeleteConfirmOpen(false);
   }
   
   const handleClientAdded = () => {
-      fetchData();
+      fetchDashboardData();
       setIsAddModalOpen(false);
   };
-
-
-  const getContractStatusInfo = (clientContracts: Contrato[]) => {
-      if (clientContracts.length === 0) {
-        return { text: 'Inativo', className: 'border-gray-500 bg-gray-500/10 text-gray-700' };
-      }
-      const hasPending = clientContracts.some(c => c.status === 'signed_by_provider');
-      if (hasPending) {
-        return { text: 'Aguard. Cliente', className: 'border-orange-500 bg-orange-500/10 text-orange-700' };
-      }
-      const hasActive = clientContracts.some(c => c.status === 'signed_by_client');
-      if (hasActive) {
-        return { text: 'Ativo', className: 'border-green-500 bg-green-500/10 text-green-700' };
-      }
-      return { text: 'Rascunho', className: 'border-gray-500 bg-gray-500/10 text-gray-700' };
-  }
-
 
   const columns: ColumnDef<Cliente>[] = [
     {
@@ -258,13 +223,13 @@ function ClientsDataTable() {
         const client = row.original;
         const name = client.full_name || client.company_name;
         return (
-            <div className="flex items-center gap-3">
+            <div onClick={() => openDetailSheet(client)} className="flex items-center gap-3 group cursor-pointer">
                 <Avatar className="h-6 w-6">
                     <AvatarImage src={client.avatar_url || ''} alt="Avatar do Cliente" />
                     <AvatarFallback>{(name || 'C').charAt(0)}</AvatarFallback>
                 </Avatar>
                 <div className="flex flex-col">
-                    <span className="font-medium text-sm">{name}</span>
+                    <span className="font-medium text-sm group-hover:underline">{name}</span>
                     <span className="text-xs text-muted-foreground">{client.email}</span>
                 </div>
             </div>
@@ -272,14 +237,17 @@ function ClientsDataTable() {
       },
     },
     {
-      id: "contrato",
-      header: "Contrato",
+      id: "status",
+      header: "Status",
       cell: ({ row }) => {
         const client = row.original;
-        const clientContracts = contracts.filter(c => c.cliente_id === client.id);
-        const status = getContractStatusInfo(clientContracts);
+        const statusText = client.billing_status === 'active' ? 'Ativo' : 'Inativo';
+        const statusClass = client.billing_status === 'active' 
+          ? 'border-green-500 bg-green-500/10 text-green-700' 
+          : 'border-gray-500 bg-gray-500/10 text-gray-700';
+
         return (
-            <Badge variant="outline" className={cn("font-normal", status.className)}>{status.text}</Badge>
+            <Badge variant="outline" className={cn("font-normal", statusClass)}>{statusText}</Badge>
         )
       }
     },
@@ -323,7 +291,7 @@ function ClientsDataTable() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>Ações</DropdownMenuLabel>
-              <DropdownMenuItem onClick={() => router.push(`/dashboard/clientes/${client.id}`)}>
+              <DropdownMenuItem onClick={() => openDetailSheet(client)}>
                 <FilePen className="mr-2 h-4 w-4" /> Ver / Editar
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => openContractModalForClient(client)}>
@@ -516,9 +484,9 @@ function ClientsDataTable() {
           clients={clients}
           proposals={proposals}
           profile={profile}
-          onClientListChange={setClients}
+          onClientListChange={() => {}}
           selectedClientId={clientForContract?.id}
-          onContractAdded={() => fetchData()} 
+          onContractAdded={() => fetchDashboardData()} 
       />}
       
       <AlertDialog open={!!clientToDelete} onOpenChange={() => setClientToDelete(null)}>
@@ -560,6 +528,15 @@ function ClientsDataTable() {
             </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {selectedClient && (
+        <ClientDetailSheet
+          client={selectedClient}
+          isOpen={isSheetOpen}
+          onClose={() => setIsSheetOpen(false)}
+          onUpdate={fetchDashboardData}
+        />
+      )}
     </>
   )
 }
@@ -575,5 +552,3 @@ export default function ClientesPage() {
         </div>
     )
 }
-
-    

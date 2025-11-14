@@ -12,7 +12,7 @@ export async function createProposal(formData: any) {
     return { error: { message: 'Usuário não autenticado.' } }
   }
 
-  const { name, services, payment_type, value, value_in_words, payment_day, payment_method, contract_duration_type, contract_duration_months, start_date, end_date, jurisdiction_city, jurisdiction_state } = formData;
+  const { name, services, payment_type, value, work_hours, value_in_words, payment_day, payment_method, contract_duration_type, contract_duration_months, start_date, end_date, jurisdiction_city, jurisdiction_state } = formData;
 
   const { data, error } = await supabase
     .from('propostas')
@@ -22,6 +22,7 @@ export async function createProposal(formData: any) {
       services,
       payment_type,
       value,
+      work_hours: work_hours ? parseInt(work_hours, 10) : null,
       value_in_words,
       payment_day: parseInt(payment_day, 10),
       payment_method,
@@ -70,6 +71,7 @@ export async function updateProposal(proposalId: string, formData: any) {
     .from('propostas')
     .update({
       ...formData,
+      work_hours: formData.work_hours ? parseInt(formData.work_hours, 10) : null,
       updated_at: new Date().toISOString()
     })
     .eq('id', proposalId)

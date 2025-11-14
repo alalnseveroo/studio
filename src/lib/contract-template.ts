@@ -1,5 +1,4 @@
 
-
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type { Profile, Cliente, Proposta, Contrato, SignatureData } from './types';
@@ -23,7 +22,7 @@ function getContratanteInfo(contratante: Cliente): string {
     return `
         <h3>CONTRATANTE:</h3>
         <p>
-            <strong>${contratante.full_name || '[Nome Completo do Cliente]'}</strong>, ${contratante.nationality || '[Nacionalidade]'}, ${contratante.civil_status || '[Estado Civil]'}, ${contratante.profession || '[Profissão]'}, portador(a) da cédula de identidade RG nº <strong>${contratante.rg || '[Número do RG]'}</strong> e inscrito(a) no CPF/ME sob o nº <strong>${contratante.cpf || '[Número do CPF]'}</strong>, residente e domiciliado(a) na ${contratante.address || '[Endereço completo com CEP, Cidade e Estado]'}.
+            <strong>${contratante.full_name || '[Nome Completo do Cliente]'}</strong>, ${contratante.nationality || '[Nacionalidade]'}, ${contratante.civil_status || '[Estado Civil]'}, ${contratante.profession || '[Profissão]'}, portador(a) da cédula de identidade RG nº <strong>${contratante.rg || '[Número do RG]'}</strong> e inscrito(a) no CPF/ME sob o nº <strong>${contratante.cpf || '[Número do CPF]'}</strong>, residente e domiciliado(a) na ${contratante.address || '[Seu endereço completo com CEP, Cidade e Estado]'}.
         </p>
     `;
 }
@@ -182,7 +181,7 @@ export function getContractTemplate(data: TemplateData): string {
         <p>a) Infração de qualquer uma das cláusulas contratuais por qualquer das partes;</p>
         <p>b) Pedido de recuperação judicial ou decretação de falência de qualquer uma das partes.</p>
         <p>9.2. Caso o contrato seja de prazo indeterminado, qualquer uma das partes poderá rescindi-lo sem justo motivo, mediante comunicação por escrito à outra parte com antecedência mínima de 30 (trinta) dias.</p>
-        <p>9.3. O não cumprimento do aviso prévio estipulado no item 9.2 implicará no pagamento de multa compensatória no valor correspondente a 1 (um) mês dos serviços contratados.</p>
+        <p>9.3. O não cumprimento do aviso prévio estipulado no item 9.2 implicará no pagamento de multa compensatória no valor fixo de R$ 1.000,00 (mil reais), referente a 1 (um) mês de atendimento.</p>
 
         <h2>CLÁUSULA 10ª - DAS DISPOSIÇÕES GERAIS</h2>
         <p>10.1. Qualquer alteração nas condições deste contrato só terá validade se realizada por meio de um Termo Aditivo, devidamente assinado por ambas as partes.</p>

@@ -1,7 +1,8 @@
 
+
 'use client'
 
-import { useState, useEffect, useMemo, Suspense } from 'react'
+import { useState, useEffect, useMemo, Suspense, useContext } from 'react'
 import Link from 'next/link'
 import { Button, buttonVariants } from '@/components/ui/button'
 import {
@@ -33,17 +34,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { PlusCircle, FileSignature, Eye, MoreVertical, Send, Trash2 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { CreateContractModal } from '@/components/create-contract-modal'
-import { getContracts, deleteMultipleContracts } from '@/lib/actions/contratos'
-import { getClients } from '@/lib/actions/clients'
-import { getProposals } from '@/lib/actions/propostas'
-import { getProfile } from '@/lib/actions/profile'
-import type { Contrato, Cliente, Proposta, Profile } from '@/lib/types'
+import { deleteMultipleContracts } from '@/lib/actions/contratos'
+import type { Contrato } from '@/lib/types'
 import { format } from 'date-fns'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { cn } from '@/lib/utils'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useToast } from '@/hooks/use-toast'
 import { Skeleton } from '@/components/ui/skeleton'
+import { useDashboard } from '../layout-context'
 
 function ContractsTableSkeleton() {
     return (
@@ -84,49 +83,21 @@ function ContractsTableSkeleton() {
 
 function ContratosPageComponent() {
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const [contracts, setContracts] = useState<Contrato[]>([])
-  const [clients, setClients] = useState<Cliente[]>([])
-  const [proposals, setProposals] = useState<Proposta[]>([])
-  const [profile, setProfile] = useState<Profile | null>(null);
   const [selectedContracts, setSelectedContracts] = useState<string[]>([])
   const [statusFilter, setStatusFilter] = useState('all')
   const [sortOrder, setSortOrder] = useState('desc')
   const [isBulkDeleteConfirmOpen, setIsBulkDeleteConfirmOpen] = useState(false)
   const { toast } = useToast()
-  const [isLoading, setIsLoading] = useState(true);
   const [isClientSide, setIsClientSide] = useState(false);
+
+  const { clients, proposals, profile, contracts, isLoading, fetchDashboardData } = useDashboard();
 
   useEffect(() => {
     setIsClientSide(true);
   }, []);
 
-  const fetchAllData = async () => {
-    setIsLoading(true);
-    const [
-      { data: contractsData }, 
-      { data: clientsData }, 
-      { data: proposalsData },
-      { data: profileData }
-    ] = await Promise.all([
-      getContracts(),
-      getClients(),
-      getProposals(),
-      getProfile()
-    ])
-    
-    setContracts(contractsData || [])
-    setClients(clientsData || [])
-    setProposals(proposalsData || [])
-    setProfile(profileData as Profile | null);
-    setIsLoading(false);
-  }
-
-  useEffect(() => {
-    fetchAllData()
-  }, [])
-
   const handleContractAdded = (newContract: Contrato) => {
-    setContracts((prev) => [newContract, ...prev])
+    fetchDashboardData();
   }
   
   const handleBulkDelete = async () => {
@@ -145,7 +116,7 @@ function ContratosPageComponent() {
         title: 'Contratos Excluídos!',
         description: `${selectedContracts.length} contratos foram removidos com sucesso.`,
       })
-      await fetchAllData() // Refetch all data
+      await fetchDashboardData() // Refetch all data
       setSelectedContracts([]) // Clear selection
     }
     setIsBulkDeleteConfirmOpen(false)
@@ -368,7 +339,7 @@ function ContratosPageComponent() {
         clients={clients}
         proposals={proposals}
         profile={profile}
-        onClientListChange={setClients}
+        onClientListChange={() => {}}
       />
       
        <AlertDialog open={isBulkDeleteConfirmOpen} onOpenChange={setIsBulkDeleteConfirmOpen}>

@@ -1,5 +1,4 @@
 
-
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
@@ -49,8 +48,8 @@ export async function createFullClient(formData: any) {
   }
   
   const address = `${formData.street}, ${formData.number}${formData.complement ? `, ${formData.complement}` : ''} - ${formData.neighborhood}, ${formData.city} - ${formData.state}, CEP: ${formData.cep}`;
-  const fullName = formData.fullName;
-
+  
+  const isPj = formData.personType === 'cnpj';
 
   const clientDataForDb = {
     user_id: user.id,
@@ -61,22 +60,14 @@ export async function createFullClient(formData: any) {
     address: address,
     person_type: formData.personType,
     sex: formData.sex,
-    full_name: formData.personType === 'cpf' ? fullName : null,
-    cpf: formData.personType === 'cpf' ? formData.cpf : null,
-    nationality: formData.personType === 'cpf' ? formData.nationality : null,
-    civil_status: formData.personType === 'cpf' ? formData.civilStatus : null,
-    profession: formData.personType === 'cpf' ? formData.profession : null,
-    company_name: formData.personType === 'cnpj' ? formData.companyName : null,
-    cnpj: formData.personType === 'cnpj' ? formData.cnpj : null,
-    representative_name: formData.personType === 'cnpj' ? formData.representativeName : null,
-    representative_cpf: formData.personType === 'cnpj' ? formData.representativeCpf : null,
-    
-    // Financials
-    billing_status: formData.billing_status,
-    proposal_id: formData.proposal_id,
-    value: formData.value,
-    payment_day: formData.payment_day,
-    first_charge_date: formData.first_charge_date,
+    full_name: !isPj ? formData.fullName : null,
+    cpf: !isPj ? formData.cpf : null,
+    nationality: !isPj ? formData.nationality : null,
+    company_name: isPj ? formData.companyName : null,
+    cnpj: isPj ? formData.cnpj : null,
+    representative_name: isPj ? formData.representativeName : null,
+    representative_cpf: isPj ? formData.representativeCpf : null,
+    billing_status: 'inactive'
   };
 
 
@@ -92,7 +83,6 @@ export async function createFullClient(formData: any) {
             const portalUrl = new URL(`/portal/${newClient.id}`, process.env.NEXT_PUBLIC_SITE_URL).toString();
             const providerName = providerProfile.full_name || providerProfile.company_name;
 
-            // Enriquecer os dados do cliente com informações extras antes de enviar para o webhook
             const enrichedClientData = {
                 ...newClient,
                 portal_url: portalUrl,
@@ -115,22 +105,6 @@ export async function createFullClient(formData: any) {
             console.warn(`Falha ao enviar webhook ou e-mail de boas-vindas: ${webhookError.message}`);
         }
     }
-
-  // Handle financials if billing is active
-  if (newClient && formData.billing_status === 'active') {
-    const financialResult = await updateClientFinancials(newClient.id, {
-        proposal_id: formData.proposal_id,
-        value: formData.value,
-        payment_day: formData.payment_day,
-        first_charge_date: formData.first_charge_date,
-        billing_status: 'active'
-    });
-
-    if (financialResult.error) {
-        // Optional: decide if you want to delete the client if financial setup fails
-        return { data: newClient, error: { message: `Cliente criado, mas falha na configuração financeira: ${financialResult.error.message}`}};
-    }
-  }
 
   revalidatePath('/dashboard/clientes')
   return { data: newClient, error: null }
@@ -161,7 +135,11 @@ export async function getClientById(id: string) {
     
     const { data, error } = await supabase
         .from('clientes')
-        .select('*')
+        .select(`
+            *,
+            contratos(*, propostas(*)),
+            external_contracts(*)
+        `)
         .eq('id', id)
         .single();
 
@@ -253,7 +231,6 @@ export async function updateClientFinancials(id: string, financials: {
     value: any; 
     payment_day: any;
     first_charge_date?: string | null;
-    billing_status: 'active' | 'inactive';
 }) {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -261,13 +238,6 @@ export async function updateClientFinancials(id: string, financials: {
     return { error: { message: 'Usuário não autenticado.' } };
   }
   
-  if (financials.billing_status === 'active') {
-    const activationResult = await activateClientAndDeductCredit(id);
-    if (activationResult.error) {
-        return activationResult;
-    }
-  }
-
   const firstChargeDate = financials.first_charge_date ? new Date(financials.first_charge_date + 'T00:00:00') : new Date();
 
   // 1. Atualiza os dados financeiros no perfil do cliente
@@ -275,9 +245,7 @@ export async function updateClientFinancials(id: string, financials: {
     proposal_id: financials.proposal_id,
     value: financials.value ? Number(financials.value) : null,
     payment_day: financials.payment_day ? Number(financials.payment_day) : null,
-    // A data da próxima cobrança é sempre o mês seguinte
-    first_charge_date: financials.billing_status === 'active' ? format(addMonths(firstChargeDate, 1), 'yyyy-MM-dd') : null,
-    billing_status: financials.billing_status,
+    first_charge_date: financials.first_charge_date, // Salva a data da primeira cobrança para referência
     updated_at: new Date().toISOString(),
   };
 
@@ -289,24 +257,6 @@ export async function updateClientFinancials(id: string, financials: {
   if (clientUpdateError) {
     console.error('Supabase error updating financials:', clientUpdateError);
     return { error: { message: `Não foi possível atualizar as configurações financeiras: ${clientUpdateError.message}` } };
-  }
-
-  // 2. Cria a primeira cobrança imediatamente se um valor foi fornecido
-  if (financials.billing_status === 'active' && financials.value && financials.value > 0) {
-      const { error: chargeInsertError } = await supabase
-        .from('cobrancas')
-        .insert({
-            user_id: user.id,
-            cliente_id: id,
-            due_date: format(firstChargeDate, 'yyyy-MM-dd'),
-            value: Number(financials.value),
-            status: 'pendente',
-        });
-      
-      if (chargeInsertError) {
-          console.error('Supabase error creating first charge:', chargeInsertError);
-          return { error: { message: `Configuração salva, mas falha ao criar a primeira cobrança: ${chargeInsertError.message}` } };
-      }
   }
   
   revalidatePath(`/dashboard/clientes/${id}`);
@@ -366,4 +316,38 @@ export async function deleteMultipleClients(ids: string[]) {
 
   revalidatePath('/dashboard/clientes');
   return { error: null };
+}
+
+export async function uploadExternalContract(clientId: string, fileUrl: string, fileName: string) {
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+        return { error: { message: 'Usuário não autenticado.' } };
+    }
+
+    // 1. Salva o registro do contrato externo
+    const { error: insertError } = await supabase
+        .from('external_contracts')
+        .insert({
+            user_id: user.id,
+            client_id: clientId,
+            file_url: fileUrl,
+            file_name: fileName,
+        });
+
+    if (insertError) {
+        return { error: { message: `Erro ao salvar o contrato externo: ${insertError.message}` } };
+    }
+
+    // 2. Ativa o cliente e deduz o crédito
+    const activationResult = await activateClientAndDeductCredit(clientId);
+
+    if (activationResult.error) {
+        // Opcional: Reverter o upload do contrato se a ativação falhar
+        return { error: activationResult.error };
+    }
+
+    revalidatePath(`/dashboard/clientes/${clientId}`);
+    return { error: null };
 }

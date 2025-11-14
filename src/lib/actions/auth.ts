@@ -51,11 +51,12 @@ export async function sendClientVerificationCode(contractId: string) {
   
   const { data: contract, error: contractError } = await supabase
     .from('contratos')
-    .select('id, user_id, clientes (email, full_name, company_name)')
+    .select('*, clientes:cliente_id (email, full_name, company_name)')
     .eq('id', contractId)
     .single();
 
   if (contractError || !contract || !contract.clientes?.email) {
+      console.error("Error fetching contract or client email:", contractError);
       return { success: false, error: { message: 'Contrato ou e-mail do cliente não encontrado.' } };
   }
 

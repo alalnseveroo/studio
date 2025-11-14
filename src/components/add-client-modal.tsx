@@ -30,6 +30,7 @@ import {
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -67,23 +68,22 @@ const clientSchema = z.object({
   neighborhood: z.string().optional(),
   city: z.string().optional(),
   state: z.string().optional(),
-})
-.refine(data => {
+  
+}).refine(data => {
     if (data.personType === 'cpf') {
-        return !!data.fullName && data.fullName.trim().length > 2 && !!data.cpf && !!data.cep;
+        return !!data.fullName && data.fullName.length >= 3 && !!data.cpf;
     }
     return true;
 }, {
-    message: "Para Pessoa Física, Nome Completo, CPF e CEP são obrigatórios.",
-    path: ["fullName"],
-})
-.refine(data => {
+    message: "Nome completo e CPF são obrigatórios para Pessoa Física.",
+    path: ["fullName"], 
+}).refine(data => {
     if (data.personType === 'cnpj') {
-        return !!data.companyName && !!data.cnpj && !!data.representativeName && !!data.representativeCpf && !!data.cep;
+        return !!data.companyName && data.companyName.length >= 3 && !!data.cnpj;
     }
     return true;
 }, {
-    message: "Para Pessoa Jurídica, todos os campos são obrigatórios.",
+    message: "Razão Social e CNPJ são obrigatórios para Pessoa Jurídica.",
     path: ["companyName"],
 });
 
@@ -184,7 +184,7 @@ function ValidatedInput({ field, fieldState, placeholder }: { field: any, fieldS
     );
 }
 
-export function AddClientModal({ isOpen, onClose, onSuccess }: AddClientModalProps) {
+export function AddClientModal({ isOpen, onClose, onSuccess, proposals }: AddClientModalProps) {
   const [isLoading, setIsLoading] = React.useState(false);
   const { toast } = useToast()
 
@@ -240,6 +240,7 @@ export function AddClientModal({ isOpen, onClose, onSuccess }: AddClientModalPro
 
   const handleFormSubmit = async (values: ClientFormData) => {
     setIsLoading(true);
+
     const { data, error } = await createFullClient(values);
     setIsLoading(false);
 
@@ -306,7 +307,7 @@ export function AddClientModal({ isOpen, onClose, onSuccess }: AddClientModalPro
       <DialogContent className="sm:max-w-2xl p-0">
         <DialogHeader className="p-6 pb-4">
           <DialogTitle className="text-xl font-normal">Adicionar Novo Cliente</DialogTitle>
-          <DialogDescription>Preencha os dados abaixo para cadastrar um novo cliente.</DialogDescription>
+          <DialogDescription>Preencha os dados abaixo para cadastrar um novo cliente. A cobrança será configurada depois.</DialogDescription>
         </DialogHeader>
         <FormProvider {...form}>
             <form onSubmit={form.handleSubmit(handleFormSubmit)}>

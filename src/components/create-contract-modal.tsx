@@ -90,8 +90,8 @@ export function CreateContractModal({
 
 
   const handleFormSubmit = async (values: z.infer<typeof contractSchema>) => {
-    // Verificação de créditos antes de criar o contrato
-    if (profile && (profile.plan_type === 'free' || profile.plan_type === 'assistente') && profile.credits <= 0) {
+    // Verificação de créditos para usuários free/assistente
+    if (profile && (profile.plan_type === 'Free' || profile.plan_type === 'Crédito') && profile.credits <= 0) {
         toast({
           title: 'Créditos Insuficientes',
           description: 'Você precisa de créditos para gerar um novo contrato.',
@@ -125,10 +125,8 @@ export function CreateContractModal({
   }
   
   const handleClientAdded = async (newClient: Cliente) => {
-    const { data } = await getClients();
-    if(data) {
-        onClientListChange(data);
-    }
+    // A atualização da lista de clientes agora é gerenciada pelo DashboardContext
+    onClientListChange([...clients, newClient]);
     form.setValue('clienteId', newClient.id, { shouldValidate: true });
     setIsAddClientModalOpen(false);
   }

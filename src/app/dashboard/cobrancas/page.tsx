@@ -1,7 +1,8 @@
 
+
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useContext } from 'react'
 import {
   Table,
   TableBody,
@@ -31,8 +32,8 @@ import {
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Send, FileWarning, UserPlus, FilePlus, Link2, BadgeCheck, PlusCircle, MoreVertical, Trash2 } from 'lucide-react'
-import { getCharges, markChargeAsPaid, deleteCharge } from '@/lib/actions/cobrancas'
-import type { Cobranca, Profile, Cliente, Proposta } from '@/lib/types'
+import { markChargeAsPaid, deleteCharge } from '@/lib/actions/cobrancas'
+import type { Cobranca } from '@/lib/types'
 import { format, isPast } from 'date-fns'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { useToast } from '@/hooks/use-toast'
@@ -40,13 +41,11 @@ import { sendTransactionalEmail } from '@/lib/brevo'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
-import { getProfile } from '@/lib/actions/profile'
-import { getClients } from '@/lib/actions/clients'
-import { getProposals } from '@/lib/actions/propostas'
 import { InvoiceTooltip } from '@/components/invoice-tooltip'
 import Link from 'next/link'
 import { ConfigureBillingModal } from '@/components/configure-billing-modal'
 import { Skeleton } from '@/components/ui/skeleton'
+import { useDashboard } from '../layout-context'
 
 
 function ChargesTableSkeleton() {
@@ -87,16 +86,13 @@ function ChargesTableSkeleton() {
 }
 
 export default function CobrancasPage() {
-  const [charges, setCharges] = useState<Cobranca[]>([])
-  const [clients, setClients] = useState<Cliente[]>([])
-  const [proposals, setProposals] = useState<Proposta[]>([])
   const [isSending, setIsSending] = useState<string | null>(null);
-  const [providerProfile, setProviderProfile] = useState<Profile | null>(null)
   const { toast } = useToast()
-  const [isLoading, setIsLoading] = useState(true);
   const [isBillingModalOpen, setIsBillingModalOpen] = useState(false)
   const [isClientSide, setIsClientSide] = useState(false);
   const [chargeToDelete, setChargeToDelete] = useState<Cobranca | null>(null);
+
+  const { charges, clients, proposals, profile: providerProfile, isLoading, fetchDashboardData } = useDashboard();
 
   useEffect(() => {
     setIsClientSide(true);
@@ -115,42 +111,13 @@ export default function CobrancasPage() {
     return { text: 'Pendente', className: 'border-yellow-500 bg-yellow-500/10 text-yellow-700' };
   }
 
-  const fetchData = async () => {
-      setIsLoading(true);
-      const [{ data: chargesData, error: chargesError }, { data: profileData }, { data: clientsData }, { data: proposalsData }] = await Promise.all([
-        getCharges(),
-        getProfile(),
-        getClients(),
-        getProposals(),
-      ]);
-
-      if (chargesError || !chargesData) {
-        toast({
-            variant: 'destructive',
-            title: 'Erro ao buscar dados',
-            description: chargesError?.message || 'Não foi possível carregar as cobranças.'
-        })
-      } else {
-        setCharges(chargesData);
-      }
-      
-      setProviderProfile(profileData as Profile | null);
-      setClients(clientsData || [])
-      setProposals(proposalsData || [])
-      setIsLoading(false);
-    }
-
-  useEffect(() => {
-    fetchData()
-  }, [])
-
   const handleMarkAsPaid = async (chargeId: string) => {
     const { error } = await markChargeAsPaid(chargeId);
      if (error) {
       toast({ variant: 'destructive', title: 'Erro', description: error.message });
     } else {
       toast({ title: 'Sucesso!', description: 'Cobrança marcada como paga.' });
-      await fetchData(); // Refetch charges
+      await fetchDashboardData(); // Refetch charges
     }
   }
 
@@ -161,7 +128,7 @@ export default function CobrancasPage() {
       toast({ variant: 'destructive', title: 'Erro ao Excluir', description: error.message });
     } else {
       toast({ title: 'Cobrança Excluída!', description: 'A cobrança foi removida com sucesso.' });
-      await fetchData();
+      await fetchDashboardData();
     }
     setChargeToDelete(null);
   }
@@ -181,7 +148,7 @@ export default function CobrancasPage() {
           CLIENTE_NOME: charge.clientes.full_name || charge.clientes.company_name,
           CONTRATADA_NOME: providerProfile.full_name || providerProfile.company_name,
           COBRANCA_VALOR: (charge.value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-          COBRANCA_VENCIMENTO: format(new Date(charge.due_date + 'T00:00:00'), 'dd/MM/yyyy'),
+          COBRANCA_VENCIMENTO: isClientSide ? format(new Date(charge.due_date + 'T00:00:00'), 'dd/MM/yyyy') : '',
           LINK_PORTAL: portalUrl,
         },
         userId: charge.user_id,
@@ -311,7 +278,7 @@ export default function CobrancasPage() {
                                     ) : (
                                         <Badge variant="outline">Pendente</Badge>
                                     )}
-                                    <InvoiceTooltip charge={charge} onUploadSuccess={fetchData} />
+                                    <InvoiceTooltip charge={charge} onUploadSuccess={fetchDashboardData} />
                                 </div>
                             </TableCell>
                             <TableCell className="text-center">
@@ -370,7 +337,7 @@ export default function CobrancasPage() {
     <ConfigureBillingModal
       isOpen={isBillingModalOpen}
       onClose={() => setIsBillingModalOpen(false)}
-      onBillingConfigured={fetchData}
+      onBillingConfigured={fetchDashboardData}
       clientId={null}
       clients={clients}
       proposals={proposals}

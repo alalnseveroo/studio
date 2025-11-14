@@ -1,6 +1,6 @@
 
 import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { format, addMonths } from 'https://deno.land/std@0.208.0/datetime/mod.ts';
+import { format, addMonths, getDay, getDate } from 'https://deno.land/std@0.208.0/datetime/mod.ts';
 
 const BREVO_API_KEY = Deno.env.get('BREVO_API_KEY');
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
@@ -43,20 +43,41 @@ Deno.serve(async (_req) => {
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     const today = new Date();
     const todayStr = format(today, 'yyyy-MM-dd');
+    const currentDayOfMonth = getDate(today);
+    const currentMonth = today.getMonth() + 1;
+    const currentYear = today.getFullYear();
 
     // --- 1. GERAÇÃO DE COBRANÇAS RECORRENTES ---
-    // Busca clientes ativos cuja data da próxima cobrança é hoje.
+    // Busca clientes ativos cujo dia de pagamento é hoje.
     const { data: activeClients, error: clientsError } = await supabase
         .from('clientes')
         .select('*')
         .eq('billing_status', 'active')
-        .eq('first_charge_date', todayStr);
+        .eq('payment_day', currentDayOfMonth);
 
     if (clientsError) throw new Error(`Error fetching active clients: ${clientsError.message}`);
 
     for (const client of activeClients || []) {
         if (!client.value || !client.payment_day) {
             console.warn(`Skipping new charge for client ${client.id}: Missing value or payment_day.`);
+            continue;
+        }
+
+        // Verifica se já existe uma cobrança para este cliente no mês corrente para evitar duplicidade
+        const { data: existingCharges, error: checkError } = await supabase
+            .from('cobrancas')
+            .select('id')
+            .eq('cliente_id', client.id)
+            .gte('due_date', `${currentYear}-${String(currentMonth).padStart(2, '0')}-01`)
+            .lte('due_date', `${currentYear}-${String(currentMonth).padStart(2, '0')}-31`);
+
+        if (checkError) {
+            console.error(`Failed to check existing charges for client ${client.id}:`, checkError.message);
+            continue;
+        }
+
+        if (existingCharges && existingCharges.length > 0) {
+            console.log(`Charge for client ${client.id} already exists for this month. Skipping.`);
             continue;
         }
 
@@ -72,18 +93,7 @@ Deno.serve(async (_req) => {
         if (insertError) {
             console.error(`Failed to create charge for client ${client.id}:`, insertError.message);
         } else {
-            // Calcula e atualiza a data da próxima cobrança para o mês seguinte
-            const nextChargeDate = format(addMonths(today, 1), 'yyyy-MM-dd');
-            const { error: updateError } = await supabase
-                .from('clientes')
-                .update({ first_charge_date: nextChargeDate })
-                .eq('id', client.id);
-
-            if (updateError) {
-                console.error(`Failed to update next charge date for client ${client.id}:`, updateError.message);
-            } else {
-                 console.log(`Successfully created charge and updated next charge date for client ${client.id}`);
-            }
+            console.log(`Successfully created charge for client ${client.id}`);
         }
     }
     

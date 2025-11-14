@@ -15,7 +15,7 @@ import { format, parseISO } from 'date-fns'
 import { useForm, useFieldArray } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
@@ -30,6 +30,7 @@ const proposalSchema = z.object({
   }),
   payment_type: z.enum(['fixed', 'hourly', 'project'], { required_error: 'Selecione o tipo de remuneração.' }),
   value: z.coerce.number().min(0.01, { message: 'O valor é obrigatório.' }),
+  work_hours: z.coerce.number().optional(),
   value_in_words: z.string().min(3, { message: 'O valor por extenso é obrigatório.' }),
   payment_day: z.coerce.number().min(1, 'Dia inválido.').max(31, 'Dia inválido.'),
   payment_method: z.string().min(3, { message: 'O método de pagamento é obrigatório.' }),
@@ -68,6 +69,7 @@ export default function PropostaDetailPage() {
       services: [],
       payment_type: 'fixed',
       value: 0,
+      work_hours: undefined,
       value_in_words: '',
       payment_day: 1,
       payment_method: '',
@@ -94,6 +96,7 @@ export default function PropostaDetailPage() {
             services: foundProposal.services || [],
             payment_type: foundProposal.payment_type || 'fixed',
             value: foundProposal.value || 0,
+            work_hours: foundProposal.work_hours || undefined,
             value_in_words: foundProposal.value_in_words || '',
             payment_day: foundProposal.payment_day || 1,
             payment_method: foundProposal.payment_method || '',
@@ -273,9 +276,12 @@ export default function PropostaDetailPage() {
                         <FormItem><FormLabel>Valor por Extenso</FormLabel><FormControl><Input placeholder="Mil e quinhentos reais" {...field} /></FormControl><FormMessage /></FormItem>
                     )} />
                 </div>
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <FormField control={form.control} name="payment_day" render={({ field }) => (
                         <FormItem><FormLabel>Dia do Vencimento</FormLabel><FormControl><Input type="number" placeholder="5" {...field} /></FormControl><FormDescription>Dia útil de cada mês para o pagamento.</FormDescription><FormMessage /></FormItem>
+                    )} />
+                     <FormField control={form.control} name="work_hours" render={({ field }) => (
+                        <FormItem><FormLabel>Horas de Trabalho</FormLabel><FormControl><Input type="number" placeholder="8" {...field} value={field.value ?? ''} /></FormControl><FormDescription>Carga horária diária.</FormDescription><FormMessage /></FormItem>
                     )} />
                     <FormField control={form.control} name="payment_method" render={({ field }) => (
                         <FormItem><FormLabel>Método de Pagamento</FormLabel><FormControl><Input placeholder="Pix, Transferência Bancária..." {...field} /></FormControl><FormMessage /></FormItem>

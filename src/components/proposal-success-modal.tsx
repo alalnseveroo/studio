@@ -1,4 +1,5 @@
 
+
 'use client'
 
 import * as React from 'react'
@@ -17,8 +18,9 @@ import { Plus, Link, FileSignature, ArrowRight, Badge } from 'lucide-react'
 import { CreateContractModal } from './create-contract-modal'
 import { getClients } from '@/lib/actions/clients'
 import { getProposals } from '@/lib/actions/propostas'
-import type { Cliente, Proposta } from '@/lib/types'
+import type { Cliente, Proposta, Profile } from '@/lib/types'
 import { useRouter } from 'next/navigation'
+import { useDashboard } from '@/app/dashboard/layout-context'
 
 interface ActionCardProps {
   icon: React.ElementType
@@ -58,23 +60,10 @@ interface ProposalSuccessModalProps {
 
 export function ProposalSuccessModal({ isOpen, onClose, onCreateAnother, proposal }: ProposalSuccessModalProps) {
   const [isContractModalOpen, setIsContractModalOpen] = React.useState(false)
-  const [clients, setClients] = React.useState<Cliente[]>([])
-  const [proposals, setProposals] = React.useState<Proposta[]>([])
+  const dashboardContext = useDashboard();
   const router = useRouter()
-
-  React.useEffect(() => {
-    if (isContractModalOpen) {
-      const fetchData = async () => {
-        const [{data: clientData}, {data: proposalData}] = await Promise.all([
-          getClients(),
-          getProposals()
-        ]);
-        setClients(clientData || []);
-        setProposals(proposalData || []);
-      }
-      fetchData()
-    }
-  }, [isContractModalOpen])
+  
+  const { clients, proposals, profile, fetchDashboardData } = dashboardContext;
 
   const handleLinkToClient = () => {
     onClose()
@@ -88,7 +77,7 @@ export function ProposalSuccessModal({ isOpen, onClose, onCreateAnother, proposa
   
   const handleModalClose = () => {
       onClose();
-      router.push('/dashboard/clientes');
+      router.push('/dashboard/propostas');
   }
 
   return (
@@ -142,7 +131,8 @@ export function ProposalSuccessModal({ isOpen, onClose, onCreateAnother, proposa
           onClose={() => setIsContractModalOpen(false)}
           clients={clients}
           proposals={proposals}
-          onClientListChange={setClients}
+          profile={profile}
+          onClientListChange={() => fetchDashboardData()}
           onContractAdded={() => setIsContractModalOpen(false)} 
           selectedProposalId={proposal?.id}
       />
