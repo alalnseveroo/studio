@@ -41,6 +41,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Skeleton } from '@/components/ui/skeleton'
 import { UploadInvoiceModal } from '@/components/upload-invoice-modal'
+import { UploadContractModal } from '@/components/upload-contract-modal'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from './ui/alert-dialog'
 
 const clientInfoSchema = z.object({
@@ -550,7 +551,8 @@ function InfoStep({ isEditing, setEditingStep, onSave, isSaving }: StepProps) {
     );
   }
 
-  const clientData = methods.getValues();
+  // Criar variável específica para o tipo de pessoa no modo de visualização
+  const viewPersonType = client?.person_type || 'cpf';
 
   return (
       <Card>
@@ -558,28 +560,28 @@ function InfoStep({ isEditing, setEditingStep, onSave, isSaving }: StepProps) {
             <div className="space-y-1">
                 <CardTitle>Informações do Cliente</CardTitle>
                 <CardDescription>
-                    {personType === 'cpf' ? `CPF: ${clientData.cpf || 'Não preenchido'}` : `CNPJ: ${clientData.cnpj || 'Não preenchido'}`}
+                    {viewPersonType === 'cpf' ? `CPF: ${client?.cpf || 'Não preenchido'}` : `CNPJ: ${client?.cnpj || 'Não preenchido'}`}
                 </CardDescription>
             </div>
             <Button variant="outline" size="sm" onClick={() => setEditingStep('info')}><Edit className="mr-2 h-4 w-4" />Editar</Button>
         </CardHeader>
         <CardContent className="space-y-4 text-sm pt-6">
-            <p><strong>E-mail:</strong> {clientData.email || 'Não preenchido'}</p>
-            {personType === 'cpf' && (
+            <p><strong>E-mail:</strong> {client?.email || 'Não preenchido'}</p>
+            {viewPersonType === 'cpf' && (
                 <>
-                    <p><strong>Nome Completo:</strong> {clientData.fullName || 'Não preenchido'}</p>
-                    <p><strong>Nacionalidade:</strong> {clientData.nationality || 'Não preenchido'}</p>
-                    <p><strong>Estado Civil:</strong> {clientData.civilStatus || 'Não preenchido'}</p>
-                    <p><strong>Profissão:</strong> {clientData.profession || 'Não preenchido'}</p>
-                    <p><strong>CPF:</strong> {clientData.cpf || 'Não preenchido'}</p>
+                    <p><strong>Nome Completo:</strong> {client?.full_name || 'Não preenchido'}</p>
+                    <p><strong>Nacionalidade:</strong> {client?.nationality || 'Não preenchido'}</p>
+                    <p><strong>Estado Civil:</strong> {client?.civil_status || 'Não preenchido'}</p>
+                    <p><strong>Profissão:</strong> {client?.profession || 'Não preenchido'}</p>
+                    <p><strong>CPF:</strong> {client?.cpf || 'Não preenchido'}</p>
                 </>
             )}
-             {personType === 'cnpj' && (
+             {viewPersonType === 'cnpj' && (
                 <>
-                    <p><strong>Nome da Empresa:</strong> {clientData.companyName || 'Não preenchido'}</p>
-                    <p><strong>CNPJ:</strong> {clientData.cnpj || 'Não preenchido'}</p>
-                    <p><strong>Representante Legal:</strong> {clientData.representativeName || 'Não preenchido'}</p>
-                    <p><strong>CPF do Representante:</strong> {clientData.representativeCpf || 'Não preenchido'}</p>
+                    <p><strong>Nome da Empresa:</strong> {client?.company_name || 'Não preenchido'}</p>
+                    <p><strong>CNPJ:</strong> {client?.cnpj || 'Não preenchido'}</p>
+                    <p><strong>Representante Legal:</strong> {client?.representative_name || 'Não preenchido'}</p>
+                    <p><strong>CPF do Representante:</strong> {client?.representative_cpf || 'Não preenchido'}</p>
                 </>
             )}
         </CardContent>
@@ -671,9 +673,10 @@ function AddressStep({ isEditing, setEditingStep, onSave, isSaving }: StepProps)
         )
     }
     
-    const clientData = methods.getValues();
-    const fullAddress = clientData.street ? 
-        `${clientData.street}, ${clientData.number}${clientData.complement ? `, ${clientData.complement}` : ''} - ${clientData.neighborhood}, ${clientData.city}/${clientData.state} - CEP: ${clientData.cep}`
+    // Criar endereço a partir dos dados do cliente quando não estiver editando
+    const addressParts = client ? parseAddress(client.address) : { street: '', number: '', complement: '', neighborhood: '', city: '', state: '', cep: '' };
+    const fullAddress = client?.address ?
+        `${addressParts.street}, ${addressParts.number}${addressParts.complement ? `, ${addressParts.complement}` : ''} - ${addressParts.neighborhood}, ${addressParts.city}/${addressParts.state} - CEP: ${addressParts.cep}`
         : 'Não preenchido';
 
     return (
@@ -681,7 +684,7 @@ function AddressStep({ isEditing, setEditingStep, onSave, isSaving }: StepProps)
             <CardHeader className="flex flex-row items-center justify-between">
                 <div className="space-y-1">
                     <CardTitle>Endereço</CardTitle>
-                    <CardDescription>{clientData.street ? `${clientData.street}, ${clientData.number}` : 'Não preenchido'}</CardDescription>
+                    <CardDescription>{client?.address ? `${addressParts.street}, ${addressParts.number}` : 'Não preenchido'}</CardDescription>
                 </div>
                 <Button variant="outline" size="sm" onClick={() => setEditingStep('address')}><Edit className="mr-2 h-4 w-4" />Editar</Button>
             </CardHeader>
@@ -840,7 +843,7 @@ function FinancialStep({ isEditing, setEditingStep, onSave, isSaving, proposals,
                     <div className="space-y-1">
                         <CardTitle>Configuração Financeira</CardTitle>
                         <CardDescription>
-                            Automação de cobrança: {clientData.billing_status === 'active' ? 'Ativa' : 'Inativa'}
+                            Automação de cobrança: {client?.billing_status === 'active' ? 'Ativa' : 'Inativa'}
                         </CardDescription>
                     </div>
                     <Button variant="outline" size="sm" onClick={() => setEditingStep('financial')}><Edit className="mr-2 h-4 w-4" />Editar</Button>
@@ -848,16 +851,16 @@ function FinancialStep({ isEditing, setEditingStep, onSave, isSaving, proposals,
                 <CardContent className="space-y-4 text-sm pt-6">
                      <p className="flex items-center">
                         <DollarSign className="mr-2 h-4 w-4 text-muted-foreground" />
-                        <strong>Valor Mensal:</strong>&nbsp;R$ {Number(clientData.value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        <strong>Valor Mensal:</strong>&nbsp;R$ {Number(client?.value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </p>
                     <p className="flex items-center">
                         <Calendar className="mr-2 h-4 w-4 text-muted-foreground" />
-                        <strong>Vencimento:</strong>&nbsp;Todo dia {clientData.payment_day || 'N/A'}
+                        <strong>Vencimento:</strong>&nbsp;Todo dia {client?.payment_day || 'N/A'}
                     </p>
-                     {clientData.first_charge_date && isClientSide && (
+                     {client?.first_charge_date && isClientSide && (
                         <p className="flex items-center">
                             <Calendar className="mr-2 h-4 w-4 text-muted-foreground" />
-                            <strong>Início das cobranças:</strong>&nbsp;{format(new Date(clientData.first_charge_date), 'dd/MM/yyyy')}
+                            <strong>Início das cobranças:</strong>&nbsp;{format(new Date(client.first_charge_date), 'dd/MM/yyyy')}
                         </p>
                      )}
                     {selectedProposal ? (
@@ -1027,7 +1030,7 @@ function ContractsStep({ client, isClientSide, onUploadSuccess }: { client: Clie
                 </Table>
             </CardContent>
             {client && (
-                <UploadInvoiceModal 
+                <UploadContractModal
                     isOpen={isUploadModalOpen}
                     onClose={() => setIsUploadModalOpen(false)}
                     onUploadSuccess={onUploadSuccess}

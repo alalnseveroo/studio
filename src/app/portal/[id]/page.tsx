@@ -6,10 +6,10 @@ import { useState, useEffect, useCallback } from 'react'
 import { useParams } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
-import { getClientById } from '@/lib/actions/clients'
+import { getClientByIdForPortal } from '@/lib/actions/clients'
 import { getContractsForClientPortal } from '@/lib/actions/contratos'
 import { getChargesForClientPortal } from '@/lib/actions/cobrancas'
-import { getProfile } from '@/lib/actions/profile'
+import { getProfileForPortal } from '@/lib/actions/profile'
 import { createClient } from '@/lib/supabase/client'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { AlertCircle, User, FileText, Check, Clock, Verified, Briefcase, Mail, Download, CreditCard, Lock, Loader2, DollarSign, Calendar, CheckCircle, MessageSquare, ArrowUpRight, X, Info } from 'lucide-react'
@@ -106,14 +106,14 @@ export default function ClientPortalPage() {
     setError(null)
     
     try {
-        const { data: clientData, error: clientError } = await getClientById(clientId);
+        const { data: clientData, error: clientError } = await getClientByIdForPortal(clientId);
         if (clientError || !clientData) {
             throw new Error('Não foi possível carregar os dados do cliente.');
         }
         setClient(clientData);
 
         if (clientData.user_id) {
-            const { data: providerData, error: providerError } = await getProfile(clientData.user_id);
+            const { data: providerData, error: providerError } = await getProfileForPortal(clientData.user_id);
             if (providerError || !providerData) {
                  console.error("Could not fetch provider profile for portal", providerError);
             } else {

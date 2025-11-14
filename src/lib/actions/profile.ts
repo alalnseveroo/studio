@@ -199,7 +199,7 @@ export async function getProfile(userId?: string) {
         .select('*')
         .eq('id', targetUserId)
         .single();
-        
+
     if (error && error.code !== 'PGRST116') {
         console.error('Error fetching profile:', error);
         return { data: null, error: { message: 'Erro ao buscar perfil.' } };
@@ -208,10 +208,39 @@ export async function getProfile(userId?: string) {
     if (!profileData) {
         return { data: null, error: null };
     }
-    
+
     if (!profileData.email && user && user.id === targetUserId) {
         profileData.email = user.email;
     }
 
     return { data: profileData, error: null };
+}
+
+// Nova função específica para acesso ao portal do provedor
+export async function getProfileForPortal(userId: string) {
+    const supabase = createClient();
+
+    // Primeiro, tentar buscar informações públicas do perfil
+    const { data: basicProfileData, error: basicError } = await supabase
+        .from('profiles')
+        .select('id, full_name, company_name, avatar_url, email, pix_key, slug, is_agency, plan_type, title, location, availability, responseTime, bio, specialties, services, tools, certifications, testimonials, public_profile_completed')
+        .eq('id', userId)
+        .single();
+
+    if (basicError) {
+        console.error('Error fetching basic profile for portal:', basicError);
+
+        // Verificar se é erro de permissão
+        if (basicError.code === '42501' || basicError.message.includes('permission')) {
+            return { data: null, error: { message: 'Acesso ao perfil negado. Entre em contato com o provedor do serviço.' } };
+        }
+
+        return { data: null, error: { message: 'Erro ao buscar perfil para o portal.' } };
+    }
+
+    if (!basicProfileData) {
+        return { data: null, error: { message: 'Perfil não encontrado.' } };
+    }
+
+    return { data: basicProfileData, error: null };
 }

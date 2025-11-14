@@ -133,17 +133,114 @@ export default function ContratoPortalPage() {
   }
 
   const handleDownloadPdf = async () => {
-    const html2pdf = (await import('html2pdf.js')).default;
-    const element = document.getElementById('contract-content-for-pdf');
-    if (element) {
-        const opt = {
-            margin:       1,
-            filename:     `Contrato_${contract?.contract_code}.pdf`,
-            image:        { type: 'jpeg', quality: 0.98 },
-            html2canvas:  { scale: 2, useCORS: true },
-            jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
-        };
-        html2pdf().from(element).set(opt).save();
+    try {
+      // Primeiro, forçar um pequeno delay para garantir que o DOM esteja completamente renderizado
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      const html2pdf = (await import('html2pdf.js')).default;
+      const element = document.getElementById('contract-content-for-pdf');
+
+      if (!element) {
+        toast({
+          variant: 'destructive',
+          title: 'Erro ao gerar PDF',
+          description: 'Não foi possível localizar o conteúdo do contrato para gerar o PDF.'
+        });
+        return;
+      }
+
+      // Verificar se o conteúdo do contrato está vazio
+      if (!contract?.full_contract_text) {
+        toast({
+          variant: 'destructive',
+          title: 'Erro ao gerar PDF',
+          description: 'O contrato não contém conteúdo para ser gerado em PDF.'
+        });
+        return;
+      }
+
+      // Criar e injetar estilos CSS temporários para substituir os estilos problemáticos
+      const styleId = 'pdf-generation-styles';
+      const existingStyle = document.getElementById(styleId);
+      if (existingStyle) {
+        existingStyle.remove();
+      }
+
+      const tempStyle = document.createElement('style');
+      tempStyle.id = styleId;
+      tempStyle.textContent = `
+        /* Substituir todos os estilos com formato oklch por valores padrão */
+        *, *::before, *::after {
+          background: white !important;
+          color: black !important;
+          border-color: #ccc !important;
+        }
+        .bg-white { background-color: white !important; }
+        .text-black { color: black !important; }
+        .border { border: 1px solid #ccc !important; }
+        .border-gray-200 { border-color: #ccc !important; }
+        .prose {
+          color: black !important;
+          background: white !important;
+          max-width: 100% !important;
+        }
+      `;
+      document.head.appendChild(tempStyle);
+
+      const opt = {
+          margin:       0.5,
+          filename:     `Contrato_${contract?.contract_code || 'assinado'}.pdf`,
+          image:        { type: 'jpeg', quality: 0.98 },
+          html2canvas:  {
+            scale: 2,
+            useCORS: true,
+            logging: false, // Reduz o logging para evitar erros no console
+            letterRendering: true, // Melhora a qualidade do texto
+            // Configurações para evitar problemas com cores modernas
+            allowTaint: true,
+            backgroundColor: '#ffffff', // Forçar fundo branco
+          },
+          jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
+      };
+
+      // Mostrar feedback ao usuário enquanto o PDF está sendo gerado
+      toast({
+        title: 'Gerando PDF...',
+        description: 'Por favor, aguarde enquanto o documento é preparado.'
+      });
+
+      // Usar html2pdf com configurações otimizadas
+      html2pdf().set(opt).from(element).save().then(() => {
+        // Remover os estilos temporários após a geração do PDF
+        const styleToRemove = document.getElementById(styleId);
+        if (styleToRemove) {
+          styleToRemove.remove();
+        }
+        toast({
+          title: 'PDF gerado com sucesso!',
+          description: 'O contrato foi baixado para o seu dispositivo.'
+        });
+      }).catch((error) => {
+        console.error('Erro ao gerar PDF com html2pdf:', error);
+        // Remover os estilos temporários após o erro
+        const styleToRemove = document.getElementById(styleId);
+        if (styleToRemove) {
+          styleToRemove.remove();
+        }
+        toast({
+          variant: 'destructive',
+          title: 'Erro ao gerar PDF',
+          description: 'Ocorreu um erro ao tentar gerar o PDF. Por favor, tente novamente.'
+        });
+      });
+
+    } catch (error) {
+      console.error('Erro geral ao gerar PDF:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao gerar PDF',
+        description: 'Ocorreu um erro inesperado ao tentar gerar o PDF. Por favor, tente novamente.'
+      });
     }
   }
 
@@ -193,9 +290,9 @@ export default function ContratoPortalPage() {
             <div className="grid md:grid-cols-2 gap-12 items-start max-w-6xl mx-auto">
                 {/* Coluna Esquerda: Preview do Contrato */}
                 <div id="contract-content-for-pdf">
-                    <div className="bg-white shadow-md rounded-lg">
-                        <div 
-                            className="prose prose-sm max-w-none p-6 h-[70vh] overflow-y-auto"
+                    <div className="bg-white p-8 min-h-[70vh]">
+                        <div
+                            className="prose max-w-none"
                             dangerouslySetInnerHTML={{ __html: contract.full_contract_text || '' }}
                         />
                     </div>
@@ -282,13 +379,27 @@ export default function ContratoPortalPage() {
                             )}
 
                              {otpStep === 'signed' && (
-                                 <Alert variant="default" className="bg-green-50 border-green-200">
-                                    <BadgeCheck className="h-4 w-4 text-green-600" />
-                                    <AlertTitle className="text-green-800">Assinatura Concluída!</AlertTitle>
-                                    <AlertDescription className="text-green-700">
-                                        Seu contrato foi assinado com sucesso. Avance para o pagamento.
-                                    </AlertDescription>
-                                </Alert>
+                                <>
+                                    <Alert variant="default" className="bg-green-50 border-green-200">
+                                        <BadgeCheck className="h-4 w-4 text-green-600" />
+                                        <AlertTitle className="text-green-800">Assinatura Concluída!</AlertTitle>
+                                        <AlertDescription className="text-green-700">
+                                            Seu contrato foi assinado com sucesso. Avance para o pagamento.
+                                        </AlertDescription>
+                                    </Alert>
+                                    <div className="flex flex-col gap-2">
+                                        <Button onClick={handleDownloadPdf} size="lg" className="w-full">
+                                            <Download className="mr-2 h-4 w-4" />
+                                            Baixar Cópia do Contrato em PDF
+                                        </Button>
+                                        <Button asChild variant="outline" size="lg" className="w-full">
+                                            <Link href={`/portal/${clientId}`}>
+                                                <ArrowLeft className="mr-2 h-4 w-4" />
+                                                Voltar ao Portal
+                                            </Link>
+                                        </Button>
+                                    </div>
+                                </>
                             )}
                         </div>
                      )}

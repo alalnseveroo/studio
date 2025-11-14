@@ -48,7 +48,7 @@ export async function sendSignatureOtp() {
 
 export async function sendClientVerificationCode(contractId: string) {
   const supabase = createClient();
-  
+
   const { data: contract, error: contractError } = await supabase
     .from('contratos')
     .select('*, clientes:cliente_id (email, full_name, company_name)')
@@ -76,13 +76,14 @@ export async function sendClientVerificationCode(contractId: string) {
   if (updateError) {
       return { success: false, error: { message: 'Falha ao salvar o código de verificação no banco de dados.' } };
   }
-  
+
+  // Tenta enviar via Brevo primeiro
   try {
-    const BREVO_TEMPLATE_ID = 58; 
+    const BREVO_TEMPLATE_ID = 58;
     await sendTransactionalEmail({
         toEmail: clientEmail,
         templateId: BREVO_TEMPLATE_ID,
-        params: { 
+        params: {
             PINSECRET: code,
             NOME_CLIENTE: clientName,
         },
@@ -92,7 +93,31 @@ export async function sendClientVerificationCode(contractId: string) {
     return { success: true, message: `Um e-mail com o código de verificação foi enviado para ${clientEmail}.` };
   } catch (brevoError: any) {
     console.error("Brevo API Error:", brevoError);
-    return { success: false, error: { message: `Falha ao enviar o e-mail de verificação. Detalhes: ${brevoError.message}` } };
+
+    // Verifica se é um erro de chave da API desativada ou inválida
+    if (brevoError.message &&
+        (brevoError.message.toLowerCase().includes('api key is not enabled') ||
+         brevoError.message.toLowerCase().includes('not enabled') ||
+         brevoError.message.toLowerCase().includes('unauthorized') ||
+         brevoError.message.toLowerCase().includes('authentication'))) {
+      return { success: false, error: {
+        message: `Sistema de e-mail temporariamente indisponível devido a problemas com a chave da API. Entre em contato com a contratada para obter o código de verificação manualmente.`
+      }};
+    }
+
+    // Para outros erros do Brevo, tentar fallback
+    try {
+      // Aqui poderia implementar um serviço de e-mail alternativo se necessário
+      // Por enquanto, retornamos uma mensagem mais amigável ao usuário
+      return { success: false, error: {
+        message: `Erro ao enviar e-mail de verificação: ${brevoError.message}. Entre em contato com a contratada via telefone ou outro meio para obter o código de assinatura.`
+      }};
+    } catch (fallbackError: any) {
+      console.error("Falha de fallback:", fallbackError);
+      return { success: false, error: {
+        message: `Falha ao enviar o e-mail de verificação. Detalhes: ${brevoError.message}`
+      }};
+    }
   }
 }
 

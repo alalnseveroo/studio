@@ -65,15 +65,15 @@ export async function addOrUpdateContact(email: string, attributes: { [key: stri
  */
 export async function sendTransactionalEmail(
     { toEmail, templateId, params, userId }: EmailParams,
-    supabaseClient?: any 
+    supabaseClient?: any
 ) {
     if (!BREVO_API_KEY) throw new Error("A chave da API da Brevo não está configurada.");
-    
+
     // Usa o cliente fornecido (de Edge) ou cria um novo (de Server)
     const supabase = supabaseClient || createClient();
-    
+
     let providerName = 'Sua Assistente Virtual'; // Valor padrão
-    
+
     // O nome da contratada já deve vir nos params, mas buscamos como fallback.
     if (!params.CONTRATADA_NOME) {
         const { data: providerProfile, error: profileError } = await supabase
@@ -81,7 +81,7 @@ export async function sendTransactionalEmail(
             .select('full_name, company_name')
             .eq('id', userId)
             .single();
-            
+
         if (profileError) {
             console.error("Erro ao buscar perfil da contratada:", profileError);
             // Não lança erro, continua com o nome padrão
@@ -91,15 +91,20 @@ export async function sendTransactionalEmail(
     } else {
         providerName = params.CONTRATADA_NOME;
     }
-    
+
     // Garante que o nome da contratada está nos parâmetros.
     const finalParams = { ...params, CONTRATADA_NOME: providerName };
 
     // Garante que o contato e seus atributos estão atualizados antes de enviar o e-mail
-    await addOrUpdateContact(toEmail, finalParams);
+    try {
+        await addOrUpdateContact(toEmail, finalParams);
+    } catch (contactError: any) {
+        console.warn("Aviso: Erro ao atualizar contato na Brevo:", contactError.message);
+        // Continua mesmo se não for possível atualizar o contato
+    }
 
     let sendSmtpEmail = new Brevo.SendSmtpEmail();
-    
+
     sendSmtpEmail.templateId = templateId;
     sendSmtpEmail.to = [{ email: toEmail }];
     sendSmtpEmail.params = finalParams;
@@ -109,6 +114,14 @@ export async function sendTransactionalEmail(
     } catch (error: any) {
         const errorMessage = error.body?.message || error.message || 'Erro desconhecido ao enviar e-mail pela Brevo.';
         console.error("Erro na API da Brevo (sendTransacEmail):", error.body || error);
+
+        // Se for um erro de API key desativada, vamos tentar fornecer uma mensagem mais clara
+        if (errorMessage.toLowerCase().includes('api key is not enabled') ||
+            errorMessage.toLowerCase().includes('not enabled') ||
+            error.response?.status === 401) {
+            console.error("A API key da Brevo está com problemas. Verifique as configurações da conta.");
+        }
+
         throw new Error(errorMessage);
     }
 }

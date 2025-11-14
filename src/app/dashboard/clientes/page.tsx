@@ -51,10 +51,11 @@ import { AddClientModal } from '@/components/add-client-modal'
 import { deleteClient, deleteMultipleClients } from '@/lib/actions/clients'
 import type { Cliente } from '@/lib/types'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { ArrowUpDown, ChevronDown, Copy, PlusCircle, Trash2, MoreHorizontal, Check, Link2, FilePen, FileWarning } from 'lucide-react'
+import { ArrowUpDown, ChevronDown, Copy, PlusCircle, Trash2, MoreHorizontal, Check, Link2, FilePen, FileWarning, Upload } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useToast } from '@/hooks/use-toast'
 import { CreateContractModal } from '@/components/create-contract-modal'
+import { UploadContractModal } from '@/components/upload-contract-modal'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useDashboard } from '../layout-context'
 import { ClientDetailSheet } from '@/components/client-detail-sheet'
@@ -123,6 +124,8 @@ function ClientsDataTable() {
   const [isAddModalOpen, setIsAddModalOpen] = React.useState(false)
   const [isContractModalOpen, setIsContractModalOpen] = React.useState(false)
   const [isSheetOpen, setIsSheetOpen] = React.useState(false)
+  const [isUploadContractFlow, setIsUploadContractFlow] = React.useState(false)
+  const [isUploadContractModalOpen, setIsUploadContractModalOpen] = React.useState(false)
   
   const [clientToDelete, setClientToDelete] = React.useState<Cliente | null>(null)
   const [isBulkDeleteConfirmOpen, setIsBulkDeleteConfirmOpen] = React.useState(false)
@@ -144,8 +147,20 @@ function ClientsDataTable() {
 
   const openDetailSheet = (client: Cliente) => {
     setSelectedClient(client);
+    setIsUploadContractFlow(false); // Normal flow
     setIsSheetOpen(true);
   }
+
+  const openUploadContractModal = (client: Cliente) => {
+    setSelectedClient(client);
+    setIsUploadContractModalOpen(true);
+  }
+
+  const handleUploadContractSuccess = () => {
+    setIsUploadContractModalOpen(false);
+    setSelectedClient(null);
+    fetchDashboardData(); // Atualiza os dados após o upload
+  };
   
   const handleCopyLink = (clientId: string) => {
     const portalUrl = new URL(`/portal/${clientId}`, window.location.origin).toString();
@@ -274,6 +289,24 @@ function ClientsDataTable() {
                 </Button>
             </div>
           )
+      }
+    },
+    {
+      id: "upload_contract",
+      header: () => <div className="text-center">Subir Contrato</div>,
+      cell: ({ row }) => {
+        const client = row.original
+        return (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => openUploadContractModal(client)}
+            className="w-full"
+          >
+            <Upload className="h-4 w-4 mr-2" />
+            Subir
+          </Button>
+        )
       }
     },
     {
@@ -535,6 +568,18 @@ function ClientsDataTable() {
           isOpen={isSheetOpen}
           onClose={() => setIsSheetOpen(false)}
           onUpdate={fetchDashboardData}
+        />
+      )}
+
+      {selectedClient && (
+        <UploadContractModal
+          isOpen={isUploadContractModalOpen}
+          onClose={() => {
+            setIsUploadContractModalOpen(false);
+            setSelectedClient(null);
+          }}
+          clientId={selectedClient.id}
+          onUploadSuccess={handleUploadContractSuccess}
         />
       )}
     </>

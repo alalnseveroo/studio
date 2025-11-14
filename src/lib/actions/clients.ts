@@ -131,9 +131,78 @@ export async function getClients() {
 }
 
 export async function getClientById(id: string) {
-    const supabase = createClient()
-    
-    const { data, error } = await supabase
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    // Se houver usuário autenticado (dashboard), verificar se o cliente pertence a ele
+    if (user) {
+        const { data, error } = await supabase
+            .from('clientes')
+            .select(`
+                *,
+                contratos(*, propostas(*)),
+                external_contracts(*)
+            `)
+            .eq('id', id)
+            .eq('user_id', user.id)
+            .single();
+
+        if (error) {
+            console.error('Supabase error:', error);
+            return { data: null, error: { message: 'Não foi possível buscar os dados do cliente.' } };
+        }
+
+        return { data, error: null };
+    } else {
+        // Se não há usuário autenticado, tentar acessar via RLS adequada
+        // A RLS deve permitir acesso baseado em outros critérios
+        const { data, error } = await supabase
+            .from('clientes')
+            .select(`
+                *,
+                contratos(*, propostas(*)),
+                external_contracts(*)
+            `)
+            .eq('id', id)
+            .single();
+
+        if (error) {
+            console.error('Supabase error (portal access):', error);
+            return { data: null, error: { message: 'Não foi possível buscar os dados do cliente.' } };
+        }
+
+        return { data, error: null };
+    }
+}
+
+// Nova função específica para acesso ao portal do cliente
+export async function getClientByIdForPortal(id: string) {
+    const supabase = createClient();
+
+    // Primeiro, tentar buscar o cliente com informações mínimas
+    const { data: basicClientData, error: basicError } = await supabase
+        .from('clientes')
+        .select('id, user_id, avatar_url, email, person_type, company_name, full_name')
+        .eq('id', id)
+        .single();
+
+    if (basicError) {
+        console.error('Supabase error fetching basic client data (portal access):', basicError);
+
+        // Verificar se é erro de permissão
+        if (basicError.code === '42501' || basicError.message.includes('permission')) {
+            return { data: null, error: { message: 'Acesso negado. Entre em contato com o provedor do serviço.' } };
+        }
+
+        return { data: null, error: { message: 'Não foi possível buscar os dados do cliente no portal.' } };
+    }
+
+    if (!basicClientData) {
+        return { data: null, error: { message: 'Cliente não encontrado.' } };
+    }
+
+    // Agora buscar informações completas com junções
+    const { data: fullClientData, error: fullError } = await supabase
         .from('clientes')
         .select(`
             *,
@@ -143,12 +212,14 @@ export async function getClientById(id: string) {
         .eq('id', id)
         .single();
 
-    if (error) {
-        console.error('Supabase error:', error);
-        return { data: null, error: { message: 'Não foi possível buscar os dados do cliente.' } };
+    if (fullError) {
+        console.error('Supabase error fetching full client data (portal access):', fullError);
+
+        // Se falhar na consulta completa, retornar os dados básicos
+        return { data: basicClientData, error: null };
     }
 
-    return { data, error: null };
+    return { data: fullClientData, error: null };
 }
 
 export async function updateClientProfile(id: string, formData: any) {

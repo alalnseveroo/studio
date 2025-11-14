@@ -16,12 +16,12 @@ export default function ClientDetailPageRedirect({ params }: { params: { id: str
       router.push('/dashboard/clientes')
     }, 300)
   }
-  
+
   // O componente ClientDetailSheet é responsável por buscar seus próprios dados
   // com base no ID fornecido
   return (
     <ClientDetailSheet
-      client={{ id: params.id } as any} // Passa um objeto de cliente parcial apenas com o ID
+      client={{ id: params.id } as Cliente} // Passa um objeto de cliente parcial apenas com o ID
       isOpen={isOpen}
       onClose={handleClose}
       onUpdate={() => {}} // A atualização é tratada dentro da folha
